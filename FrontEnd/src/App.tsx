@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import './App.css'
 //importaciones antonella
+import AlexExperimentos from './pages/AlexExperimentos'
 import LoginAdminPage from './pages/LoginAdminPage'
 import RecuperacionCuentaAdminsPage from './pages/RecuperacionCuentaAdminsPage'
 import VerificacionCuentaAdminsPage from './pages/VerificacionCuentaAdminsPage'
@@ -15,6 +16,7 @@ import ConsultaVozPage from './pages/MedicoModulo/ConsultaVozPage'
 import FichaPacientePage from './pages/MedicoModulo/FichaPacientePage'
 import GestionarPacientesPage from './pages/MedicoModulo/GestionarPacientesPage'
 import HistoriaPacientePage from './pages/MedicoModulo/HistoriaPacientePage'
+import NuevoPacientePage from './pages/MedicoModulo/NuevoPacientePage'
 import SeguimientoPacientesListaPage from './pages/MedicoModulo/SeguimientoPacientesListaPage'
 import VisualizarSeguimientoPacientePage from './pages/MedicoModulo/VisualizarSeguimientoPacientePage'
 
@@ -31,6 +33,8 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path='/alex' element={<AlexExperimentos />} />
+
         <Route path='/login' element={<LoginAdminPage />} />
         <Route path='/recuperacion' element={<RecuperacionCuentaAdminsPage />} />
         <Route path='/verificacion' element={<VerificacionCuentaAdminsPage />} />
@@ -40,6 +44,7 @@ function App() {
         <Route path='/doctor/ficha' element={<FichaPacientePage />} />
         <Route path='/doctor/consulta' element={<ConsultaVozPage />} />
         <Route path='/doctor/historial' element={<HistoriaPacientePage />} />
+        <Route path='/doctor/nuevoRegistro' element={<NuevoPacientePage />} />
         <Route path='/doctor/seguimiento' element={<SeguimientoPacientesListaPage />} />
         <Route path='/doctor/visualizar' element={<VisualizarSeguimientoPacientePage />} />
 
