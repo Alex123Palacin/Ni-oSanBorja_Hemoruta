@@ -12,6 +12,37 @@ dist
 dist-ssr
 *.local
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Local AI agent state
+.agent/
+.agents/
+.codex/
+
+# Python generated files and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+.eggs/
+.ipynb_checkpoints/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
