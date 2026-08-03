@@ -2,7 +2,6 @@ import FormInicioComp from "../components/FormInicioComp";
 import iconoHemoRuta from "../assets/iconoHemoRutaNoBg.png";
 
 function LoginAdminPage() {
-  //1375
   let classNameTitle = "text-3xl max-[1375px]:text-[40px] text-[50px] ";
   let classNameDescription = "max-[1375px]:text-3xl text-[25px]";
   return (
