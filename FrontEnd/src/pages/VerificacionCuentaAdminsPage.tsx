@@ -5,7 +5,13 @@ import iconoHemoRuta from "../assets/iconoHemoRutaNoBg.png";
 
 function VerificacionCuentaAdminsPage() {
   return (
-    <div className="flex min-h-dvh flex-col overflow-hidden bg-white">
+    <div
+      className="flex min-h-dvh flex-col overflow-hidden bg-cover
+"
+      style={{
+        backgroundImage: `url(${fondoFormulario})`,
+      }}
+    >
       <header
         className="
           relative
@@ -16,11 +22,7 @@ function VerificacionCuentaAdminsPage() {
           shrink-0
           items-center
           justify-between
-          border-b
-          border-[#e7ecf3]
-          bg-white
           px-[clamp(24px,3vw,48px)]
-          shadow-[0_2px_9px_rgba(15,46,85,0.06)]
         "
       >
         <div className="flex min-w-0 flex-col items-start">
@@ -38,8 +40,8 @@ function VerificacionCuentaAdminsPage() {
               ml-1
               mt-0.5
               hidden
-              text-[clamp(9px,0.75vw,12px)]
-              font-medium
+              text-[clamp(11px,0.8vw,12px)]
+              font-semibold
               text-[#5f7193]
               sm:block
             "
@@ -190,8 +192,10 @@ function VerificacionCuentaAdminsPage() {
                 className="
                   max-w-[210px]
                   truncate
-                  text-[clamp(10px,0.75vw,13px)]
+                  text-[clamp(11px,0.8vw,13px)]
                   text-[#647695]
+                                font-semibold
+
                 "
               >
                 Hematología Pediátrica
@@ -231,16 +235,12 @@ function VerificacionCuentaAdminsPage() {
           items-center
           justify-center
           overflow-hidden
-          bg-cover
           bg-center
           bg-no-repeat
           px-4
           pb-[clamp(80px,8vh,110px)]
           pt-[clamp(20px,3vh,40px)]
         "
-        style={{
-          backgroundImage: `url(${fondoFormulario})`,
-        }}
       >
         <div className="relative z-10 w-full">
           <FormVerificacionComp />
