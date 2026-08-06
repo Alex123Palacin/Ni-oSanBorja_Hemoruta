@@ -1,8 +1,10 @@
 import FormInicioComp from '../components/FormInicioComp'
 import { BtnCrear } from '../ui/BotonUi'
+import AdaptadoMobil from '../components/pacienteMcomp/AdaptadoMobil'
 
 function AlexExperimentos() {
   return (
+    <AdaptadoMobil>
     <main className='flex min-h-screen w-full flex-col items-center justify-center gap-10 bg-[#f3f9fb] py-10'>
       <FormInicioComp />
 
@@ -14,6 +16,7 @@ function AlexExperimentos() {
         <BtnCrear ruta='/antonella' texto='Nuevo paciente' />
       </section>
     </main>
+    </AdaptadoMobil>
   )
 }
 
