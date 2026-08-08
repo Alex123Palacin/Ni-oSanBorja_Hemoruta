@@ -23,7 +23,7 @@ import VisualizarSeguimientoPacientePage from './pages/MedicoModulo/VisualizarSe
 import DocumentosPage from './pages/PacienteModulo/DocumentosPage'
 import InicioPage from './pages/PacienteModulo/InicioPage'
 import LoginPacientePage from './pages/PacienteModulo/LoginPacientePage'
-import MedicamentoPage from './pages/PacienteModulo/MedicamentoPage'
+import MedicamentosPage from './pages/PacienteModulo/MedicamentosPage'
 import RecuperacionCuentaPacientePage from './pages/PacienteModulo/RecuperacionCuentaPacientePage'
 import SintomasPage from './pages/PacienteModulo/SintomasPage'
 import TratamientoPage from './pages/PacienteModulo/TratamientoPage'
@@ -57,7 +57,7 @@ function App() {
         <Route path='/paciente/recuperacion' element={<RecuperacionCuentaPacientePage />} />
         <Route path='/paciente/verificacion' element={<VerificacionCuentaPacientePage />} />
         <Route path='/paciente/inicio' element={<InicioPage />} />
-        <Route path='/paciente/medicamento' element={<MedicamentoPage />} />
+        <Route path='/paciente/medicamento' element={<MedicamentosPage />} />
         <Route path='/paciente/sintomas' element={<SintomasPage />} />
         <Route path='/paciente/tratamiento' element={<TratamientoPage />} />
         <Route path='/paciente/documentos' element={<DocumentosPage />} />

@@ -1,5 +1,7 @@
+import MedicamentosPage from './MedicamentosPage'
+
 function MedicamentoPage() {
-  return null
+  return <MedicamentosPage />
 }
 
 export default MedicamentoPage
