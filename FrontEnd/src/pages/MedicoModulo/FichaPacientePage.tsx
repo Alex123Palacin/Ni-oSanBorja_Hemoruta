@@ -259,7 +259,7 @@ function FichaPacientePage() {
               <span aria-hidden='true' className='hidden h-11 w-px bg-[#d7e1ec] sm:block' />
               <button
                 className='flex h-[60px] w-[332px] max-w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#08aabc] to-[#078da9] px-6 text-[20px] font-medium text-white shadow-[0_6px_14px_rgba(5,111,124,0.2)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aabb] active:translate-y-0'
-                onClick={() => redirigir('/antonella')}
+                onClick={() => redirigir('/doctor/consulta')}
                 type='button'
               >
                 <IconoMedico className='h-7 w-7' nombre='microphone' strokeWidth={1.9} />
