@@ -15,14 +15,18 @@ function DocumentosRecientesSeguimientoComp({
   onVerTodos,
 }: DocumentosRecientesSeguimientoCompProps) {
   return (
-    <section className='rounded-xl border border-[#dce5ee] bg-white p-3 shadow-[0_2px_8px_rgba(18,52,91,0.04)]'>
-      <h2 className='text-[10px] font-extrabold text-[#102e78]'>Documentos recientes</h2>
-      <ul className='mt-2 divide-y divide-[#e4ebf1]'>
+    <section
+      className={`flex flex-col rounded-xl border border-[#dce5ee] bg-white p-3.5 shadow-[0_2px_9px_rgba(18,52,91,0.045)] ${
+        limite >= 3 ? 'min-h-[188px]' : 'min-h-[142px]'
+      }`}
+    >
+      <h2 className='text-[11px] font-extrabold leading-[14px] text-[#102e78]'>Documentos recientes</h2>
+      <ul className='mt-2.5 divide-y divide-[#e4ebf1]'>
         {documentos.slice(0, limite).map((documento) => (
-          <li className='flex min-h-7 items-center gap-2 py-1 text-[7px] text-[#415982]' key={documento.id}>
+          <li className='flex min-h-8 items-center gap-2 py-1 text-[8px] text-[#415982]' key={documento.id}>
             <IconoMedico className='h-4 w-4 shrink-0 text-[#7258de]' nombre='file' />
             <span className='min-w-0 flex-1 truncate font-bold'>{documento.nombre}</span>
-            <time className='shrink-0 text-[#5c7092]'>{documento.fecha}</time>
+            <time className='shrink-0 text-[7px] text-[#5c7092]'>{documento.fecha}</time>
             <span className={`shrink-0 rounded-full px-2 py-1 font-bold ${
               documento.origen === 'WhatsApp'
                 ? 'bg-[#e6f8eb] text-[#17a950]'
@@ -32,7 +36,7 @@ function DocumentosRecientesSeguimientoComp({
             </span>
             <button
               aria-label={`Ver ${documento.nombre}`}
-              className='grid h-5 w-5 shrink-0 cursor-pointer place-items-center rounded text-[#1595b5] transition hover:bg-[#eaf8fa] focus-visible:outline-2 focus-visible:outline-[#08aabb]'
+              className='grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded text-[#1595b5] transition hover:bg-[#eaf8fa] focus-visible:outline-2 focus-visible:outline-[#08aabb]'
               onClick={() => onVerDocumento(documento)}
               type='button'
             >
@@ -42,7 +46,7 @@ function DocumentosRecientesSeguimientoComp({
         ))}
       </ul>
       <button
-        className='mt-2 flex h-8 w-full cursor-pointer items-center justify-center rounded-lg border border-[#08aabb] bg-white text-[8px] font-bold text-[#26709e] transition hover:bg-[#effafb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aabb]'
+        className='mt-auto flex h-8 w-full cursor-pointer items-center justify-center rounded-lg border border-[#08aabb] bg-white text-[9px] font-bold text-[#26709e] transition hover:bg-[#effafb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aabb]'
         onClick={onVerTodos}
         type='button'
       >

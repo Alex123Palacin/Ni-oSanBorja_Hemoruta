@@ -264,6 +264,10 @@ const RESUMEN_SEGUIMIENTO: ResumenPanelSeguimiento = {
     { fecha: '19/05/2025', id: 'doc-informe', nombre: 'Informe médico escaneado', origen: 'App móvil' },
     { fecha: '18/05/2025', id: 'doc-laboratorio', nombre: 'Resultados laboratorio JPG', origen: 'WhatsApp' },
   ],
+  documentosRecientes: [
+    { fecha: '19/05/2025', id: 'doc-reciente-hemograma', nombre: 'Hemograma completo', origen: 'WhatsApp' },
+    { fecha: '15/05/2025', id: 'doc-reciente-indicaciones', nombre: 'Indicaciones médicas', origen: 'App móvil' },
+  ],
   dosisOmitida: {
     fecha: '18/05/2025',
     hora: '09:00 a. m.',
@@ -329,34 +333,35 @@ function VisualizarSeguimientoPacientePage() {
     setFiltroActivo('todos')
   }
 
-  const totalVisible = busqueda ? registrosVisibles.length : TOTAL_REGISTROS[filtroActivo]
+  const totalVisible = busqueda.trim() ? registrosVisibles.length : TOTAL_REGISTROS[filtroActivo]
 
   return (
-    <div className='flex min-h-screen bg-[#fbfdff]'>
-      <MenuMedicoComp />
+    <div className='flex min-h-dvh bg-[#fbfdff]'>
+      <MenuMedicoComp variante='seguimiento' />
 
       <div className='min-w-0 flex-1'>
         <HeaderDoctorMedicoComp
           especialidad={DOCTORA.especialidad}
           nombre={DOCTORA.nombre}
           notificaciones={5}
+          variante='detalleSeguimiento'
         />
 
-        <main className='min-h-[calc(100vh-46px)] px-4 py-4 sm:px-5'>
-          <div className='mx-auto w-full max-w-[1240px]'>
-            <header className='px-1'>
-              <h1 className='text-[24px] font-extrabold tracking-[-0.03em] text-[#0a2b79]'>
+        <main className='min-h-[calc(100dvh-52px)] px-[clamp(16px,2vw,26px)] pb-2 pt-[18px]'>
+          <div className='mx-auto w-full max-w-[1260px]'>
+            <header>
+              <h1 className='text-[clamp(25px,2.1vw,28px)] font-extrabold leading-[34px] tracking-[-0.035em] text-[#0a2b79]'>
                 Seguimiento del paciente
               </h1>
-              <p className='mt-0.5 text-[9px] font-medium text-[#50658a]'>
+              <p className='mt-0.5 text-[10px] font-medium leading-[14px] text-[#50658a]'>
                 Información consolidada desde WhatsApp y la app móvil para seguimiento clínico.
               </p>
             </header>
 
-            <div className='mt-4 grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_285px]'>
+            <div className='mt-4 grid items-start gap-3.5 xl:grid-cols-[minmax(0,1fr)_280px]'>
               <div className='min-w-0'>
                 <PerfilSeguimientoPacienteComp perfil={PERFIL_PACIENTE} />
-                <div className='mt-3'>
+                <div className='mt-4'>
                   <RegistrosSeguimientoComp
                     busqueda={busqueda}
                     filtroActivo={filtroActivo}
@@ -371,15 +376,17 @@ function VisualizarSeguimientoPacientePage() {
                 </div>
               </div>
 
-              <PanelLateralSeguimientoComp
-                filtroActivo={filtroActivo}
-                onRegistrarAccion={() => redirigir('/doctor/consulta')}
-                onVerDocumento={() => redirigir('/doctor/ficha')}
-                onVerDocumentos={() => redirigir('/doctor/ficha')}
-                onVerFicha={() => redirigir('/doctor/ficha')}
-                onVerHistorial={() => redirigir('/doctor/historial')}
-                resumen={RESUMEN_SEGUIMIENTO}
-              />
+              <div className='min-w-0 xl:-mt-9 xl:sticky xl:top-16'>
+                <PanelLateralSeguimientoComp
+                  filtroActivo={filtroActivo}
+                  onRegistrarAccion={() => redirigir('/doctor/consulta')}
+                  onVerDocumento={() => redirigir('/doctor/ficha')}
+                  onVerDocumentos={() => redirigir('/doctor/ficha')}
+                  onVerFicha={() => redirigir('/doctor/ficha')}
+                  onVerHistorial={() => redirigir('/doctor/historial')}
+                  resumen={RESUMEN_SEGUIMIENTO}
+                />
+              </div>
             </div>
           </div>
         </main>

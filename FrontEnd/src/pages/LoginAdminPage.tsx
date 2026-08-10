@@ -30,6 +30,7 @@ function LoginAdminPage() {
           <FormInicioComp />
         </div>
       </div>
+      
     </div>
   );
 }

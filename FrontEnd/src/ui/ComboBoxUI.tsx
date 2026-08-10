@@ -10,16 +10,19 @@ interface ComboBoxUIProps {
   id: string
   onChange: (valor: string) => void
   opciones: readonly OpcionComboBox[]
+  tamano?: 'compacto' | 'normal'
   valor: string
 }
 
-function ComboBoxUI({ etiqueta, id, onChange, opciones, valor }: ComboBoxUIProps) {
+function ComboBoxUI({ etiqueta, id, onChange, opciones, tamano = 'normal', valor }: ComboBoxUIProps) {
   return (
     <label className='block min-w-0' htmlFor={id}>
-      <span className='mb-1 block text-[9px] font-bold text-[#43577d]'>{etiqueta}</span>
+      <span className={`${tamano === 'compacto' ? 'text-[9px]' : 'text-[10px]'} mb-1 block font-bold text-[#43577d]`}>
+        {etiqueta}
+      </span>
       <span className='relative block'>
         <select
-          className='h-9 w-full cursor-pointer appearance-none rounded-lg border border-[#d3dfeb] bg-white px-3 pr-9 text-[10px] font-semibold text-[#183775] outline-none transition focus:border-[#08aabb] focus:ring-3 focus:ring-[#08aabb]/10'
+          className={`${tamano === 'compacto' ? 'h-9 text-[10px]' : 'h-10 text-[11px]'} w-full cursor-pointer appearance-none rounded-lg border border-[#d3dfeb] bg-white px-3 pr-9 font-semibold text-[#183775] outline-none transition focus:border-[#08aabb] focus:ring-3 focus:ring-[#08aabb]/10`}
           id={id}
           onChange={(event) => onChange(event.target.value)}
           value={valor}

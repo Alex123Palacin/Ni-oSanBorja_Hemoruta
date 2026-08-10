@@ -52,6 +52,7 @@ export interface ResumenPanelSeguimiento {
   adherenciaGeneral: number
   adherenciaMedicacion: number
   documentos: DocumentoSeguimientoPaciente[]
+  documentosRecientes: DocumentoSeguimientoPaciente[]
   dosisOmitida: {
     fecha: string
     hora: string

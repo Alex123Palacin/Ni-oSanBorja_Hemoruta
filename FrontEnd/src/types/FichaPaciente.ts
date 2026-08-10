@@ -21,7 +21,14 @@ export interface DocumentoFichaPaciente {
   nombre: string
 }
 
+export interface DetalleDatoFichaPaciente {
+  icono?: NombreIconoMedico
+  texto: string
+  tono?: 'azul' | 'normal'
+}
+
 export interface ItemDatosFichaPaciente {
+  detalles?: DetalleDatoFichaPaciente[]
   etiqueta: string
   secundario?: string
   tono?: 'alerta' | 'exito' | 'normal'
@@ -29,6 +36,7 @@ export interface ItemDatosFichaPaciente {
 }
 
 export interface SeccionDatosFichaPaciente {
+  distribucion?: 'contacto' | 'lista'
   icono: NombreIconoMedico
   items: ItemDatosFichaPaciente[]
   titulo: string

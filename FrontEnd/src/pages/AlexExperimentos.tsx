@@ -13,11 +13,13 @@ function AlexExperimentos() {
         className='flex w-[85%] max-w-[620px] flex-col items-center gap-4'
       >
         <BtnCrear ruta='/antonella' texto='Nuevo usuario' />
-        <BtnCrear ruta='/antonella' texto='Nuevo paciente' />
+        <BtnCrear ruta='/' texto='Nuevo paciente' />
+        
       </section>
     </main>
+    
     </AdaptadoMobil>
-  )
+  );
 }
 
-export default AlexExperimentos
+export default AlexExperimentos;

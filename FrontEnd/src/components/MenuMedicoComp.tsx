@@ -6,12 +6,18 @@ import IconoMedico, { type NombreIconoMedico } from './IconoMedico'
 
 interface ItemMenu {
   activo: boolean
+  contador?: number
   icono: NombreIconoMedico
   ruta: string
   texto: string
 }
 
-function MenuMedicoComp() {
+interface MenuMedicoCompProps {
+  contadorSeguimiento?: number
+  variante?: 'amplia' | 'normal' | 'seguimiento'
+}
+
+function MenuMedicoComp({ contadorSeguimiento, variante = 'normal' }: MenuMedicoCompProps) {
   const { pathname } = useLocation()
   const pacientesActivo = [
     '/doctor/pacientes',
@@ -39,6 +45,7 @@ function MenuMedicoComp() {
     },
     {
       activo: seguimientoActivo,
+      contador: contadorSeguimiento,
       icono: 'whatsapp',
       ruta: '/doctor/seguimiento',
       texto: 'Seguimiento',
@@ -46,11 +53,19 @@ function MenuMedicoComp() {
   ]
 
   return (
-    <aside className='sticky top-0 hidden h-screen w-[190px] min-w-[190px] flex-col overflow-y-auto border-r border-[#dbe5ee] bg-white px-3 pb-4 pt-4 lg:flex'>
+    <aside
+      className={`sticky top-0 hidden h-screen flex-col overflow-y-auto border-r border-[#dbe5ee] bg-white pb-4 pt-4 lg:flex ${
+        variante === 'amplia'
+          ? 'w-[clamp(190px,17.9vw,236px)] min-w-[clamp(190px,17.9vw,236px)] px-[clamp(12px,1.2vw,16px)]'
+          : variante === 'seguimiento'
+            ? 'w-[clamp(196px,15.7vw,212px)] min-w-[clamp(196px,15.7vw,212px)] px-[clamp(12px,1.05vw,14px)]'
+          : 'w-[190px] min-w-[190px] px-3'
+      }`}
+    >
       <div>
         <img
           alt='HemoRuta Pediátrica'
-          className='h-auto w-[142px] object-contain'
+          className={`h-auto object-contain ${variante === 'seguimiento' ? 'w-[150px]' : 'w-[142px]'}`}
           draggable={false}
           src={logoHemoRuta}
         />
@@ -85,17 +100,20 @@ function MenuMedicoComp() {
                 />
               )}
               <IconoMedico className='h-5 w-5 shrink-0' nombre={item.icono} strokeWidth={1.9} />
-              {item.texto}
+              <span>
+                {item.texto}
+                {item.contador !== undefined && ` ${item.contador}`}
+              </span>
             </Link>
           ))}
         </nav>
       </div>
 
       <div className='mt-auto pt-5'>
-        <div className='flex h-[174px] items-end justify-center overflow-hidden'>
+        <div className={`flex items-end justify-center overflow-hidden ${variante === 'seguimiento' ? 'h-[184px]' : 'h-[174px]'}`}>
           <img
             alt='Niño de HemoRuta saludando'
-            className='h-[174px] w-[174px] object-cover'
+            className={`object-cover ${variante === 'seguimiento' ? 'h-[184px] w-[184px]' : 'h-[174px] w-[174px]'}`}
             draggable={false}
             src={fondoNino}
           />

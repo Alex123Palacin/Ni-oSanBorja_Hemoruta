@@ -29,7 +29,13 @@ const InputUi = forwardRef<HTMLInputElement, InputUiProps>(function InputUi(
 
   return (
     <label className={`block min-w-0 ${contenedorClassName}`} htmlFor={inputId}>
-      <span className={etiquetaVisible ? 'mb-1 block text-[9px] font-bold text-[#43577d]' : 'sr-only'}>
+      <span
+        className={
+          etiquetaVisible
+            ? `${tamano === 'compacto' ? 'text-[9px]' : 'text-[10px]'} mb-1 block font-bold text-[#43577d]`
+            : 'sr-only'
+        }
+      >
         {etiqueta}
       </span>
       <span className='relative block'>
@@ -39,7 +45,7 @@ const InputUi = forwardRef<HTMLInputElement, InputUiProps>(function InputUi(
         />
         <input
           {...inputProps}
-          className={`${tamano === 'compacto' ? 'h-8' : 'h-9'} w-full rounded-lg border border-[#d3dfeb] bg-white pl-9 pr-3 text-[10px] font-medium text-[#183775] outline-none transition placeholder:text-[#627698] focus:border-[#08aabb] focus:ring-3 focus:ring-[#08aabb]/10 disabled:cursor-not-allowed disabled:bg-[#f2f5f8] ${className}`}
+          className={`${tamano === 'compacto' ? 'h-8 text-[10px]' : 'h-10 text-[11px]'} w-full rounded-lg border border-[#d3dfeb] bg-white pl-9 pr-3 font-medium text-[#183775] outline-none transition placeholder:text-[#627698] focus:border-[#08aabb] focus:ring-3 focus:ring-[#08aabb]/10 disabled:cursor-not-allowed disabled:bg-[#f2f5f8] ${className}`}
           id={inputId}
           ref={ref}
           type={type}

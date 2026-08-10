@@ -4,24 +4,47 @@ interface HeaderDoctorMedicoCompProps {
   especialidad: string
   nombre: string
   notificaciones?: number
+  variante?: 'amplia' | 'detalleSeguimiento' | 'normal' | 'seguimiento'
 }
 
-function HeaderDoctorMedicoComp({ especialidad, nombre, notificaciones }: HeaderDoctorMedicoCompProps) {
+function HeaderDoctorMedicoComp({
+  especialidad,
+  nombre,
+  notificaciones,
+  variante = 'normal',
+}: HeaderDoctorMedicoCompProps) {
+  const esAmplia = variante === 'amplia'
+  const esDetalleSeguimiento = variante === 'detalleSeguimiento'
+  const esSeguimiento = variante === 'seguimiento' || esDetalleSeguimiento
+
   return (
-    <header className='sticky top-0 z-30 flex h-[46px] items-center justify-end border-b border-[#dbe5ef] bg-white px-4 sm:px-5'>
+    <header
+      className={`sticky top-0 z-30 flex items-center justify-end border-b border-[#dbe5ef] bg-white px-4 sm:px-5 ${
+        esAmplia
+          ? 'h-[clamp(46px,4.1vw,54px)]'
+          : esDetalleSeguimiento
+            ? 'h-[52px]'
+            : esSeguimiento
+              ? 'h-12'
+              : 'h-[46px]'
+      }`}
+    >
       {notificaciones !== undefined && (
-        <button
-          aria-label={`${notificaciones} notificaciones pendientes`}
-          className='relative mr-2 grid h-9 w-9 cursor-pointer place-items-center rounded-lg text-[#28478c] transition hover:bg-[#f2fafb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aebb]'
-          type='button'
-        >
-          <IconoMedico className='h-5 w-5' nombre='bell' strokeWidth={1.9} />
-          {notificaciones > 0 && (
-            <span className='absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[#ed3f4d] px-1 text-[8px] font-extrabold text-white'>
-              {notificaciones}
-            </span>
-          )}
-        </button>
+        <>
+          <button
+            aria-label={`${notificaciones} notificaciones pendientes`}
+            className='relative mr-2 grid h-9 w-9 cursor-pointer place-items-center rounded-lg text-[#28478c] transition hover:bg-[#f2fafb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aebb]'
+            type='button'
+          >
+            <IconoMedico className='h-5 w-5' nombre='bell' strokeWidth={1.9} />
+            {notificaciones > 0 && (
+              <span className='absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[#ed3f4d] px-1 text-[8px] font-extrabold text-white'>
+                {notificaciones}
+              </span>
+            )}
+          </button>
+          {esSeguimiento && <span aria-hidden='true' className='mr-2 h-7 w-px bg-[#dbe5ef]' />}
+        </>
       )}
 
       <button
@@ -29,14 +52,22 @@ function HeaderDoctorMedicoComp({ especialidad, nombre, notificaciones }: Header
         className='flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1 text-left transition hover:bg-[#f2fafb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aebb]'
         type='button'
       >
-        <span className='grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#d8e5ed] bg-gradient-to-b from-[#f9d9c8] to-[#f4b89b] text-[22px] shadow-sm'>
+        <span
+          className={`grid shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#d8e5ed] bg-gradient-to-b from-[#f9d9c8] to-[#f4b89b] shadow-sm ${
+            esAmplia
+              ? 'h-[42px] w-[42px] text-[25px]'
+              : esSeguimiento
+                ? 'h-10 w-10 text-[24px]'
+                : 'h-9 w-9 text-[22px]'
+          }`}
+        >
           <span aria-hidden='true' className='translate-y-0.5'>👩🏻‍⚕️</span>
         </span>
         <span className='hidden min-w-0 sm:block'>
-          <strong className='block truncate text-[12px] font-extrabold leading-4 text-[#0b2b7a]'>
+          <strong className={`${esAmplia ? 'text-[13px]' : 'text-[12px]'} block truncate font-extrabold leading-4 text-[#0b2b7a]`}>
             {nombre}
           </strong>
-          <span className='block truncate text-[9px] font-medium leading-3 text-[#526a91]'>
+          <span className={`${esAmplia ? 'text-[10px]' : 'text-[9px]'} block truncate font-medium leading-3 text-[#526a91]`}>
             {especialidad}
           </span>
         </span>

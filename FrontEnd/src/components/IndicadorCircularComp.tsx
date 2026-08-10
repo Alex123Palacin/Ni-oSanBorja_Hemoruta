@@ -41,8 +41,8 @@ function IndicadorCircularComp({
           {valorSeguro}%
         </strong>
       </div>
-      <span className='mt-1 text-[7px] font-bold leading-[10px] text-[#435a83]'>{etiqueta}</span>
-      {detalle && <span className='text-[7px] font-medium leading-[10px] text-[#687a98]'>{detalle}</span>}
+      <span className='mt-1 text-[8px] font-bold leading-[11px] text-[#435a83]'>{etiqueta}</span>
+      {detalle && <span className='text-[8px] font-medium leading-[11px] text-[#687a98]'>{detalle}</span>}
     </div>
   )
 }

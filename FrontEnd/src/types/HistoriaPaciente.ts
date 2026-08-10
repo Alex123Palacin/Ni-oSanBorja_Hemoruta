@@ -4,6 +4,7 @@ export type TipoDetalleHistorial = 'medicacion' | 'tratamiento'
 export interface DetalleHistorialPaciente {
   descripcion: string
   fecha: string
+  fechaHoraIso: string
   hora: string
   id: string
   lineas: string[]
@@ -17,6 +18,7 @@ export interface EpisodioHistorialPaciente {
   especialidad: string
   estado: string
   fecha: string
+  fechaHoraIso: string
   hora: string
   id: string
   medico: string
