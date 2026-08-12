@@ -2,11 +2,11 @@ import type { FormEvent } from 'react'
 
 import type {
   ActualizarFormulario,
-  CanalActivacion,
   DatosPaciente,
   FormularioActivacion,
 } from '../types/NuevoPaciente'
 import IconoMedico, { type NombreIconoMedico } from './IconoMedico'
+import CanalAccesoPacienteComp from './CanalAccesoPacienteComp'
 import ResumenPacienteComp from './ResumenPacienteComp'
 
 interface CampoFormularioProps {
@@ -17,9 +17,23 @@ interface CampoFormularioProps {
   placeholder: string
   tipo?: 'email' | 'text'
   valor: string
+  obligatorio?: boolean
+  longitudMaxima?: number
+  modoEntrada?: 'email' | 'numeric' | 'tel' | 'text'
 }
 
-function CampoFormulario({ etiqueta, icono, id, onChange, placeholder, tipo = 'text', valor }: CampoFormularioProps) {
+function CampoFormulario({
+  etiqueta,
+  icono,
+  id,
+  longitudMaxima,
+  modoEntrada,
+  obligatorio = false,
+  onChange,
+  placeholder,
+  tipo = 'text',
+  valor,
+}: CampoFormularioProps) {
   return (
     <label className='block' htmlFor={id}>
       <span className='mb-1.5 flex items-center gap-2 text-[10px] font-extrabold text-[#173478]'>
@@ -29,49 +43,14 @@ function CampoFormulario({ etiqueta, icono, id, onChange, placeholder, tipo = 't
       <input
         className='h-9 w-full rounded-lg border border-[#d6e1ec] bg-white px-3 text-[11px] text-[#173478] outline-none transition placeholder:text-[#7588a7] focus:border-[#08aabb] focus:ring-3 focus:ring-[#08aabb]/10'
         id={id}
+        inputMode={modoEntrada}
+        maxLength={longitudMaxima}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
+        required={obligatorio}
         type={tipo}
         value={valor}
       />
-    </label>
-  )
-}
-
-interface OpcionCanalProps {
-  activo: boolean
-  canal: CanalActivacion
-  descripcion: string
-  onSeleccionar: (canal: CanalActivacion) => void
-}
-
-function OpcionCanal({ activo, canal, descripcion, onSeleccionar }: OpcionCanalProps) {
-  const esWhatsApp = canal === 'WhatsApp'
-
-  return (
-    <label
-      className={`flex min-h-[76px] cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition ${
-        activo ? 'border-[#08a9bb] bg-[#f8fefe]' : 'border-[#dbe5ee] bg-white hover:bg-[#f8fbfd]'
-      }`}
-    >
-      <input
-        checked={activo}
-        className='mt-1 h-3.5 w-3.5 accent-[#098fdf]'
-        name='canalActivacion'
-        onChange={() => onSeleccionar(canal)}
-        type='radio'
-      />
-      <span
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
-          esWhatsApp ? 'bg-[#19bd5b] text-white' : 'bg-[#e6f1ff] text-[#147cf3]'
-        }`}
-      >
-        <IconoMedico className='h-6 w-6' nombre={esWhatsApp ? 'whatsapp' : 'smartphone'} strokeWidth={1.9} />
-      </span>
-      <span className='min-w-0 text-[9px] leading-[13px] text-[#36517f]'>
-        <strong className='mb-0.5 block text-[11px] text-[#173478]'>{canal}</strong>
-        {descripcion}
-      </span>
     </label>
   )
 }
@@ -82,9 +61,19 @@ interface NuevoPaso1Props {
   formulario: FormularioActivacion
   onCancelar: () => void
   onContinuar: () => void
+  cargando?: boolean
+  error?: string
 }
 
-function NuevoPaso1({ actualizarFormulario, datos, formulario, onCancelar, onContinuar }: NuevoPaso1Props) {
+function NuevoPaso1({
+  actualizarFormulario,
+  cargando = false,
+  datos,
+  error = '',
+  formulario,
+  onCancelar,
+  onContinuar,
+}: NuevoPaso1Props) {
   const resumen: DatosPaciente = {
     ...datos,
     canal: formulario.canal,
@@ -105,8 +94,8 @@ function NuevoPaso1({ actualizarFormulario, datos, formulario, onCancelar, onCon
         <section className='rounded-xl border border-[#dbe5ef] bg-white p-5 shadow-[0_1px_3px_rgba(18,52,91,0.04)]'>
           <h2 className='text-[14px] font-extrabold text-[#123278]'>Datos básicos para activar al paciente</h2>
           <p className='mt-1 max-w-[620px] text-[9px] font-medium leading-[14px] text-[#526a91]'>
-            Solo necesitamos estos datos mínimos. La información personal y familiar restante será completada
-            por la familia desde WhatsApp o la app móvil.
+            Solo necesitamos estos datos mínimos. La ficha quedará marcada como provisional hasta completar la
+            información clínica y familiar.
           </p>
 
           <div className='mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2'>
@@ -117,6 +106,9 @@ function NuevoPaso1({ actualizarFormulario, datos, formulario, onCancelar, onCon
               onChange={(valor) => actualizarFormulario('dni', valor)}
               placeholder='Ingresar DNI'
               valor={formulario.dni}
+              obligatorio
+              longitudMaxima={8}
+              modoEntrada='numeric'
             />
             <CampoFormulario
               etiqueta='Nombre completo del paciente'
@@ -125,6 +117,7 @@ function NuevoPaso1({ actualizarFormulario, datos, formulario, onCancelar, onCon
               onChange={(valor) => actualizarFormulario('nombre', valor)}
               placeholder='Ej. Mateo Gabriel Flores'
               valor={formulario.nombre}
+              obligatorio
             />
             <CampoFormulario
               etiqueta='Teléfono del tutor'
@@ -133,6 +126,9 @@ function NuevoPaso1({ actualizarFormulario, datos, formulario, onCancelar, onCon
               onChange={(valor) => actualizarFormulario('telefono', valor)}
               placeholder='Ej. 987 654 321'
               valor={formulario.telefono}
+              obligatorio
+              longitudMaxima={20}
+              modoEntrada='tel'
             />
             <CampoFormulario
               etiqueta='Correo electrónico'
@@ -142,48 +138,32 @@ function NuevoPaso1({ actualizarFormulario, datos, formulario, onCancelar, onCon
               placeholder='Ej. maria.flores@email.com'
               tipo='email'
               valor={formulario.correo}
+              modoEntrada='email'
             />
           </div>
 
-          <fieldset className='mt-4'>
-            <legend className='mb-2 text-[10px] font-extrabold text-[#173478]'>Canal principal de acceso</legend>
-            <div className='grid gap-3 sm:grid-cols-2'>
-              <OpcionCanal
-                activo={formulario.canal === 'WhatsApp'}
-                canal='WhatsApp'
-                descripcion='La familia recibirá el enlace y continuará el registro por WhatsApp.'
-                onSeleccionar={(canal) => actualizarFormulario('canal', canal)}
-              />
-              <OpcionCanal
-                activo={formulario.canal === 'App móvil'}
-                canal='App móvil'
-                descripcion='La familia recibirá el enlace y continuará el registro desde la app móvil.'
-                onSeleccionar={(canal) => actualizarFormulario('canal', canal)}
-              />
-            </div>
-          </fieldset>
-
-          <label className='mt-4 flex cursor-pointer items-start gap-2.5' htmlFor='enviarCopia'>
-            <input
-              checked={formulario.copiaCorreo}
-              className='mt-0.5 h-4 w-4 accent-[#08a9bb]'
-              id='enviarCopia'
-              onChange={(event) => actualizarFormulario('copiaCorreo', event.target.checked)}
-              type='checkbox'
+          <div className='mt-4'>
+            <CanalAccesoPacienteComp
+              descripcionApp='La familia podrá ingresar desde la app con sus credenciales temporales.'
+              descripcionWhatsApp='El canal queda seleccionado para continuar el registro con la familia.'
+              onCambiar={(canal) => actualizarFormulario('canal', canal)}
+              valor={formulario.canal}
             />
-            <span className='text-[9px] leading-[14px] text-[#526a91]'>
-              <strong className='block text-[10px] text-[#173478]'>Enviar copia al correo del tutor</strong>
-              Se enviará un resumen con las instrucciones de activación.
-            </span>
-          </label>
+          </div>
+
+          {error && (
+            <p className='mt-4 rounded-lg border border-[#ffc8cc] bg-[#fff5f6] px-3 py-2 text-[9px] font-semibold text-[#c93442]' role='alert'>
+              {error}
+            </p>
+          )}
         </section>
 
         <ResumenPacienteComp
           datos={resumen}
-          estado='Listo para enviar'
-          notaDetalle='Podrán agregar datos personales, familiares, historial médico y autorizaciones.'
-          notaTitulo='La familia completará el resto del perfil desde WhatsApp o la app móvil.'
-          titulo='Resumen de activación'
+          estado='Listo para registrar'
+          notaDetalle='La ficha podrá completarse luego sin perder el vínculo con el médico.'
+          notaTitulo='Se generará una ficha provisional y credenciales temporales de acceso.'
+          titulo='Resumen del alta'
         />
       </div>
 
@@ -197,11 +177,12 @@ function NuevoPaso1({ actualizarFormulario, datos, formulario, onCancelar, onCon
           Cancelar
         </button>
         <button
-          className='flex h-9 min-w-[195px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#08aabd] to-[#078eaa] px-6 text-[10px] font-bold text-white shadow-sm transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08a9bb]'
+          className='flex h-9 min-w-[195px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#08aabd] to-[#078eaa] px-6 text-[10px] font-bold text-white shadow-sm transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08a9bb] disabled:cursor-wait disabled:opacity-65'
+          disabled={cargando}
           type='submit'
         >
           <IconoMedico className='h-4 w-4' nombre='send' strokeWidth={1.8} />
-          Enviar activación
+          {cargando ? 'Creando paciente...' : 'Crear paciente y acceso'}
         </button>
       </div>
     </form>

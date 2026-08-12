@@ -1,38 +1,25 @@
-import { useState } from 'react'
 import FondoNino from '../../assets/FondoNiño5.png'
 import AdaptadoMobil from '../../components/pacienteMcomp/AdaptadoMobil'
 import DetalleSintomasPacienteComp, {
-  type BorradorDetalleSintomasPaciente,
   type EtiquetasDetalleSintomasPaciente,
   type OpcionDuracionSintomaPaciente,
   type OpcionEvolucionSintomaPaciente,
 } from '../../components/pacienteMcomp/DetalleSintomasPacienteComp'
 import InformacionSintomasPacienteComp from '../../components/pacienteMcomp/InformacionSintomasPacienteComp'
+import EnviarSintomasPacienteComp from '../../components/pacienteMcomp/EnviarSintomasPacienteComp'
 import MenuPaciente from '../../components/pacienteMcomp/MenuPaciente'
 import PerfilPacienteNiñoComp, {
   type DatosPerfilPacienteNino,
 } from '../../components/pacienteMcomp/PerfilPacienteNiñoComp'
 import SintomasIntencidadComp, {
-  type NivelIntensidadSintoma,
   type OpcionIntensidadSintoma,
 } from '../../components/pacienteMcomp/SintomasIntencidadComp'
 import TipoSintomaPacienteComp, {
   type TipoSintomaPaciente,
 } from '../../components/pacienteMcomp/TipoSintomaPacienteComp'
-
-interface BorradorRegistroSintomas extends BorradorDetalleSintomasPaciente {
-  intensidadGeneral: NivelIntensidadSintoma | null
-  pacienteId: string
-  sintomasIds: string[]
-}
-
-const PACIENTE: DatosPerfilPacienteNino = {
-  edad: '8 años',
-  estado: 'Activo',
-  historiaClinica: 'HC-2024-01568',
-  imagen: FondoNino,
-  nombre: 'Mateo Gabriel Flores',
-}
+import useRegistroSintomasPaciente from '../../hooks/useRegistroSintomasPaciente'
+import { formatearEdadPaciente } from '../../utils/paciente'
+import useDatosInicioPacienteApi from '../../hooks/useDatosInicioPacienteApi'
 
 const TIPOS_SINTOMA: readonly TipoSintomaPaciente[] = [
   { icono: 'thermometer', id: 'fiebre', texto: 'Fiebre' },
@@ -84,37 +71,46 @@ const INFORMACION_SINTOMAS = {
   importanteTitulo: 'Importante',
 } as const
 
-const REGISTRO_INICIAL: BorradorRegistroSintomas = {
-  duracion: null,
-  evolucion: 'igual',
-  fechaHora: '',
-  intensidadGeneral: 'leve',
-  observacion: '',
-  pacienteId: 'mateo-gabriel-flores',
-  sintomasIds: ['fiebre'],
-}
-
 function SintomasPage() {
-  const [registro, setRegistro] = useState<BorradorRegistroSintomas>(REGISTRO_INICIAL)
-
-  function alternarSintoma(sintomaId: string) {
-    setRegistro((registroActual) => ({
-      ...registroActual,
-      sintomasIds: registroActual.sintomasIds.includes(sintomaId)
-        ? registroActual.sintomasIds.filter((id) => id !== sintomaId)
-        : [...registroActual.sintomasIds, sintomaId],
-    }))
-  }
-
-  function cambiarDetalle(cambio: Partial<BorradorDetalleSintomasPaciente>) {
-    setRegistro((registroActual) => ({ ...registroActual, ...cambio }))
-  }
+  const { datos: datosInicio, error: errorPerfil } = useDatosInicioPacienteApi()
+  const {
+    alternarSintoma,
+    cambiarDetalle,
+    cambiarIntensidad,
+    enviarReporte,
+    estadoEnvio,
+    mensajeEnvio,
+    registro,
+  } = useRegistroSintomasPaciente()
+  const paciente: DatosPerfilPacienteNino | null = datosInicio
+    ? {
+        edad: formatearEdadPaciente(datosInicio.paciente.edad),
+        estado: datosInicio.paciente.estado.replaceAll('_', ' ').toLocaleLowerCase('es-PE').replace(/^./, (letra) => letra.toLocaleUpperCase('es-PE')),
+        historiaClinica: datosInicio.paciente.historiaClinica,
+        imagen: FondoNino,
+        nombre: datosInicio.paciente.nombre,
+      }
+    : null
 
   return (
     <AdaptadoMobil estilos='bg-[#f8fbfd] text-[#082767]'>
       <div className='flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#f8fbfd]'>
         <main className='min-h-0 flex-1 overflow-y-auto px-2.5 pb-2 pt-2'>
-          <PerfilPacienteNiñoComp paciente={PACIENTE} tamano='compacto' />
+          {paciente ? (
+            <PerfilPacienteNiñoComp paciente={paciente} tamano='compacto' />
+          ) : (
+            <div className='h-[82px] animate-pulse rounded-xl border border-[#e1e9ef] bg-white' />
+          )}
+
+          {errorPerfil && (
+            <p
+              className='mt-1.5 rounded-md bg-[#fff8e8] px-2 py-1 text-center text-[6.7px] font-semibold text-[#9a6a17]'
+              role='status'
+              title={errorPerfil}
+            >
+              No se pudo actualizar el perfil. Puedes continuar enviando el reporte.
+            </p>
+          )}
 
           <div className='mt-2'>
             <TipoSintomaPacienteComp
@@ -128,7 +124,7 @@ function SintomasPage() {
           <div className='mt-2'>
             <SintomasIntencidadComp
               intensidad={registro.intensidadGeneral}
-              onCambiar={(intensidadGeneral) => setRegistro((actual) => ({ ...actual, intensidadGeneral }))}
+              onCambiar={cambiarIntensidad}
               opciones={INTENSIDADES}
               titulo='2. ¿Qué intensidad tiene?'
             />
@@ -149,6 +145,14 @@ function SintomasPage() {
             <InformacionSintomasPacienteComp
               {...INFORMACION_SINTOMAS}
               imagenPaciente={FondoNino}
+            />
+          </div>
+
+          <div className='mt-2 pb-2'>
+            <EnviarSintomasPacienteComp
+              estado={estadoEnvio}
+              mensaje={mensajeEnvio}
+              onEnviar={() => void enviarReporte()}
             />
           </div>
         </main>

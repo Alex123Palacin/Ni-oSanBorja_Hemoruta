@@ -35,10 +35,7 @@ function ResumenPacienteComp({ datos, estado, notaDetalle, notaTitulo, titulo }:
 
         <div className='grid grid-cols-[92px_minmax(0,1fr)] items-center gap-2 py-2'>
           <dt className='flex items-center gap-2 text-[10px] font-semibold text-[#405683]'>
-            <IconoMedico
-              className={`h-3.5 w-3.5 ${datos.canal === 'WhatsApp' ? 'text-[#16b858]' : 'text-[#147cf3]'}`}
-              nombre={datos.canal === 'WhatsApp' ? 'whatsapp' : 'smartphone'}
-            />
+            <IconoMedico className='h-3.5 w-3.5 text-[#147cf3]' nombre='smartphone' />
             Canal:
           </dt>
           <dd className='text-[10px] font-bold text-[#102f79]'>{datos.canal}</dd>

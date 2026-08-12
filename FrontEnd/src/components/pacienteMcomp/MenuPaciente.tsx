@@ -15,7 +15,11 @@ const OPCIONES_MENU: readonly OpcionMenuPaciente[] = [
   { icono: 'file', ruta: '/paciente/documentos', texto: 'Documentos' },
 ]
 
-function MenuPaciente() {
+interface MenuPacienteProps {
+  onSeleccionarInicio?: () => void
+}
+
+function MenuPaciente({ onSeleccionarInicio }: MenuPacienteProps) {
   return (
     <nav
       aria-label='Navegación principal del paciente'
@@ -31,6 +35,7 @@ function MenuPaciente() {
             }
             end
             key={opcion.ruta}
+            onClick={opcion.ruta === '/paciente/inicio' ? onSeleccionarInicio : undefined}
             to={opcion.ruta}
           >
             {({ isActive }) => (

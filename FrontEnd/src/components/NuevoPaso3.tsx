@@ -1,4 +1,8 @@
-import type { DatosPaciente } from '../types/NuevoPaciente'
+import { useState } from 'react'
+
+import type { CanalActivacion, CredencialesTemporalesPaciente, DatosPaciente } from '../types/NuevoPaciente'
+import CanalAccesoPacienteComp from './CanalAccesoPacienteComp'
+import CredencialesAccesoPacienteComp from './CredencialesAccesoPacienteComp'
 import IconoMedico, { type NombreIconoMedico } from './IconoMedico'
 
 interface FilaDetalle {
@@ -34,43 +38,16 @@ function GrupoDetalle({ filas, icono, titulo }: GrupoDetalleProps) {
   )
 }
 
-interface TarjetaCanalProps {
-  descripcion: string
-  icono: 'smartphone' | 'whatsapp'
-  titulo: string
-}
-
-function TarjetaCanal({ descripcion, icono, titulo }: TarjetaCanalProps) {
-  const esWhatsApp = icono === 'whatsapp'
-
-  return (
-    <article className='flex gap-3 rounded-lg border border-[#dbe8e2] bg-white p-3'>
-      <span
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
-          esWhatsApp ? 'bg-[#e5f8eb] text-[#12ae50]' : 'bg-[#e7f2ff] text-[#147cf3]'
-        }`}
-      >
-        <IconoMedico className='h-6 w-6' nombre={icono} />
-      </span>
-      <div className='min-w-0 text-[8px] leading-[12px] text-[#405a85]'>
-        <strong className='block text-[10px] text-[#173478]'>{titulo}</strong>
-        {descripcion}
-        <span className='mt-1 block w-fit rounded-full bg-[#dcf5e4] px-2 py-0.5 text-[8px] font-bold text-[#078b3e]'>
-          Habilitado
-        </span>
-      </div>
-    </article>
-  )
-}
-
 interface NuevoPaso3Props {
+  credenciales: CredencialesTemporalesPaciente
   datos: DatosPaciente
   onFicha: () => void
   onSeguimiento: () => void
   onVolver: () => void
 }
 
-function NuevoPaso3({ datos, onFicha, onSeguimiento, onVolver }: NuevoPaso3Props) {
+function NuevoPaso3({ credenciales, datos, onFicha, onSeguimiento, onVolver }: NuevoPaso3Props) {
+  const [canalSeleccionado, setCanalSeleccionado] = useState<CanalActivacion>(datos.canal)
   const datosPersonales: FilaDetalle[] = [
     { etiqueta: 'Nombre', valor: datos.nombre },
     { etiqueta: 'DNI', valor: datos.dni },
@@ -90,7 +67,8 @@ function NuevoPaso3({ datos, onFicha, onSeguimiento, onVolver }: NuevoPaso3Props
     { etiqueta: 'Idioma preferido', valor: datos.idioma },
   ]
   const accesoHabilitado: FilaDetalle[] = [
-    { etiqueta: 'Canales activos', valor: datos.canalesActivos.join(' · ') },
+    { etiqueta: 'Canal preferido', valor: canalSeleccionado },
+    { etiqueta: 'Usuario', valor: credenciales.usuario },
     { etiqueta: 'Estado', valor: 'Activo' },
     { etiqueta: 'Fecha de activación', valor: datos.fechaActivacion },
     { etiqueta: 'Registrado por', valor: datos.registradoPor },
@@ -109,12 +87,11 @@ function NuevoPaso3({ datos, onFicha, onSeguimiento, onVolver }: NuevoPaso3Props
               <span className='absolute -left-5 bottom-0 text-[#ffbd17]'>✦</span>
             </span>
             <div>
-              <h2 className='text-[17px] font-extrabold text-[#079447]'>¡Cuenta activada correctamente!</h2>
+              <h2 className='text-[17px] font-extrabold text-[#079447]'>¡Paciente registrado correctamente!</h2>
               <p className='mt-1 text-[9px] leading-[14px] text-[#405a85]'>
-                La familia completó su registro a través de WhatsApp o la app móvil.
+                La ficha provisional y las credenciales quedaron creadas en una sola operación.
                 <br />
-                El paciente ya puede usar cualquiera de los dos canales para comunicarse, recibir recordatorios y
-                acceder a su información.
+                Ya puedes abrir la ficha real del paciente para continuar con su atención.
               </p>
             </div>
           </article>
@@ -132,28 +109,27 @@ function NuevoPaso3({ datos, onFicha, onSeguimiento, onVolver }: NuevoPaso3Props
             <span className='grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#1680ea] text-white'>
               <IconoMedico className='h-3.5 w-3.5' nombre='info' strokeWidth={2.1} />
             </span>
-            Las futuras actualizaciones desde WhatsApp o la app móvil (síntomas, medicación, citas, documentos,
-            etc.) se sincronizarán automáticamente con la plataforma del médico.
+            Las futuras actualizaciones del módulo del paciente (síntomas, medicación, citas y documentos) se
+            reflejarán automáticamente en la plataforma del médico.
           </div>
         </div>
 
         <aside className='rounded-xl border border-[#d9e9e2] bg-[#fcfffd] p-4'>
           <h2 className='text-[13px] font-extrabold text-[#079447]'>Acceso habilitado</h2>
           <p className='mt-2 text-[9px] leading-[13px] text-[#405a85]'>
-            El paciente y su familia pueden usar cualquiera de estos canales:
+            La familia ya puede ingresar con sus credenciales:
           </p>
 
           <div className='mt-3 space-y-3'>
-            <TarjetaCanal
-              descripcion='Para recordatorios, récord de medicación y comunicación.'
-              icono='whatsapp'
-              titulo='WhatsApp'
+            <CanalAccesoPacienteComp
+              compacto
+              descripcionApp='Acceso a medicación, síntomas, tratamiento, citas y documentos.'
+              descripcionWhatsApp='Canal preferido para orientar y acompañar a la familia.'
+              etiqueta='Canal preferido'
+              onCambiar={setCanalSeleccionado}
+              valor={canalSeleccionado}
             />
-            <TarjetaCanal
-              descripcion='Para gestionar información, medicamentos y citas.'
-              icono='smartphone'
-              titulo='App móvil'
-            />
+            <CredencialesAccesoPacienteComp compacto credenciales={credenciales} />
           </div>
 
           <div className='mt-3 flex gap-2 rounded-xl border border-[#f5d48b] bg-[#fffaf0] p-3'>
@@ -161,8 +137,8 @@ function NuevoPaso3({ datos, onFicha, onSeguimiento, onVolver }: NuevoPaso3Props
               <IconoMedico className='h-4 w-4' nombre='star' />
             </span>
             <p className='text-[8px] leading-[12px] text-[#3d5680]'>
-              <strong className='block text-[#173478]'>Ambos canales están habilitados y sincronizados.</strong>
-              La familia puede elegir el que prefiera en cualquier momento.
+              <strong className='block text-[#173478]'>Perfil provisional.</strong>
+              Completa los datos faltantes cuando la familia los confirme.
             </p>
           </div>
         </aside>

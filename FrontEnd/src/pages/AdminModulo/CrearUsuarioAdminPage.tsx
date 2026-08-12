@@ -1,5 +1,12 @@
 import { useState, type FormEvent } from "react";
 
+import {
+  crearContrasenaTemporalAdmin,
+  crearUsuarioHospitalarioApi,
+  type CrearUsuarioHospitalarioApi,
+} from "../../api/admin/AdminApi";
+import { obtenerMensajeErrorApi } from "../../api/compartido/ClienteApi";
+import useAuth from "../../auth/useAuth";
 import iconoHemoRuta from "../../assets/iconoHemoRutaNoBg.png";
 import fondoNino from "../../assets/FondoNiño4.png";
 
@@ -7,24 +14,47 @@ import useRedirrecion from "../../hooks/Redirrecion";
 
 function CrearUsuarioAdminPage() {
   const redirigir = useRedirrecion();
+  const { usuario: usuarioSesion } = useAuth();
 
   const [perfil, setPerfil] = useState("");
+  const [creando, setCreando] = useState(false);
+  const [errorCreacion, setErrorCreacion] = useState("");
 
-  function evtSubmitCrearUsuario(event: FormEvent<HTMLFormElement>) {
+  async function evtSubmitCrearUsuario(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
+    const rol = String(formData.get("perfil") ?? "");
+    if (rol !== "MEDICO" && rol !== "ADMINISTRADOR" && rol !== "PACIENTE") {
+      setErrorCreacion("Selecciona un perfil hospitalario válido.");
+      return;
+    }
 
-    const usuario = {
+    const usuario: CrearUsuarioHospitalarioApi = {
       nombres: String(formData.get("nombres") ?? ""),
       dni: String(formData.get("dni") ?? ""),
       correo: String(formData.get("correo") ?? ""),
       telefono: String(formData.get("telefono") ?? ""),
-      perfil: String(formData.get("perfil") ?? ""),
+      rol,
     };
 
-    console.log("Crear usuario:", usuario);
-    redirigir("/admin/confirmacion");
+    setCreando(true);
+    setErrorCreacion("");
+    try {
+      const creado = await crearUsuarioHospitalarioApi(usuario);
+      window.sessionStorage.setItem(
+        "hemoruta.admin.ultimoUsuarioCreado",
+        JSON.stringify({
+          ...creado,
+          contrasenaTemporal: crearContrasenaTemporalAdmin(usuario.dni),
+        }),
+      );
+      redirigir("/admin/confirmacion");
+    } catch (error) {
+      setErrorCreacion(obtenerMensajeErrorApi(error));
+    } finally {
+      setCreando(false);
+    }
   }
 
   function evtClickVolver() {
@@ -309,11 +339,13 @@ function CrearUsuarioAdminPage() {
                 transition
                 hover:bg-[#f6f9fc]
               "
+              onClick={() => redirigir('/admin/inicio')}
               type="button"
             >
               <div
                 className="
                   grid
+                  relative
                   h-10
                   w-10
                   shrink-0
@@ -325,6 +357,9 @@ function CrearUsuarioAdminPage() {
                   bg-[#eaf8f8]
                 "
               >
+                {usuarioSesion?.fotoPerfil && (
+                  <img alt={`Foto de ${usuarioSesion.nombre}`} className="absolute inset-0 z-10 h-full w-full object-cover" src={usuarioSesion.fotoPerfil} />
+                )}
                 <svg
                   aria-hidden="true"
                   className="h-full w-full"
@@ -350,7 +385,7 @@ function CrearUsuarioAdminPage() {
 
               <div className="hidden md:block">
                 <p className="text-xs font-bold text-[#0b2b69]">
-                  Lic. Andrea Salazar
+                  {usuarioSesion?.nombre ?? "Administrador"}
                 </p>
 
                 <p className="mt-0.5 text-[10px] text-[#667794]">
@@ -798,6 +833,7 @@ function CrearUsuarioAdminPage() {
                           </option>
 
                           <option value="MEDICO">Médico</option>
+                          <option value="PACIENTE">Paciente o responsable</option>
                           <option value="ADMINISTRADOR">
                             Administrador general
                           </option>
@@ -847,20 +883,20 @@ function CrearUsuarioAdminPage() {
                           gap-3
                           rounded-xl
                           border
-                          border-[#f0d8a7]
-                          bg-[#fff9ec]
+                          border-[#bfe7ce]
+                          bg-[#f0fbf4]
                           px-4
                           text-xs
                           font-semibold
-                          text-[#f28705]
+                          text-[#168b58]
                         "
                       >
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#ff9900]" />
-                        Pendiente de activación
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#1cb16d]" />
+                        Cuenta activa
                       </div>
 
                       <span className="mt-2 block text-[10px] text-[#65738d]">
-                        El usuario deberá activar su cuenta para acceder.
+                        El usuario podrá ingresar con su contraseña temporal.
                       </span>
                     </div>
                   </div>
@@ -901,10 +937,19 @@ function CrearUsuarioAdminPage() {
                     </div>
 
                     <p className="text-[11px] leading-[1.45] text-[#28598e]">
-                      El nuevo usuario recibirá un correo con instrucciones para
-                      activar su cuenta y acceder a la plataforma.
+                      Se creará una contraseña temporal basada en el DNI. El
+                      usuario deberá cambiarla después de iniciar sesión.
                     </p>
                   </div>
+
+                  {errorCreacion && (
+                    <div
+                      className="mt-4 rounded-xl border border-[#f2b7b7] bg-[#fff3f3] px-4 py-3 text-xs text-[#a73838]"
+                      role="alert"
+                    >
+                      {errorCreacion}
+                    </div>
+                  )}
                 </div>
 
                 {/* FOOTER FORM */}
@@ -1003,7 +1048,10 @@ function CrearUsuarioAdminPage() {
                         transition
                         hover:-translate-y-0.5
                         hover:shadow-[0_8px_20px_rgba(0,158,166,0.27)]
+                        disabled:cursor-wait
+                        disabled:opacity-70
                       "
+                      disabled={creando}
                       type="submit"
                     >
                       <svg
@@ -1027,7 +1075,7 @@ function CrearUsuarioAdminPage() {
                           strokeWidth="1.7"
                         />
                       </svg>
-                      Crear usuario
+                      {creando ? "Creando usuario..." : "Crear usuario"}
                     </button>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import type { PerfilSeguimientoPaciente } from '../types/SeguimientoPaciente'
+import { formatearEdadPaciente } from '../utils/paciente'
 import IconoMedico from './IconoMedico'
 
 interface CampoPerfilProps {
@@ -46,7 +47,7 @@ function PerfilSeguimientoPacienteComp({ perfil }: PerfilSeguimientoPacienteComp
           <div className='mt-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[9px] font-semibold text-[#536a91] sm:justify-start'>
             <span className='flex items-center gap-1.5'>
               <IconoMedico className='h-4 w-4 text-[#31559f]' nombre='user' />
-              {perfil.edad} años
+              {formatearEdadPaciente(perfil.edad)}
             </span>
             <span className='flex items-center gap-1.5'>
               <IconoMedico className='h-4 w-4 text-[#31559f]' nombre='idCard' />

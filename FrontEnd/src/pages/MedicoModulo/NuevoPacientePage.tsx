@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import HeaderDoctorMedicoComp from '../../components/HeaderDoctorMedicoComp'
 import MenuMedicoComp from '../../components/MenuMedicoComp'
 import NuevoPaso1 from '../../components/NuevoPaso1'
@@ -8,6 +6,8 @@ import NuevoPaso3 from '../../components/NuevoPaso3'
 import ProgresionComp from '../../components/ProgresionComp'
 import { useProgreso } from '../../hooks/ProgresoNewpaso'
 import useRedirrecion from '../../hooks/Redirrecion'
+import useAltaPacienteMedico from '../../hooks/useAltaPacienteMedico'
+import useFormularioNuevoPaciente from '../../hooks/useFormularioNuevoPaciente'
 import type {
   DatosPaciente,
   FormularioActivacion,
@@ -22,28 +22,28 @@ const DOCTORA = {
 const DATOS_PACIENTE: DatosPaciente = {
   canal: 'WhatsApp',
   canalesActivos: ['WhatsApp', 'App móvil'],
-  correo: 'maria.flores@email.com',
-  diagnostico: 'Hemofilia A moderada',
-  direccion: 'Av. Javier Prado Este 1234, San Borja, Lima',
-  dni: '74585684',
-  dniTutor: '45678912',
-  estado: 'Listo para enviar',
-  factorBase: 'VIII: 2%',
-  fechaActivacion: '24/05/2025 10:30 a. m.',
-  fechaNacimiento: '12/05/2018 (6 años)',
-  grupoRh: 'O+',
+  correo: 'Por completar',
+  diagnostico: 'Por completar',
+  direccion: 'Por completar',
+  dni: 'Por completar',
+  dniTutor: 'Por completar',
+  estado: 'Registro provisional',
+  factorBase: 'Por completar',
+  fechaActivacion: 'Registrado en HemoRuta',
+  fechaNacimiento: 'Por completar',
+  grupoRh: 'Por completar',
+  historiaClinica: 'Se generará al guardar',
   idioma: 'Español',
-  nombre: 'Mateo Gabriel Flores',
-  parentesco: 'Madre',
-  peso: '20.5 kg',
-  registradoPor: 'Familia a través de WhatsApp',
-  telefono: '+51 987 654 321',
-  tutor: 'María Flores López',
+  nombre: 'Por completar',
+  parentesco: 'Por completar',
+  peso: 'Por completar',
+  registradoPor: 'Médico tratante',
+  telefono: 'Por completar',
+  tutor: 'Responsable por completar',
 }
 
 const FORMULARIO_INICIAL: FormularioActivacion = {
   canal: 'WhatsApp',
-  copiaCorreo: false,
   correo: '',
   dni: '',
   nombre: '',
@@ -52,38 +52,57 @@ const FORMULARIO_INICIAL: FormularioActivacion = {
 
 const CABECERAS: Record<PasoActivacion, { descripcion: string; titulo: string }> = {
   1: {
-    descripcion: 'Registra solo los datos básicos para activar el acceso por WhatsApp o la app móvil.',
-    titulo: 'Activación de cuenta del paciente',
+    descripcion: 'Registra los datos básicos para crear la ficha provisional y habilitar el acceso familiar.',
+    titulo: 'Nuevo paciente',
   },
   2: {
-    descripcion: 'Registra solo los datos básicos para activar el acceso por app móvil y WhatsApp.',
-    titulo: 'Activación de cuenta del paciente',
+    descripcion: 'La ficha y la cuenta ya fueron creadas. Conserva las credenciales temporales.',
+    titulo: 'Paciente registrado',
   },
   3: {
-    descripcion: 'La familia completó exitosamente el registro a través de WhatsApp o la app móvil.',
-    titulo: 'Cuenta activada',
+    descripcion: 'El paciente ya forma parte de tu listado y puede abrirse en su ficha real.',
+    titulo: 'Registro completado',
   },
 }
 
+const CLAVE_PACIENTE_SELECCIONADO = 'hemoruta.medico.pacienteId'
+
 function NuevoPacientePage() {
-  const [formulario, setFormulario] = useState<FormularioActivacion>(FORMULARIO_INICIAL)
-  const { irAlAnterior, irAlSiguiente, paso } = useProgreso()
+  const { irAlSiguiente, paso } = useProgreso()
   const redirigir = useRedirrecion()
+  const { cargando, error, registrar, resultado } = useAltaPacienteMedico()
   const cabecera = CABECERAS[paso]
-  const datosActuales: DatosPaciente = {
-    ...DATOS_PACIENTE,
-    canal: formulario.canal,
-    correo: formulario.correo || DATOS_PACIENTE.correo,
-    dni: formulario.dni || DATOS_PACIENTE.dni,
-    nombre: formulario.nombre || DATOS_PACIENTE.nombre,
-    telefono: formulario.telefono || DATOS_PACIENTE.telefono,
+  const { actualizarFormulario, datosActuales, formulario } = useFormularioNuevoPaciente({
+    datosBase: DATOS_PACIENTE,
+    formularioInicial: FORMULARIO_INICIAL,
+  })
+  const datosRegistrados: DatosPaciente = resultado
+    ? {
+        ...datosActuales,
+        dni: resultado.paciente.dni,
+        estado: resultado.paciente.estado,
+        historiaClinica: resultado.paciente.historiaClinica,
+        nombre: resultado.paciente.nombre,
+      }
+    : datosActuales
+
+  async function registrarPaciente() {
+    const alta = await registrar(formulario)
+    if (!alta) return
+    window.sessionStorage.setItem(CLAVE_PACIENTE_SELECCIONADO, alta.paciente.id)
+    irAlSiguiente()
   }
 
-  function actualizarFormulario<Campo extends keyof FormularioActivacion>(
-    campo: Campo,
-    valor: FormularioActivacion[Campo],
-  ) {
-    setFormulario((actual) => ({ ...actual, [campo]: valor }))
+  function abrirFicha() {
+    if (!resultado) return
+    window.sessionStorage.setItem(CLAVE_PACIENTE_SELECCIONADO, resultado.paciente.id)
+    redirigir('/doctor/ficha')
+  }
+
+  function abrirSeguimiento() {
+    if (!resultado) return
+    window.sessionStorage.setItem(CLAVE_PACIENTE_SELECCIONADO, resultado.paciente.id)
+    redirigir('/doctor/visualizar')
   }
 
   return (
@@ -108,20 +127,28 @@ function NuevoPacientePage() {
                   actualizarFormulario={actualizarFormulario}
                   datos={DATOS_PACIENTE}
                   formulario={formulario}
+                  cargando={cargando}
+                  error={error}
                   onCancelar={() => redirigir('/doctor/pacientes')}
-                  onContinuar={irAlSiguiente}
+                  onContinuar={registrarPaciente}
                 />
               )}
 
-              {paso === 2 && (
-                <NuevoPaso2 datos={datosActuales} onAnterior={irAlAnterior} onSiguiente={irAlSiguiente} />
+              {paso === 2 && resultado && (
+                <NuevoPaso2
+                  credenciales={resultado.cuenta}
+                  datos={datosRegistrados}
+                  onAnterior={() => redirigir('/doctor/pacientes')}
+                  onSiguiente={irAlSiguiente}
+                />
               )}
 
-              {paso === 3 && (
+              {paso === 3 && resultado && (
                 <NuevoPaso3
-                  datos={datosActuales}
-                  onFicha={() => redirigir('/doctor/ficha')}
-                  onSeguimiento={() => redirigir('/doctor/seguimiento')}
+                  credenciales={resultado.cuenta}
+                  datos={datosRegistrados}
+                  onFicha={abrirFicha}
+                  onSeguimiento={abrirSeguimiento}
                   onVolver={() => redirigir('/doctor/pacientes')}
                 />
               )}

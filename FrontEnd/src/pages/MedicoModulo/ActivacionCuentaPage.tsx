@@ -1,5 +1,3 @@
-import FondoNino from '../../assets/FondoNiño5.png'
-import logoHemoRuta from '../../assets/iconoHemoRutaNoBg.png'
 import FormActivacionCuentaComp, {
   type ContenidoFormActivacionCuenta,
   type RequisitoContrasenaActivacion,
@@ -7,26 +5,7 @@ import FormActivacionCuentaComp, {
 import HeaderActivacionCuentaComp, {
   type DatosHeaderActivacionCuenta,
 } from '../../components/HeaderActivacionCuentaComp'
-import MenuActivacionCuentaComp, {
-  type IdentidadActivacionCuenta,
-  type ItemMenuActivacionCuenta,
-} from '../../components/MenuActivacionCuentaComp'
-
-const IDENTIDAD: IdentidadActivacionCuenta = {
-  hospital: 'Hospital del Niño',
-  imagenPaciente: FondoNino,
-  imagenPacienteAlt: 'Niño de HemoRuta saludando',
-  lemaHospital: 'Donde nace la esperanza',
-  logo: logoHemoRuta,
-  logoAlt: 'HemoRuta Pediátrica',
-  sedeHospital: 'San Borja',
-}
-
-const MENU: readonly ItemMenuActivacionCuenta[] = [
-  { activo: false, icono: 'home', id: 'inicio', ruta: '/doctor/pacientes', texto: 'Inicio' },
-  { activo: false, icono: 'users', id: 'pacientes', ruta: '/doctor/pacientes', texto: 'Pacientes' },
-  { activo: true, icono: 'whatsapp', id: 'seguimiento', ruta: '/doctor/seguimiento', texto: 'Seguimiento 1' },
-]
+import MenuMedicoComp from '../../components/MenuMedicoComp'
 
 const HEADER: DatosHeaderActivacionCuenta = {
   avatar: '👩🏻‍⚕️',
@@ -65,7 +44,7 @@ const REQUISITOS: readonly RequisitoContrasenaActivacion[] = [
 function ActivacionCuentaPage() {
   return (
     <div className='flex min-h-dvh bg-[#f4f9fd] font-sans text-[#0a2b70]'>
-      <MenuActivacionCuentaComp identidad={IDENTIDAD} items={MENU} />
+      <MenuMedicoComp />
 
       <div className='min-w-0 flex-1'>
         <HeaderActivacionCuentaComp datos={HEADER} />

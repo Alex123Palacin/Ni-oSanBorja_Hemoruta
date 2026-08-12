@@ -43,7 +43,7 @@ function PerfilDocPacientComp({ onHistorial, perfil }: PerfilDocPacientCompProps
           <div className='mt-1.5 flex flex-wrap items-center justify-center gap-5 text-[11px] font-semibold text-[#536a91] md:justify-start'>
             <span className='flex items-center gap-2'>
               <IconoMedico className='h-4 w-4 text-[#31559f]' nombre='calendar' />
-              {perfil.edad} años
+              {perfil.edad === null ? 'Edad no registrada' : `${perfil.edad} años`}
             </span>
             <span className='flex items-center gap-2 border-l border-[#dfe7ef] pl-5'>
               <IconoMedico className='h-4 w-4 text-[#31559f]' nombre='idCard' />

@@ -13,7 +13,7 @@ export type TipoRegistroSeguimiento = Exclude<FiltroDetalleSeguimiento, 'todos'>
 export interface PerfilSeguimientoPaciente {
   adultoResponsable: string
   diagnostico: string
-  edad: number
+  edad: number | null
   estado: string
   fechaProximaCita: string
   historiaClinica: string

@@ -4,7 +4,7 @@ export interface PerfilFichaPaciente {
   adultoResponsable: string
   cuentaMovil: string
   diagnosticoPrincipal: string
-  edad: number
+  edad: number | null
   especialidadMedica: string
   estadoCuenta: string
   historiaClinica: string
@@ -16,9 +16,13 @@ export interface PerfilFichaPaciente {
 }
 
 export interface DocumentoFichaPaciente {
+  archivoDisponible?: boolean
+  estado?: string
   fecha: string
   formato: string
+  id?: string
   nombre: string
+  tipoMime?: string
 }
 
 export interface DetalleDatoFichaPaciente {

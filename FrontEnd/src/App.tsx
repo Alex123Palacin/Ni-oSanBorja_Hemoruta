@@ -1,5 +1,10 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
+import AuthProvider from './auth/AuthProvider'
+import ProtectedRoute from './auth/ProtectedRoute'
+import AdminSessionLayoutComp from './components/adminMcomp/AdminSessionLayoutComp'
+import DoctorSessionLayoutComp from './components/medicoMcomp/DoctorSessionLayoutComp'
+import PacienteSessionLayoutComp from './components/pacienteMcomp/PacienteSessionLayoutComp'
 //importaciones antonella
 import AlexExperimentos from './pages/AlexExperimentos'
 import LoginAdminPage from './pages/LoginAdminPage'
@@ -9,6 +14,7 @@ import VerificacionCuentaAdminsPage from './pages/VerificacionCuentaAdminsPage'
 import ConfirmacionUsuarioPage from './pages/AdminModulo/ConfirmacionUsuarioPage'
 import CrearUsuarioAdminPage from './pages/AdminModulo/CrearUsuarioAdminPage'
 import DetalleUsuarioHospitalarioPage from './pages/AdminModulo/DetalleUsuarioHospitalarioPage'
+import InicioAdminPage from './pages/AdminModulo/InicioAdminPage'
 import UsuariosHospitalariosPage from './pages/AdminModulo/UsuariosHospitalariosPage'
 
 import ActivacionCuentaPage from './pages/MedicoModulo/ActivacionCuentaPage'
@@ -16,6 +22,7 @@ import ConsultaVozPage from './pages/MedicoModulo/ConsultaVozPage'
 import FichaPacientePage from './pages/MedicoModulo/FichaPacientePage'
 import GestionarPacientesPage from './pages/MedicoModulo/GestionarPacientesPage'
 import HistoriaPacientePage from './pages/MedicoModulo/HistoriaPacientePage'
+import InicioDoctorPage from './pages/MedicoModulo/InicioDoctorPage'
 import NuevoPacientePage from './pages/MedicoModulo/NuevoPacientePage'
 import SeguimientoPacientesListaPage from './pages/MedicoModulo/SeguimientoPacientesListaPage'
 import VisualizarSeguimientoPacientePage from './pages/MedicoModulo/VisualizarSeguimientoPacientePage'
@@ -32,36 +39,53 @@ import VerificacionCuentaPacientePage from './pages/PacienteModulo/VerificacionC
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path='/alex' element={<AlexExperimentos />} />
+      <AuthProvider>
+        <Routes>
+          <Route path='/alex' element={<AlexExperimentos />} />
 
-        <Route path='/login' element={<LoginAdminPage />} />
-        <Route path='/recuperacion' element={<RecuperacionCuentaAdminsPage />} />
-        <Route path='/verificacion' element={<VerificacionCuentaAdminsPage />} />
+          <Route path='/login' element={<LoginAdminPage />} />
+          <Route path='/recuperacion' element={<RecuperacionCuentaAdminsPage />} />
+          <Route path='/verificacion' element={<VerificacionCuentaAdminsPage />} />
 
-        <Route path='/doctor/activacion' element={<ActivacionCuentaPage />} />
-        <Route path='/doctor/pacientes' element={<GestionarPacientesPage />} />
-        <Route path='/doctor/ficha' element={<FichaPacientePage />} />
-        <Route path='/doctor/consulta' element={<ConsultaVozPage />} />
-        <Route path='/doctor/historial' element={<HistoriaPacientePage />} />
-        <Route path='/doctor/nuevoRegistro' element={<NuevoPacientePage />} />
-        <Route path='/doctor/seguimiento' element={<SeguimientoPacientesListaPage />} />
-        <Route path='/doctor/visualizar' element={<VisualizarSeguimientoPacientePage />} />
+          <Route path='/doctor/activacion' element={<ActivacionCuentaPage />} />
+          <Route element={<ProtectedRoute rolesPermitidos={['MEDICO']} rutaLogin='/login' />}>
+            <Route element={<DoctorSessionLayoutComp />}>
+              <Route path='/doctor/inicio' element={<InicioDoctorPage />} />
+              <Route path='/doctor/pacientes' element={<GestionarPacientesPage />} />
+              <Route path='/doctor/ficha' element={<FichaPacientePage />} />
+              <Route path='/doctor/consulta' element={<ConsultaVozPage />} />
+              <Route path='/doctor/historial' element={<HistoriaPacientePage />} />
+              <Route path='/doctor/nuevoRegistro' element={<NuevoPacientePage />} />
+              <Route path='/doctor/seguimiento' element={<SeguimientoPacientesListaPage />} />
+              <Route path='/doctor/visualizar' element={<VisualizarSeguimientoPacientePage />} />
+            </Route>
+          </Route>
 
-        <Route path='/admin/UsuariosHospitalarios' element={<UsuariosHospitalariosPage />} />
-        <Route path='/admin/CrearUs' element={<CrearUsuarioAdminPage />} />
-        <Route path='/admin/confirmacion' element={<ConfirmacionUsuarioPage />} />
-        <Route path='/admin/detalleUs' element={<DetalleUsuarioHospitalarioPage />} />
+          <Route element={<ProtectedRoute rolesPermitidos={['ADMINISTRADOR']} rutaLogin='/login' />}>
+            <Route element={<AdminSessionLayoutComp />}>
+              <Route path='/admin/inicio' element={<InicioAdminPage />} />
+              <Route path='/admin/UsuariosHospitalarios' element={<UsuariosHospitalariosPage />} />
+              <Route path='/admin/CrearUs' element={<CrearUsuarioAdminPage />} />
+              <Route path='/admin/confirmacion' element={<ConfirmacionUsuarioPage />} />
+              <Route path='/admin/detalleUs' element={<Navigate replace to='/admin/UsuariosHospitalarios' />} />
+              <Route path='/admin/detalleUs/:usuarioId' element={<DetalleUsuarioHospitalarioPage />} />
+            </Route>
+          </Route>
 
-        <Route path='/paciente/login' element={<LoginPacientePage />} />
-        <Route path='/paciente/recuperacion' element={<RecuperacionCuentaPacientePage />} />
-        <Route path='/paciente/verificacion' element={<VerificacionCuentaPacientePage />} />
-        <Route path='/paciente/inicio' element={<InicioPage />} />
-        <Route path='/paciente/medicamento' element={<MedicamentosPage />} />
-        <Route path='/paciente/sintomas' element={<SintomasPage />} />
-        <Route path='/paciente/tratamiento' element={<TratamientoPage />} />
-        <Route path='/paciente/documentos' element={<DocumentosPage />} />
-      </Routes>
+          <Route element={<PacienteSessionLayoutComp />}>
+            <Route path='/paciente/login' element={<LoginPacientePage />} />
+            <Route path='/paciente/recuperacion' element={<RecuperacionCuentaPacientePage />} />
+            <Route path='/paciente/verificacion' element={<VerificacionCuentaPacientePage />} />
+            <Route element={<ProtectedRoute rolesPermitidos={['PACIENTE']} rutaLogin='/paciente/login' />}>
+              <Route path='/paciente/inicio' element={<InicioPage />} />
+              <Route path='/paciente/medicamento' element={<MedicamentosPage />} />
+              <Route path='/paciente/sintomas' element={<SintomasPage />} />
+              <Route path='/paciente/tratamiento' element={<TratamientoPage />} />
+              <Route path='/paciente/documentos' element={<DocumentosPage />} />
+            </Route>
+          </Route>
+        </Routes>
+      </AuthProvider>
     </Router>
   )
 }

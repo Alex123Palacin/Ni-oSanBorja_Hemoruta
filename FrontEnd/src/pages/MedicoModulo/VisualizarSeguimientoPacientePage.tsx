@@ -1,13 +1,21 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import fondoPaciente from '../../assets/FondoNiño5.png'
+import {
+  obtenerFichaPacienteMedicoApi,
+  obtenerSeguimientoPacienteMedicoApi,
+  type FichaPacienteMedicoApi,
+  type RegistroSeguimientoMedicoApi,
+} from '../../api/medico/MedicoApi'
 import HeaderDoctorMedicoComp from '../../components/HeaderDoctorMedicoComp'
 import MenuMedicoComp from '../../components/MenuMedicoComp'
 import PanelLateralSeguimientoComp from '../../components/PanelLateralSeguimientoComp'
 import PerfilSeguimientoPacienteComp from '../../components/PerfilSeguimientoPacienteComp'
 import RegistrosSeguimientoComp from '../../components/RegistrosSeguimientoComp'
 import useRedirrecion from '../../hooks/Redirrecion'
+import useRegistrosSeguimiento from '../../hooks/useRegistrosSeguimiento'
 import type {
+  DocumentoSeguimientoPaciente,
   FiltroDetalleSeguimiento,
   OpcionFiltroDetalle,
   PerfilSeguimientoPaciente,
@@ -20,22 +28,6 @@ const DOCTORA = {
   nombre: 'Dra. Valeria Ruiz',
 }
 
-const PERFIL_PACIENTE: PerfilSeguimientoPaciente = {
-  adultoResponsable: 'María Flores López',
-  diagnostico: 'Leucemia linfoblástica aguda (LLA)',
-  edad: 8,
-  estado: 'Activo',
-  fechaProximaCita: '27/05/2025',
-  historiaClinica: 'HC-2024-01568',
-  horaProximaCita: '10:30 a. m.',
-  imagen: fondoPaciente,
-  nombre: 'Mateo Gabriel Flores',
-  parentescoResponsable: 'Madre',
-  semaforo: 'Verde',
-  semaforoDescripcion: 'Sin síntomas significativos',
-  ultimaSincronizacion: 'hoy 08:45 a. m.',
-}
-
 const FILTROS: OpcionFiltroDetalle[] = [
   { etiqueta: 'Todos', valor: 'todos' },
   { etiqueta: 'Medicación', valor: 'medicacion' },
@@ -44,300 +36,380 @@ const FILTROS: OpcionFiltroDetalle[] = [
   { etiqueta: 'Documento', valor: 'documento' },
 ]
 
-const REGISTROS_SEGUIMIENTO: RegistroSeguimientoPaciente[] = [
-  {
-    estado: 'Cumplido',
-    fecha: '20/05/2025',
-    hora: '08:00 a. m.',
-    id: 'medicacion-prednisona',
-    origen: 'App móvil',
-    resumen: 'Prednisona 10 mg confirmada',
-    tipo: 'medicacion',
-  },
-  {
-    estado: 'Alerta',
-    fecha: '18/05/2025',
-    hora: '09:00 a. m.',
-    id: 'medicacion-omeprazol',
-    origen: 'App móvil',
-    resumen: 'Omeprazol 20 mg no tomada',
-    tipo: 'medicacion',
-  },
-  {
-    estado: 'En seguimiento',
-    fecha: '17/05/2025',
-    hora: '08:30 a. m.',
-    id: 'medicacion-acido-folico',
-    origen: 'WhatsApp',
-    resumen: 'Ácido fólico tomado con retraso',
-    tipo: 'medicacion',
-  },
-  {
-    estado: 'Revisado',
-    fecha: '16/05/2025',
-    hora: '07:45 a. m.',
-    id: 'medicacion-sulfato-ferroso',
-    origen: 'App móvil',
-    resumen: 'Sulfato ferroso confirmado',
-    tipo: 'medicacion',
-  },
-  {
-    estado: 'Alerta',
-    fecha: '15/05/2025',
-    hora: '06:15 p. m.',
-    id: 'medicacion-no-disponible',
-    origen: 'WhatsApp',
-    resumen: 'No había medicamento disponible',
-    tipo: 'medicacion',
-  },
-  {
-    estado: 'Revisado',
-    fecha: '20/05/2025',
-    hora: '10:30 a. m.',
-    id: 'sintoma-nauseas',
-    origen: 'WhatsApp',
-    resumen: 'Náuseas leves, sin fiebre',
-    tipo: 'sintomas',
-  },
-  {
-    estado: 'En seguimiento',
-    fecha: '19/05/2025',
-    hora: '09:15 a. m.',
-    id: 'sintoma-sin-reporte',
-    origen: 'App móvil',
-    resumen: 'Sin síntomas reportados',
-    tipo: 'sintomas',
-  },
-  {
-    estado: 'Cerrado',
-    fecha: '18/05/2025',
-    hora: '07:45 p. m.',
-    id: 'sintoma-dolor-abdominal',
-    origen: 'WhatsApp',
-    resumen: 'Dolor abdominal leve',
-    tipo: 'sintomas',
-  },
-  {
-    estado: 'Alerta',
-    fecha: '17/05/2025',
-    hora: '08:20 a. m.',
-    id: 'sintoma-fiebre',
-    origen: 'App móvil',
-    resumen: 'Fiebre 38.2 °C reportada',
-    tipo: 'sintomas',
-  },
-  {
-    estado: 'Revisado',
-    fecha: '16/05/2025',
-    hora: '06:40 p. m.',
-    id: 'sintoma-cansancio',
-    origen: 'WhatsApp',
-    resumen: 'Cansancio leve durante la tarde',
-    tipo: 'sintomas',
-  },
-  {
-    estado: 'Revisado',
-    fecha: '20/05/2025',
-    hora: '10:30 a. m.',
-    id: 'tratamiento-lectura-indicaciones',
-    origen: 'WhatsApp',
-    resumen: 'Confirmó lectura de indicaciones médicas',
-    tipo: 'tratamiento',
-  },
-  {
-    estado: 'Cumplido',
-    fecha: '20/05/2025',
-    hora: '09:15 a. m.',
-    id: 'tratamiento-continua',
-    origen: 'App móvil',
-    resumen: 'Continúa tratamiento actual según evaluación médica',
-    tipo: 'tratamiento',
-  },
-  {
-    estado: 'Revisado',
-    fecha: '19/05/2025',
-    hora: '06:00 p. m.',
-    id: 'tratamiento-indicaciones-casa',
-    origen: 'WhatsApp',
-    resumen: 'Indicaciones para casa comprendidas por la familia',
-    tipo: 'tratamiento',
-  },
-  {
-    estado: 'Cumplido',
-    fecha: '19/05/2025',
-    hora: '03:15 p. m.',
-    id: 'tratamiento-proximo-control',
-    origen: 'App móvil',
-    resumen: 'Próximo control registrado',
-    tipo: 'tratamiento',
-  },
-  {
-    estado: 'Registrado',
-    fecha: '18/05/2025',
-    hora: '09:00 a. m.',
-    id: 'tratamiento-recomendado-medico',
-    origen: 'Médico',
-    resumen: 'Tratamiento recomendado por el médico',
-    tipo: 'tratamiento',
-  },
-  {
-    estado: 'Revisado',
-    fecha: '20/05/2025',
-    hora: '11:15 a. m.',
-    id: 'documento-hemograma',
-    origen: 'WhatsApp',
-    resumen: 'Hemograma completo subido',
-    tipo: 'documento',
-  },
-  {
-    estado: 'Revisado',
-    fecha: '19/05/2025',
-    hora: '04:20 p. m.',
-    id: 'documento-informe-medico',
-    origen: 'App móvil',
-    resumen: 'Informe médico escaneado',
-    tipo: 'documento',
-  },
-  {
-    estado: 'En seguimiento',
-    fecha: '18/05/2025',
-    hora: '09:40 a. m.',
-    id: 'documento-resultados-laboratorio',
-    origen: 'WhatsApp',
-    resumen: 'Resultados laboratorio JPG',
-    tipo: 'documento',
-  },
-  {
-    estado: 'Revisado',
-    fecha: '17/05/2025',
-    hora: '06:35 p. m.',
-    id: 'documento-perfil-hepatico',
-    origen: 'App móvil',
-    resumen: 'Perfil hepático PDF cargado',
-    tipo: 'documento',
-  },
-  {
-    estado: 'Alerta',
-    fecha: '16/05/2025',
-    hora: '08:10 a. m.',
-    id: 'documento-datos-pendientes',
-    origen: 'WhatsApp',
-    resumen: 'Hemograma con datos pendientes de revisión',
-    tipo: 'documento',
-  },
-]
+const CLAVE_PACIENTE_SELECCIONADO = 'hemoruta.medico.pacienteId'
+const TAMANO_PAGINA_REGISTROS = 5
 
-const IDS_REGISTROS_TODOS = [
-  'medicacion-prednisona',
-  'sintoma-nauseas',
-  'tratamiento-lectura-indicaciones',
-  'documento-hemograma',
-  'medicacion-omeprazol',
-]
-
-const REGISTROS_TODOS = IDS_REGISTROS_TODOS.flatMap((id) => {
-  const registro = REGISTROS_SEGUIMIENTO.find((item) => item.id === id)
-  return registro ? [registro] : []
-})
-
-const REGISTROS_POR_FILTRO: Record<FiltroDetalleSeguimiento, RegistroSeguimientoPaciente[]> = {
-  documento: REGISTROS_SEGUIMIENTO.filter((registro) => registro.tipo === 'documento'),
-  medicacion: REGISTROS_SEGUIMIENTO.filter((registro) => registro.tipo === 'medicacion'),
-  sintomas: REGISTROS_SEGUIMIENTO.filter((registro) => registro.tipo === 'sintomas'),
-  todos: REGISTROS_TODOS,
-  tratamiento: REGISTROS_SEGUIMIENTO.filter((registro) => registro.tipo === 'tratamiento'),
+function crearRegistrosVacios(): Record<FiltroDetalleSeguimiento, RegistroSeguimientoPaciente[]> {
+  return {
+    documento: [],
+    medicacion: [],
+    sintomas: [],
+    todos: [],
+    tratamiento: [],
+  }
 }
 
-const TOTAL_REGISTROS: Record<FiltroDetalleSeguimiento, number> = {
-  documento: 5,
-  medicacion: 5,
-  sintomas: 5,
-  todos: 32,
-  tratamiento: 5,
+function crearTotalesVacios(): Record<FiltroDetalleSeguimiento, number> {
+  return { documento: 0, medicacion: 0, sintomas: 0, todos: 0, tratamiento: 0 }
 }
 
-const RESUMEN_SEGUIMIENTO: ResumenPanelSeguimiento = {
-  adherenciaGeneral: 87,
-  adherenciaMedicacion: 78,
-  documentos: [
-    { fecha: '20/05/2025', id: 'doc-hemograma', nombre: 'Hemograma completo', origen: 'WhatsApp' },
-    { fecha: '19/05/2025', id: 'doc-informe', nombre: 'Informe médico escaneado', origen: 'App móvil' },
-    { fecha: '18/05/2025', id: 'doc-laboratorio', nombre: 'Resultados laboratorio JPG', origen: 'WhatsApp' },
-  ],
-  documentosRecientes: [
-    { fecha: '19/05/2025', id: 'doc-reciente-hemograma', nombre: 'Hemograma completo', origen: 'WhatsApp' },
-    { fecha: '15/05/2025', id: 'doc-reciente-indicaciones', nombre: 'Indicaciones médicas', origen: 'App móvil' },
-  ],
-  dosisOmitida: {
-    fecha: '18/05/2025',
-    hora: '09:00 a. m.',
-    medicamento: 'Omeprazol 20 mg',
-  },
-  indicacionesTratamiento: [
-    'Continuar Prednisona 10 mg cada 24 h.',
-    'Omeprazol 20 mg a la 1:00 p. m.',
-    'Hemograma antes del próximo control.',
-    'Mantener hidratación adecuada.',
-    'Vigilar fiebre y signos de alarma.',
-  ],
-  medicamentoReciente: {
-    fecha: '20/05/2025',
-    hora: '08:00 a. m.',
-    nombre: 'Prednisona 10 mg confirmada',
-  },
-  resumenDocumental: {
-    alertas: 1,
-    enSeguimiento: 2,
-    revisados: 5,
-    total: 8,
-  },
-  semaforo: 'Verde',
-  semaforoDescripcion: 'Sin síntomas significativos',
-  sintomaReciente: {
-    conAlerta: 1,
-    descripcion: 'Náuseas leves, sin fiebre',
-    fecha: '20/05/2025',
-    hora: '10:30 a. m.',
-    sinSintomas: 1,
-    totalReportes: 5,
-  },
+function adaptarEstadoRegistro(estado: string): RegistroSeguimientoPaciente['estado'] {
+  const estados: Record<string, RegistroSeguimientoPaciente['estado']> = {
+    ALERTA: 'Alerta',
+    CERRADO: 'Cerrado',
+    CUMPLIDO: 'Cumplido',
+    EN_SEGUIMIENTO: 'En seguimiento',
+    PENDIENTE: 'En seguimiento',
+    RECIBIDO: 'En seguimiento',
+    REGISTRADO: 'Registrado',
+    REVISADO: 'Revisado',
+  }
+
+  return estados[estado.toUpperCase()] ?? 'En seguimiento'
+}
+
+function adaptarOrigenRegistro(
+  origen: RegistroSeguimientoMedicoApi['origen'],
+): RegistroSeguimientoPaciente['origen'] {
+  if (origen === 'MEDICO') return 'Médico'
+  if (origen === 'WHATSAPP') return 'WhatsApp'
+  return 'App móvil'
+}
+
+function adaptarTipoRegistro(
+  tipo: RegistroSeguimientoMedicoApi['tipo'],
+): RegistroSeguimientoPaciente['tipo'] {
+  if (tipo === 'DOCUMENTO') return 'documento'
+  if (tipo === 'MEDICACION') return 'medicacion'
+  if (tipo === 'TRATAMIENTO' || String(tipo) === 'CONSULTA') return 'tratamiento'
+  return 'sintomas'
+}
+
+function adaptarRegistroApi(registro: RegistroSeguimientoMedicoApi): RegistroSeguimientoPaciente {
+  const fechaRegistro = new Date(registro.ocurridoEn)
+  const fechaValida = !Number.isNaN(fechaRegistro.getTime())
+
+  return {
+    estado: adaptarEstadoRegistro(registro.estado),
+    fecha: fechaValida
+      ? new Intl.DateTimeFormat('es-PE', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        }).format(fechaRegistro)
+      : 'Fecha no disponible',
+    hora: fechaValida
+      ? new Intl.DateTimeFormat('es-PE', {
+          hour: '2-digit',
+          hour12: true,
+          minute: '2-digit',
+        }).format(fechaRegistro)
+      : '',
+    id: registro.id,
+    origen: adaptarOrigenRegistro(registro.origen),
+    resumen: registro.resumen,
+    tipo: adaptarTipoRegistro(registro.tipo),
+  }
+}
+
+function calcularEdad(fechaNacimiento: string | null) {
+  if (!fechaNacimiento) return null
+  const nacimiento = new Date(`${fechaNacimiento}T00:00:00`)
+  if (Number.isNaN(nacimiento.getTime())) return null
+
+  const hoy = new Date()
+  let edad = hoy.getFullYear() - nacimiento.getFullYear()
+  const aunNoCumple =
+    hoy.getMonth() < nacimiento.getMonth() ||
+    (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate())
+  if (aunNoCumple) edad -= 1
+  return Math.max(0, edad)
+}
+
+function formatearFechaHora(fechaIso: string | null, mensajeVacio: string) {
+  if (!fechaIso) return { fecha: mensajeVacio, hora: '' }
+  const fecha = new Date(fechaIso)
+  if (Number.isNaN(fecha.getTime())) return { fecha: 'Fecha no disponible', hora: '' }
+  return {
+    fecha: new Intl.DateTimeFormat('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(fecha),
+    hora: new Intl.DateTimeFormat('es-PE', {
+      hour: '2-digit',
+      hour12: true,
+      minute: '2-digit',
+    }).format(fecha),
+  }
+}
+
+function adaptarPerfil(ficha: FichaPacienteMedicoApi): PerfilSeguimientoPaciente {
+  const edad = calcularEdad(ficha.datosGenerales.fechaNacimiento)
+
+  const proximaCita = formatearFechaHora(ficha.proximaCitaEn, 'Sin cita programada')
+  const responsable = ficha.responsables[0]
+  const semaforo = ficha.semaforo.codigo
+    .toLocaleLowerCase('es')
+    .replace(/^./, (letra) => letra.toLocaleUpperCase('es'))
+
+  return {
+    adultoResponsable: responsable?.nombre || 'Sin responsable registrado',
+    diagnostico: ficha.diagnosticoPrincipal?.nombre || 'Sin diagnóstico registrado',
+    edad,
+    estado: ficha.cuentaMovil.estado === 'ACTIVA' ? 'Activo' : ficha.cuentaMovil.estado,
+    fechaProximaCita: proximaCita.fecha,
+    historiaClinica: ficha.historiaClinica,
+    horaProximaCita: proximaCita.hora,
+    imagen: fondoPaciente,
+    nombre: ficha.nombre,
+    parentescoResponsable: responsable?.parentesco || '',
+    semaforo,
+    semaforoDescripcion: ficha.semaforo.descripcion,
+    ultimaSincronizacion: 'sin sincronización registrada',
+  }
+}
+
+function documentosDesdeRegistros(
+  registros: RegistroSeguimientoPaciente[],
+): DocumentoSeguimientoPaciente[] {
+  return registros.flatMap((registro) => {
+    if (registro.tipo !== 'documento' || registro.origen === 'Médico') return []
+    return [
+      {
+        fecha: registro.fecha,
+        id: registro.id,
+        nombre: registro.resumen,
+        origen: registro.origen,
+      },
+    ]
+  })
+}
+
+function porcentajeCumplimiento(registros: RegistroSeguimientoPaciente[]) {
+  if (registros.length === 0) return 0
+  const cumplidos = registros.filter((registro) =>
+    ['Cumplido', 'Registrado', 'Revisado'].includes(registro.estado),
+  ).length
+  return Math.round((cumplidos / registros.length) * 100)
+}
+
+function crearResumenSeguimiento(
+  registros: RegistroSeguimientoPaciente[],
+  perfil: PerfilSeguimientoPaciente | null,
+): ResumenPanelSeguimiento {
+  const medicamentos = registros.filter((registro) => registro.tipo === 'medicacion')
+  const sintomas = registros.filter((registro) => registro.tipo === 'sintomas')
+  const tratamientos = registros.filter((registro) => registro.tipo === 'tratamiento')
+  const documentos = documentosDesdeRegistros(registros)
+  const dosisOmitida = medicamentos.find((registro) => registro.estado === 'Alerta')
+  const medicamentoReciente = medicamentos[0]
+  const sintomaReciente = sintomas[0]
+
+  return {
+    adherenciaGeneral: porcentajeCumplimiento(registros),
+    adherenciaMedicacion: porcentajeCumplimiento(medicamentos),
+    documentos,
+    documentosRecientes: documentos.slice(0, 2),
+    dosisOmitida: {
+      fecha: dosisOmitida?.fecha || '',
+      hora: dosisOmitida?.hora || '',
+      medicamento: dosisOmitida?.resumen || 'Sin dosis omitidas registradas',
+    },
+    indicacionesTratamiento: tratamientos.map((registro) => registro.resumen),
+    medicamentoReciente: {
+      fecha: medicamentoReciente?.fecha || '',
+      hora: medicamentoReciente?.hora || '',
+      nombre: medicamentoReciente?.resumen || 'Sin medicación registrada',
+    },
+    resumenDocumental: {
+      alertas: documentos.filter((documento) => {
+        const registro = registros.find((item) => item.id === documento.id)
+        return registro?.estado === 'Alerta'
+      }).length,
+      enSeguimiento: documentos.filter((documento) => {
+        const registro = registros.find((item) => item.id === documento.id)
+        return registro?.estado === 'En seguimiento'
+      }).length,
+      revisados: documentos.filter((documento) => {
+        const registro = registros.find((item) => item.id === documento.id)
+        return registro?.estado === 'Revisado'
+      }).length,
+      total: documentos.length,
+    },
+    semaforo: perfil?.semaforo || 'Sin datos',
+    semaforoDescripcion: perfil?.semaforoDescripcion || 'Sin evaluación vigente',
+    sintomaReciente: {
+      conAlerta: sintomas.filter((registro) => registro.estado === 'Alerta').length,
+      descripcion: sintomaReciente?.resumen || 'Sin síntomas registrados',
+      fecha: sintomaReciente?.fecha || '',
+      hora: sintomaReciente?.hora || '',
+      sinSintomas: sintomas.filter((registro) =>
+        registro.resumen.toLocaleLowerCase('es').includes('sin síntoma'),
+      ).length,
+      totalReportes: sintomas.length,
+    },
+  }
 }
 
 function VisualizarSeguimientoPacientePage() {
-  const [busqueda, setBusqueda] = useState('')
-  const [filtroActivo, setFiltroActivo] = useState<FiltroDetalleSeguimiento>('todos')
   const redirigir = useRedirrecion()
-
-  const registrosVisibles = useMemo(() => {
-    const termino = busqueda.trim().toLocaleLowerCase('es')
-
-    if (!termino) {
-      return REGISTROS_POR_FILTRO[filtroActivo]
+  const [pacienteId] = useState<string | null>(() => {
+    try {
+      return window.sessionStorage.getItem(CLAVE_PACIENTE_SELECCIONADO)
+    } catch {
+      return null
     }
+  })
+  const [perfil, setPerfil] = useState<PerfilSeguimientoPaciente | null>(null)
+  const [registrosResumen, setRegistrosResumen] = useState<RegistroSeguimientoPaciente[]>([])
+  const [registrosPorFiltro, setRegistrosPorFiltro] = useState(crearRegistrosVacios)
+  const [totalRegistros, setTotalRegistros] = useState(crearTotalesVacios)
+  const [avisoPerfil, setAvisoPerfil] = useState<string | null>(
+    pacienteId ? null : 'Selecciona un paciente en el listado para cargar su seguimiento.',
+  )
+  const [avisoApi, setAvisoApi] = useState<string | null>(null)
+  const [cargandoPerfil, setCargandoPerfil] = useState(Boolean(pacienteId))
+  const [cargandoResumen, setCargandoResumen] = useState(Boolean(pacienteId))
+  const [cargandoRegistros, setCargandoRegistros] = useState(false)
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [paginasTotales, setPaginasTotales] = useState(1)
+  const [tamanoPagina, setTamanoPagina] = useState(TAMANO_PAGINA_REGISTROS)
+  const resumen = useMemo(
+    () => crearResumenSeguimiento(registrosResumen, perfil),
+    [perfil, registrosResumen],
+  )
+  const {
+    busqueda,
+    cambiarFiltro: cambiarFiltroBase,
+    filtroActivo,
+    limpiarFiltros: limpiarFiltrosBase,
+    registrosVisibles,
+    setBusqueda: setBusquedaBase,
+    totalVisible,
+  } = useRegistrosSeguimiento({ registrosPorFiltro, totalRegistros })
 
-    return REGISTROS_POR_FILTRO[filtroActivo].filter((registro) =>
-      [registro.fecha, registro.hora, registro.origen, registro.resumen, registro.estado]
-        .join(' ')
-        .toLocaleLowerCase('es')
-        .includes(termino),
-    )
-  }, [busqueda, filtroActivo])
+  function cambiarBusqueda(valor: string) {
+    setPaginaActual(1)
+    setPaginasTotales(1)
+    setBusquedaBase(valor)
+  }
 
   function cambiarFiltro(filtro: FiltroDetalleSeguimiento) {
-    setFiltroActivo(filtro)
-    setBusqueda('')
+    setPaginaActual(1)
+    setPaginasTotales(1)
+    cambiarFiltroBase(filtro)
   }
 
   function limpiarFiltros() {
-    setBusqueda('')
-    setFiltroActivo('todos')
+    setPaginaActual(1)
+    setPaginasTotales(1)
+    limpiarFiltrosBase()
   }
 
-  const totalVisible = busqueda.trim() ? registrosVisibles.length : TOTAL_REGISTROS[filtroActivo]
+  useEffect(() => {
+    if (!pacienteId) return
+    let vigente = true
+
+    setCargandoPerfil(true)
+    obtenerFichaPacienteMedicoApi(pacienteId)
+      .then((ficha) => {
+        if (!vigente) return
+        const perfilRecibido = adaptarPerfil(ficha)
+        setPerfil(perfilRecibido)
+        setAvisoPerfil(null)
+      })
+      .catch(() => {
+        if (!vigente) return
+        setPerfil(null)
+        setAvisoPerfil('No se pudo cargar la ficha del paciente.')
+      })
+      .finally(() => {
+        if (vigente) setCargandoPerfil(false)
+      })
+
+    setCargandoResumen(true)
+    obtenerSeguimientoPacienteMedicoApi(pacienteId, {
+      pagina: 1,
+      tamanoPagina: 100,
+      tipo: 'todos',
+    })
+      .then((respuesta) => {
+        if (!vigente) return
+        setRegistrosResumen(respuesta.resultados.map(adaptarRegistroApi))
+      })
+      .catch(() => {
+        if (!vigente) return
+        setRegistrosResumen([])
+      })
+      .finally(() => {
+        if (vigente) setCargandoResumen(false)
+      })
+
+    return () => {
+      vigente = false
+    }
+  }, [pacienteId])
+
+  useEffect(() => {
+    if (!pacienteId) return
+
+    let vigente = true
+    setCargandoRegistros(true)
+    setAvisoApi(null)
+    setRegistrosPorFiltro((actuales) => ({ ...actuales, [filtroActivo]: [] }))
+    setTotalRegistros((actuales) => ({ ...actuales, [filtroActivo]: 0 }))
+
+    const temporizador = window.setTimeout(() => {
+      obtenerSeguimientoPacienteMedicoApi(pacienteId, {
+        busqueda: busqueda.trim() || undefined,
+        pagina: paginaActual,
+        tamanoPagina: TAMANO_PAGINA_REGISTROS,
+        tipo: filtroActivo,
+      })
+        .then((respuesta) => {
+          if (!vigente) return
+          setRegistrosPorFiltro((actuales) => ({
+            ...actuales,
+            [filtroActivo]: respuesta.resultados.map(adaptarRegistroApi),
+          }))
+          setTotalRegistros((actuales) => ({
+            ...actuales,
+            [filtroActivo]: respuesta.paginacion.total,
+          }))
+          setPaginaActual(respuesta.paginacion.pagina)
+          setPaginasTotales(Math.max(1, respuesta.paginacion.paginasTotales))
+          setTamanoPagina(respuesta.paginacion.tamanoPagina)
+          setAvisoApi(null)
+        })
+        .catch(() => {
+          if (!vigente) return
+          setRegistrosPorFiltro((actuales) => ({ ...actuales, [filtroActivo]: [] }))
+          setTotalRegistros((actuales) => ({ ...actuales, [filtroActivo]: 0 }))
+          setPaginaActual(1)
+          setPaginasTotales(1)
+          setTamanoPagina(TAMANO_PAGINA_REGISTROS)
+          setAvisoApi('No se pudieron cargar los registros de seguimiento. Intenta nuevamente.')
+        })
+        .finally(() => {
+          if (vigente) setCargandoRegistros(false)
+        })
+    }, 250)
+
+    return () => {
+      vigente = false
+      window.clearTimeout(temporizador)
+    }
+  }, [busqueda, filtroActivo, pacienteId, paginaActual])
+
+  const hayInformacionPanel =
+    filtroActivo === 'todos'
+      ? registrosResumen.length > 0
+      : registrosResumen.some((registro) => registro.tipo === filtroActivo)
 
   return (
     <div className='flex min-h-dvh bg-[#fbfdff]'>
-      <MenuMedicoComp variante='seguimiento' />
+      <MenuMedicoComp />
 
       <div className='min-w-0 flex-1'>
         <HeaderDoctorMedicoComp
@@ -360,32 +432,60 @@ function VisualizarSeguimientoPacientePage() {
 
             <div className='mt-4 grid items-start gap-3.5 xl:grid-cols-[minmax(0,1fr)_280px]'>
               <div className='min-w-0'>
-                <PerfilSeguimientoPacienteComp perfil={PERFIL_PACIENTE} />
+                {perfil ? <PerfilSeguimientoPacienteComp perfil={perfil} /> : null}
+                {!perfil ? (
+                  <div
+                    aria-live='polite'
+                    className='grid min-h-[142px] place-items-center rounded-xl border border-[#dce5ee] bg-white px-6 text-center text-[10px] font-medium text-[#607596] shadow-[0_2px_9px_rgba(18,52,91,0.055)]'
+                  >
+                    {cargandoPerfil ? 'Cargando ficha del paciente…' : avisoPerfil}
+                  </div>
+                ) : null}
+
                 <div className='mt-4'>
+                  {cargandoRegistros || avisoApi ? (
+                    <p aria-live='polite' className='mb-1.5 text-[10px] font-medium text-[#607596]'>
+                      {cargandoRegistros ? 'Cargando registros…' : avisoApi}
+                    </p>
+                  ) : null}
                   <RegistrosSeguimientoComp
                     busqueda={busqueda}
                     filtroActivo={filtroActivo}
                     filtros={FILTROS}
-                    onCambiarBusqueda={setBusqueda}
+                    onCambiarBusqueda={cambiarBusqueda}
                     onCambiarFiltro={cambiarFiltro}
+                    onCambiarPagina={setPaginaActual}
                     onLimpiarFiltros={limpiarFiltros}
                     onVerRegistro={() => redirigir('/doctor/ficha')}
+                    paginaActual={paginaActual}
+                    paginasTotales={paginasTotales}
                     registros={registrosVisibles}
+                    tamanoPagina={tamanoPagina}
                     totalRegistros={totalVisible}
                   />
                 </div>
               </div>
 
               <div className='min-w-0 xl:-mt-9 xl:sticky xl:top-16'>
-                <PanelLateralSeguimientoComp
-                  filtroActivo={filtroActivo}
-                  onRegistrarAccion={() => redirigir('/doctor/consulta')}
-                  onVerDocumento={() => redirigir('/doctor/ficha')}
-                  onVerDocumentos={() => redirigir('/doctor/ficha')}
-                  onVerFicha={() => redirigir('/doctor/ficha')}
-                  onVerHistorial={() => redirigir('/doctor/historial')}
-                  resumen={RESUMEN_SEGUIMIENTO}
-                />
+                {!pacienteId || cargandoResumen || !hayInformacionPanel ? (
+                  <div className='grid min-h-52 place-items-center rounded-xl border border-[#dce5ee] bg-white px-6 text-center text-[10px] font-medium text-[#607596] shadow-[0_2px_9px_rgba(18,52,91,0.055)]'>
+                    {!pacienteId
+                      ? 'Selecciona un paciente para consultar su resumen.'
+                      : cargandoResumen
+                        ? 'Cargando resumen del seguimiento…'
+                        : 'Aún no hay información registrada para este filtro.'}
+                  </div>
+                ) : (
+                  <PanelLateralSeguimientoComp
+                    filtroActivo={filtroActivo}
+                    onRegistrarAccion={() => redirigir('/doctor/consulta')}
+                    onVerDocumento={() => redirigir('/doctor/ficha')}
+                    onVerDocumentos={() => redirigir('/doctor/ficha')}
+                    onVerFicha={() => redirigir('/doctor/ficha')}
+                    onVerHistorial={() => redirigir('/doctor/historial')}
+                    resumen={resumen}
+                  />
+                )}
               </div>
             </div>
           </div>

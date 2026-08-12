@@ -1,104 +1,27 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
+import {
+  listarPacientesMedicoApi,
+  type PacienteMedicoListaApi,
+} from '../../api/medico/MedicoApi'
+import { obtenerMensajeErrorApi } from '../../api/compartido/ClienteApi'
 import HeaderDoctorMedicoComp from '../../components/HeaderDoctorMedicoComp'
-import IconoMedico from '../../components/IconoMedico'
 import MenuMedicoComp from '../../components/MenuMedicoComp'
+import FiltrosGestionPacientesComp from '../../components/medicoMcomp/FiltrosGestionPacientesComp'
+import ResumenPacientesRegistradosComp from '../../components/medicoMcomp/ResumenPacientesRegistradosComp'
+import TablaPacientesComp from '../../components/medicoMcomp/TablaPacientesComp'
 import useRedirrecion from '../../hooks/Redirrecion'
+import useGestionarPacientes from '../../hooks/useGestionarPacientes'
+import type { EstadoPaciente, Paciente, TipoBusqueda } from '../../types/GestionarPacientes'
 import { BtnCrear } from '../../ui/BotonUi'
-import ComboBoxUI, { type OpcionComboBox } from '../../ui/ComboBoxUI'
-import InputUi from '../../ui/InputUi'
-
-type EstadoPaciente = 'Evaluado' | 'Hoy' | 'Programado'
-type TipoBusqueda = 'dni' | 'nombre'
-
-interface Paciente {
-  avatar: string
-  colorAvatar: string
-  diagnostico: string
-  dni: string
-  edad: number
-  estado: EstadoPaciente
-  fechaCita: string
-  horaCita: string
-  nombre: string
-  parentescoTutor: string
-  tutor: string
-}
+import type { OpcionComboBox } from '../../ui/ComboBoxUI'
 
 const DOCTORA = {
   especialidad: 'Hematología Pediátrica',
   nombre: 'Dra. Valeria Ruiz',
 }
 
-const TOTAL_PACIENTES = 142
-
-const PACIENTES: Paciente[] = [
-  {
-    avatar: '👦🏻',
-    colorAvatar: 'bg-[#dff5ef]',
-    diagnostico: 'Leucemia linfoblástica aguda (LLA)',
-    dni: '71562384',
-    edad: 8,
-    estado: 'Hoy',
-    fechaCita: '27/05/2025',
-    horaCita: '10:30 a. m.',
-    nombre: 'Mateo Gabriel Flores',
-    parentescoTutor: 'Madre',
-    tutor: 'María Flores López',
-  },
-  {
-    avatar: '👧🏻',
-    colorAvatar: 'bg-[#fff0dd]',
-    diagnostico: 'Anemia aplásica',
-    dni: '62438751',
-    edad: 6,
-    estado: 'Evaluado',
-    fechaCita: '29/05/2025',
-    horaCita: '09:00 a. m.',
-    nombre: 'Luciana Valentina Rojas',
-    parentescoTutor: 'Padre',
-    tutor: 'Carlos Rojas Paredes',
-  },
-  {
-    avatar: '👦🏽',
-    colorAvatar: 'bg-[#dff4f7]',
-    diagnostico: 'Hemofilia A severa',
-    dni: '80319276',
-    edad: 10,
-    estado: 'Programado',
-    fechaCita: '02/06/2025',
-    horaCita: '11:00 a. m.',
-    nombre: 'Santiago André Medina',
-    parentescoTutor: 'Madre',
-    tutor: 'Verónica Medina Ruiz',
-  },
-  {
-    avatar: '👧🏽',
-    colorAvatar: 'bg-[#ffe7df]',
-    diagnostico: 'Linfoma de Hodgkin',
-    dni: '69254731',
-    edad: 7,
-    estado: 'Evaluado',
-    fechaCita: '05/06/2025',
-    horaCita: '02:00 p. m.',
-    nombre: 'Camila Alejandra Torres',
-    parentescoTutor: 'Padre',
-    tutor: 'Jorge Torres Vega',
-  },
-  {
-    avatar: '👦🏻',
-    colorAvatar: 'bg-[#dff6f1]',
-    diagnostico: 'Talasemia beta mayor',
-    dni: '73846219',
-    edad: 9,
-    estado: 'Hoy',
-    fechaCita: '09/06/2025',
-    horaCita: '10:30 a. m.',
-    nombre: 'Diego Alonso Pérez',
-    parentescoTutor: 'Madre',
-    tutor: 'Katherine Pérez Solís',
-  },
-]
+const CLAVE_PACIENTE_SELECCIONADO = 'hemoruta.medico.pacienteId'
 
 const OPCIONES_DIAGNOSTICO: OpcionComboBox[] = [
   { etiqueta: 'Todos los diagnósticos', valor: 'todos' },
@@ -131,81 +54,121 @@ const COLUMNAS = [
   'Acciones',
 ] as const
 
-const ESTILOS_ESTADO: Record<EstadoPaciente, { fondo: string; punto: string; texto: string }> = {
-  Evaluado: { fondo: 'bg-[#dcecff]', punto: 'bg-[#2385f4]', texto: 'text-[#1674dc]' },
-  Hoy: { fondo: 'bg-[#dcf5df]', punto: 'bg-[#27bd42]', texto: 'text-[#15952d]' },
-  Programado: { fondo: 'bg-[#ffead2]', punto: 'bg-[#ff8a1f]', texto: 'text-[#f1780d]' },
+const COLORES_AVATAR = ['bg-[#dff5ef]', 'bg-[#fff0dd]', 'bg-[#dff4f7]', 'bg-[#ffe7df]'] as const
+
+function obtenerEstadoPaciente(estadoCita: string, proximaCitaEn: string | null): EstadoPaciente {
+  if (proximaCitaEn) {
+    const fechaCita = new Date(proximaCitaEn)
+    const hoy = new Date()
+    if (
+      fechaCita.getFullYear() === hoy.getFullYear() &&
+      fechaCita.getMonth() === hoy.getMonth() &&
+      fechaCita.getDate() === hoy.getDate()
+    ) {
+      return 'Hoy'
+    }
+  }
+
+  return ['ATENDIDA', 'COMPLETADA', 'EVALUADA'].includes(estadoCita.toUpperCase())
+    ? 'Evaluado'
+    : 'Programado'
 }
 
-interface EstadoBadgeProps {
-  estado: EstadoPaciente
+function formatearProximaCita(proximaCitaEn: string | null) {
+  if (!proximaCitaEn) return { fechaCita: 'Sin cita', horaCita: '' }
+
+  const fecha = new Date(proximaCitaEn)
+  if (Number.isNaN(fecha.getTime())) return { fechaCita: 'Sin cita', horaCita: '' }
+
+  return {
+    fechaCita: new Intl.DateTimeFormat('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(fecha),
+    horaCita: new Intl.DateTimeFormat('es-PE', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(fecha),
+  }
 }
 
-function EstadoBadge({ estado }: EstadoBadgeProps) {
-  const estilo = ESTILOS_ESTADO[estado]
+function adaptarPacienteApi(paciente: PacienteMedicoListaApi, indice: number): Paciente {
+  const cita = formatearProximaCita(paciente.proximaCitaEn)
 
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold ${estilo.texto}`}>
-      <span aria-hidden='true' className={`grid h-4 w-4 place-items-center rounded-[5px] ${estilo.fondo}`}>
-        <span className={`h-2 w-2 rounded-full ${estilo.punto}`} />
-      </span>
-      {estado}
-    </span>
-  )
-}
-
-function IconoPacientesRegistrados() {
-  return (
-    <svg aria-hidden='true' className='h-9 w-9' fill='currentColor' viewBox='0 0 32 32'>
-      <circle cx='16' cy='9.2' r='5.1' />
-      <circle cx='7.4' cy='12.3' r='3.6' opacity='.85' />
-      <circle cx='24.6' cy='12.3' r='3.6' opacity='.85' />
-      <path d='M7 27v-3.1c0-5.2 3.9-8.7 9-8.7s9 3.5 9 8.7V27H7Z' />
-      <path d='M1.5 26v-2.5c0-3.6 2.4-6.3 5.9-6.8a9.4 9.4 0 0 0-2.1 6.1V26H1.5Zm29 0h-3.8v-3.2a9.4 9.4 0 0 0-2.1-6.1c3.5.5 5.9 3.2 5.9 6.8V26Z' opacity='.85' />
-    </svg>
-  )
-}
-
-function normalizarTexto(texto: string) {
-  return texto
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('es')
+  return {
+    avatar: (paciente.edad ?? 0) % 2 === 0 ? '👦🏽' : '👧🏽',
+    colorAvatar: COLORES_AVATAR[indice % COLORES_AVATAR.length],
+    diagnostico: paciente.diagnosticoPrincipal?.nombre ?? 'Sin diagnóstico registrado',
+    dni: paciente.dni || '—',
+    edad: paciente.edad,
+    estado: obtenerEstadoPaciente(paciente.estadoCita, paciente.proximaCitaEn),
+    fechaCita: cita.fechaCita,
+    horaCita: cita.horaCita,
+    id: paciente.id,
+    nombre: paciente.nombre,
+    parentescoTutor: paciente.tutor?.parentesco ?? 'Sin parentesco',
+    tutor: paciente.tutor?.nombre ?? 'Sin tutor registrado',
+  }
 }
 
 function GestionarPacientesPage() {
-  const [busqueda, setBusqueda] = useState('')
-  const [diagnostico, setDiagnostico] = useState('todos')
-  const [estado, setEstado] = useState('todos')
-  const [tipoBusqueda, setTipoBusqueda] = useState<TipoBusqueda>('dni')
   const redirigir = useRedirrecion()
+  const [pacientes, setPacientes] = useState<Paciente[]>([])
+  const [totalPacientes, setTotalPacientes] = useState(0)
+  const [cargando, setCargando] = useState(true)
+  const [errorCarga, setErrorCarga] = useState('')
+  const [intentoCarga, setIntentoCarga] = useState(0)
 
-  const pacientesFiltrados = useMemo(() => {
-    const termino = normalizarTexto(busqueda.trim())
+  useEffect(() => {
+    let estaMontado = true
 
-    return PACIENTES.filter((paciente) => {
-      const valorBusqueda = {
-        dni: paciente.dni,
-        nombre: paciente.nombre,
-      }[tipoBusqueda]
-      const coincideBusqueda = !termino || normalizarTexto(valorBusqueda).includes(termino)
-      const coincideDiagnostico = diagnostico === 'todos' || paciente.diagnostico === diagnostico
-      const coincideEstado = estado === 'todos' || paciente.estado === estado
+    async function cargarPacientes() {
+      setCargando(true)
+      setErrorCarga('')
 
-      return coincideBusqueda && coincideDiagnostico && coincideEstado
-    })
-  }, [busqueda, diagnostico, estado, tipoBusqueda])
+      try {
+        const respuesta = await listarPacientesMedicoApi({ tamanoPagina: 100 })
+        if (!estaMontado) return
+        setPacientes(respuesta.resultados.map(adaptarPacienteApi))
+        setTotalPacientes(respuesta.paginacion.total)
+      } catch (error) {
+        if (!estaMontado) return
+        setPacientes([])
+        setTotalPacientes(0)
+        setErrorCarga(obtenerMensajeErrorApi(error))
+      } finally {
+        if (estaMontado) setCargando(false)
+      }
+    }
 
-  function limpiarFiltros() {
-    setBusqueda('')
-    setDiagnostico('todos')
-    setEstado('todos')
-    setTipoBusqueda('dni')
+    void cargarPacientes()
+    return () => {
+      estaMontado = false
+    }
+  }, [intentoCarga])
+
+  const {
+    busqueda,
+    diagnostico,
+    estado,
+    limpiarFiltros,
+    pacientesFiltrados,
+    setBusqueda,
+    setDiagnostico,
+    setEstado,
+    setTipoBusqueda,
+    tipoBusqueda,
+  } = useGestionarPacientes(pacientes)
+
+  function verFichaPaciente(paciente: Paciente) {
+    window.sessionStorage.setItem(CLAVE_PACIENTE_SELECCIONADO, paciente.id)
+    redirigir('/doctor/ficha')
   }
 
   return (
     <div className='flex min-h-dvh bg-[#fbfdff] font-sans'>
-      <MenuMedicoComp contadorSeguimiento={1} variante='amplia' />
+      <MenuMedicoComp />
 
       <div className='min-w-0 flex-1'>
         <HeaderDoctorMedicoComp
@@ -228,229 +191,68 @@ function GestionarPacientesPage() {
               <BtnCrear ruta='/doctor/nuevoRegistro' tamano='compacto' texto='Nuevo paciente' />
             </div>
 
-            <section
-              aria-label={`${TOTAL_PACIENTES} pacientes registrados`}
-              className='mt-5 flex h-[108px] w-[320px] max-w-full items-center gap-5 rounded-xl border border-[#d8e8ef] bg-gradient-to-r from-[#f7fcfd] to-[#f3fafc] px-5 shadow-[0_2px_6px_rgba(18,52,91,0.04)]'
-            >
-              <span className='grid h-[68px] w-[68px] shrink-0 place-items-center rounded-full bg-[#ddf4f5] text-[#079daf]'>
-                <IconoPacientesRegistrados />
-              </span>
-              <div>
-                <span className='block text-[11px] font-bold text-[#079daf]'>Pacientes registrados</span>
-                <strong className='block text-[32px] font-extrabold leading-9 text-[#0a2b79]'>{TOTAL_PACIENTES}</strong>
-                <span className='text-[9px] font-medium text-[#50658a]'>Total de pacientes en el sistema</span>
+            {!cargando && !errorCarga && (
+              <ResumenPacientesRegistradosComp totalPacientes={totalPacientes} />
+            )}
+
+            {cargando && (
+              <div
+                aria-live='polite'
+                className='mt-5 grid h-[108px] w-[320px] max-w-full place-items-center rounded-xl border border-[#d8e8ef] bg-[#f7fcfd] px-5 text-[12px] font-semibold text-[#526a91]'
+                role='status'
+              >
+                Cargando pacientes…
               </div>
-            </section>
+            )}
 
-            <section className='mt-3 rounded-xl border border-[#dce5ee] bg-white p-3.5 shadow-[0_4px_14px_rgba(18,52,91,0.07)]'>
-              <div className='grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(300px,1.7fr)_minmax(170px,.9fr)_minmax(160px,.85fr)_136px]'>
-                <InputUi
-                  etiqueta='Búsqueda rápida'
-                  etiquetaVisible
-                  id='busquedaPaciente'
-                  onChange={(event) => setBusqueda(event.target.value)}
-                  placeholder='Buscar por DNI o nombre...'
-                  value={busqueda}
-                />
-
-                <ComboBoxUI
-                  etiqueta='Diagnóstico'
-                  id='filtroDiagnostico'
-                  onChange={setDiagnostico}
-                  opciones={OPCIONES_DIAGNOSTICO}
-                  valor={diagnostico}
-                />
-                <ComboBoxUI
-                  etiqueta='Estado'
-                  id='filtroEstado'
-                  onChange={setEstado}
-                  opciones={OPCIONES_ESTADO}
-                  valor={estado}
-                />
+            {!cargando && errorCarga && (
+              <div
+                className='mt-5 flex min-h-[108px] w-[420px] max-w-full flex-col items-start justify-center gap-3 rounded-xl border border-[#f1c9c9] bg-[#fff7f7] px-5 py-4 text-[12px] text-[#9a3434]'
+                role='alert'
+              >
+                <p>No fue posible cargar los pacientes. {errorCarga}</p>
                 <button
-                  className='flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#08aabb] bg-white px-3 text-[10px] font-bold text-[#079daf] transition hover:bg-[#f0fbfc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aabb]'
-                  onClick={limpiarFiltros}
+                  className='rounded-lg border border-[#d69a9a] bg-white px-3 py-1.5 font-bold transition hover:bg-[#fff0f0]'
+                  onClick={() => setIntentoCarga((actual) => actual + 1)}
                   type='button'
                 >
-                  <IconoMedico className='h-[18px] w-[18px]' nombre='filter' />
-                  Limpiar filtros
+                  Reintentar
                 </button>
               </div>
+            )}
 
-              <fieldset className='mt-3 flex flex-wrap items-center gap-x-6 gap-y-2'>
-                <legend className='sr-only'>Búsqueda avanzada por</legend>
-                <span className='text-[9px] font-semibold text-[#5a6e91]'>Búsqueda avanzada por</span>
-                {CAMPOS_BUSQUEDA.map((campo) => (
-                  <label
-                    className='flex cursor-pointer items-center gap-2 text-[9px] font-medium text-[#4c6186]'
-                    key={campo.valor}
-                  >
-                    <input
-                      checked={tipoBusqueda === campo.valor}
-                      className='h-3.5 w-3.5 appearance-none rounded-full border border-[#b8c8da] bg-white transition checked:border-[4px] checked:border-[#08aabb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aabb]'
-                      name='tipoBusqueda'
-                      onChange={() => setTipoBusqueda(campo.valor)}
-                      type='radio'
-                    />
-                    {campo.etiqueta}
-                  </label>
-                ))}
-              </fieldset>
-            </section>
+            <FiltrosGestionPacientesComp
+              busqueda={busqueda}
+              camposBusqueda={CAMPOS_BUSQUEDA}
+              diagnostico={diagnostico}
+              estado={estado}
+              onCambiarBusqueda={setBusqueda}
+              onCambiarDiagnostico={setDiagnostico}
+              onCambiarEstado={setEstado}
+              onCambiarTipoBusqueda={setTipoBusqueda}
+              onLimpiarFiltros={limpiarFiltros}
+              opcionesDiagnostico={OPCIONES_DIAGNOSTICO}
+              opcionesEstado={OPCIONES_ESTADO}
+              tipoBusqueda={tipoBusqueda}
+            />
 
-            <section className='mt-2.5 overflow-hidden rounded-xl border border-[#dce5ee] bg-white shadow-[0_5px_16px_rgba(18,52,91,0.08)]'>
-              <div aria-label='Tabla de pacientes' className='overflow-x-auto' tabIndex={0}>
-                <table className='w-full min-w-[900px] table-fixed border-collapse'>
-                  <caption className='sr-only'>Listado de pacientes hematológicos pediátricos registrados</caption>
-                  <colgroup>
-                    <col className='w-[20%]' />
-                    <col className='w-[9%]' />
-                    <col className='w-[16%]' />
-                    <col className='w-[18%]' />
-                    <col className='w-[14%]' />
-                    <col className='w-[11%]' />
-                    <col className='w-[12%]' />
-                  </colgroup>
-                  <thead>
-                    <tr className='h-10 border-b border-[#dce5ee] bg-[#fcfeff] text-left text-[10px] font-extrabold text-[#078fa6]'>
-                      {COLUMNAS.map((columna) => (
-                        <th className='px-3' key={columna} scope='col'>
-                          <span className={`flex items-center gap-1 ${columna === 'Acciones' ? 'justify-center' : ''}`}>
-                            {columna}
-                            {columna !== 'Acciones' && (
-                              <IconoMedico className='h-3 w-3 text-[#7390ae]' nombre='chevronDown' />
-                            )}
-                          </span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className='divide-y divide-[#e3eaf1]'>
-                    {pacientesFiltrados.map((paciente) => (
-                      <tr
-                        className='h-[54px] text-[10px] text-[#314a78] transition hover:bg-[#f7fcfd]'
-                        key={paciente.dni}
-                      >
-                        <td className='px-3'>
-                          <div className='flex items-center gap-2.5'>
-                            <span
-                              className={`grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-[#cbe9eb] text-[26px] shadow-sm ${paciente.colorAvatar}`}
-                            >
-                              <span aria-hidden='true' className='translate-y-0.5'>{paciente.avatar}</span>
-                            </span>
-                            <span className='min-w-0'>
-                              <strong className='block truncate text-[10px] font-extrabold text-[#153679]'>
-                                {paciente.nombre}
-                              </strong>
-                              <span className='text-[9px] text-[#657797]'>{paciente.edad} años</span>
-                            </span>
-                          </div>
-                        </td>
-                        <td className='px-3 text-[10px] font-semibold'>{paciente.dni}</td>
-                        <td className='px-3'>
-                          <span className='block font-medium'>{paciente.tutor}</span>
-                          <span className='text-[9px] text-[#71819d]'>{paciente.parentescoTutor}</span>
-                        </td>
-                        <td className='px-3 font-medium leading-[14px]'>{paciente.diagnostico}</td>
-                        <td className='px-3'>
-                          <span className='flex items-start gap-2'>
-                            <IconoMedico
-                              className='mt-0.5 h-4 w-4 shrink-0 text-[#526b96]'
-                              nombre='calendar'
-                            />
-                            <span className='leading-[14px]'>
-                              {paciente.fechaCita}
-                              <br />
-                              {paciente.horaCita}
-                            </span>
-                          </span>
-                        </td>
-                        <td className='px-3'>
-                          <EstadoBadge estado={paciente.estado} />
-                        </td>
-                        <td className='px-3'>
-                          <div className='flex items-center justify-center gap-1 text-[#079daf]'>
-                            <button
-                              aria-label={`Ver ficha de ${paciente.nombre}`}
-                              className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg transition hover:bg-[#eaf8fa] focus-visible:outline-2 focus-visible:outline-[#08aabb]'
-                              onClick={() => redirigir('/doctor/ficha')}
-                              type='button'
-                            >
-                              <IconoMedico className='h-[18px] w-[18px]' nombre='eye' />
-                            </button>
-                            <button
-                              aria-label={`Editar a ${paciente.nombre}`}
-                              className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg transition hover:bg-[#eaf8fa] focus-visible:outline-2 focus-visible:outline-[#08aabb]'
-                              type='button'
-                            >
-                              <IconoMedico className='h-[18px] w-[18px]' nombre='edit' />
-                            </button>
-                            <button
-                              aria-label={`Más acciones para ${paciente.nombre}`}
-                              className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-[#173478] transition hover:bg-[#eaf8fa] focus-visible:outline-2 focus-visible:outline-[#08aabb]'
-                              type='button'
-                            >
-                              <IconoMedico className='h-[18px] w-[18px]' nombre='moreVertical' strokeWidth={2.5} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {!cargando && !errorCarga && totalPacientes > 0 && (
+              <TablaPacientesComp
+                columnas={COLUMNAS}
+                onVerFicha={verFichaPaciente}
+                pacientes={pacientesFiltrados}
+                totalPacientes={totalPacientes}
+              />
+            )}
 
-                {pacientesFiltrados.length === 0 && (
-                  <div className='grid min-h-36 place-items-center px-4 text-center text-[12px] font-medium text-[#617493]'>
-                    No se encontraron pacientes con los filtros seleccionados.
-                  </div>
-                )}
-              </div>
-
-              <footer className='flex min-h-[54px] flex-wrap items-center justify-between gap-3 border-t border-[#e1e9f0] px-4 py-2'>
-                <p className='text-[10px] font-medium text-[#53688d]'>
-                  Mostrando {pacientesFiltrados.length === 0 ? 0 : 1} a {pacientesFiltrados.length} de{' '}
-                  {TOTAL_PACIENTES} pacientes
-                </p>
-                <nav aria-label='Paginación de pacientes' className='flex items-center gap-2'>
-                  <button
-                    aria-label='Página anterior'
-                    className='grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-[#d7e1ec] text-[#8a9bb5]'
-                    disabled
-                    type='button'
-                  >
-                    <IconoMedico className='h-4 w-4' nombre='arrowLeft' />
-                  </button>
-                  {[1, 2, 3].map((pagina) => (
-                    <button
-                      aria-current={pagina === 1 ? 'page' : undefined}
-                      className={`grid h-8 w-8 cursor-pointer place-items-center rounded-lg border text-[11px] font-bold transition ${
-                        pagina === 1
-                          ? 'border-[#08aabb] bg-[#edfafa] text-[#079daf]'
-                          : 'border-[#d7e1ec] bg-white text-[#49618b] hover:bg-[#f4fafb]'
-                      }`}
-                      key={pagina}
-                      type='button'
-                    >
-                      {pagina}
-                    </button>
-                  ))}
-                  <span aria-hidden='true' className='px-1 text-[11px] text-[#60749a]'>...</span>
-                  <button
-                    className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-[#d7e1ec] text-[11px] font-bold text-[#49618b] transition hover:bg-[#f4fafb]'
-                    type='button'
-                  >
-                    29
-                  </button>
-                  <button
-                    aria-label='Página siguiente'
-                    className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-[#d7e1ec] text-[#49618b] transition hover:bg-[#f4fafb]'
-                    type='button'
-                  >
-                    <IconoMedico className='h-4 w-4' nombre='arrowRight' />
-                  </button>
-                </nav>
-              </footer>
-            </section>
+            {!cargando && !errorCarga && totalPacientes === 0 && (
+              <section className='mt-2.5 grid min-h-44 place-items-center rounded-xl border border-[#dce5ee] bg-white px-6 text-center shadow-[0_5px_16px_rgba(18,52,91,0.08)]'>
+                <div>
+                  <p className='text-[13px] font-bold text-[#173679]'>Aún no hay pacientes registrados</p>
+                  <p className='mt-1 text-[11px] text-[#617493]'>Los pacientes creados aparecerán en esta lista.</p>
+                </div>
+              </section>
+            )}
           </div>
         </main>
       </div>

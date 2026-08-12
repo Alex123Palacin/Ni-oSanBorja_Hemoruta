@@ -1,5 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
+import {
+  listarUsuariosHospitalariosApi,
+  type UsuarioHospitalarioListaApi,
+} from "../../api/admin/AdminApi";
+import { obtenerMensajeErrorApi } from "../../api/compartido/ClienteApi";
+import useAuth from "../../auth/useAuth";
 import iconoHemoRuta from "../../assets/iconoHemoRutaNoBg.png";
 import fondoNino from "../../assets/FondoNiño4.png";
 import useRedirrecion from "../../hooks/Redirrecion";
@@ -7,71 +13,124 @@ import useRedirrecion from "../../hooks/Redirrecion";
 type PerfilUsuario = "Médico" | "Paciente" | "Administrador";
 
 interface UsuarioHospitalario {
-  id: number;
+  id: string;
   nombre: string;
   documento: string;
   correo: string;
   perfil: PerfilUsuario;
 }
 
-const usuariosIniciales: UsuarioHospitalario[] = [
-  {
-    id: 1,
-    nombre: "Dra. Valeria Ruiz",
-    documento: "45781234",
-    correo: "valeria.ruiz@hnsb.gob.pe",
-    perfil: "Médico",
-  },
-  {
-    id: 2,
-    nombre: "Dr. Luis Paredes",
-    documento: "43321108",
-    correo: "luis.paredes@hnsb.gob.pe",
-    perfil: "Médico",
-  },
-  {
-    id: 3,
-    nombre: "Andrea Salazar",
-    documento: "41234567",
-    correo: "andrea.salazar@hnsb.gob.pe",
-    perfil: "Paciente",
-  },
-  {
-    id: 4,
-    nombre: "Rosa Medina",
-    documento: "40456789",
-    correo: "rosa.medina@hnsb.gob.pe",
-    perfil: "Paciente",
-  },
-];
+const TAMANO_PAGINA = 10;
+
+function convertirUsuarioApi(usuario: UsuarioHospitalarioListaApi): UsuarioHospitalario {
+  const perfiles: Record<UsuarioHospitalarioListaApi["rol"], PerfilUsuario> = {
+    ADMINISTRADOR: "Administrador",
+    MEDICO: "Médico",
+    PACIENTE: "Paciente",
+  };
+
+  return {
+    correo: usuario.correo,
+    documento: usuario.documento,
+    id: usuario.id,
+    nombre: usuario.nombreCompleto,
+    perfil: perfiles[usuario.rol],
+  };
+}
 
 function UsuariosHospitalariosPage() {
+  const { usuario: usuarioSesion } = useAuth();
   const [busqueda, setBusqueda] = useState("");
   const [perfil, setPerfil] = useState("todos");
+  const [pagina, setPagina] = useState(1);
+  const [paginasTotales, setPaginasTotales] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [usuarios, setUsuarios] = useState<UsuarioHospitalario[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState("");
+  const [resumen, setResumen] = useState({ medicos: 0, pacientes: 0, total: 0 });
+  const [cargandoResumen, setCargandoResumen] = useState(true);
+  const [errorResumen, setErrorResumen] = useState(false);
   const redirigir = useRedirrecion();
 
-  const usuariosFiltrados = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
+  useEffect(() => {
+    let vigente = true;
 
-    return usuariosIniciales.filter((usuario) => {
-      const coincidePerfil = perfil === "todos" || usuario.perfil === perfil;
+    Promise.all([
+      listarUsuariosHospitalariosApi({ pagina: 1, tamanoPagina: 1 }),
+      listarUsuariosHospitalariosApi({ pagina: 1, rol: "MEDICO", tamanoPagina: 1 }),
+      listarUsuariosHospitalariosApi({ pagina: 1, rol: "PACIENTE", tamanoPagina: 1 }),
+    ])
+      .then(([todos, medicos, pacientes]) => {
+        if (!vigente) return;
+        setResumen({
+          medicos: medicos.paginacion.total,
+          pacientes: pacientes.paginacion.total,
+          total: todos.paginacion.total,
+        });
+      })
+      .catch(() => {
+        if (!vigente) return;
+        setResumen({ medicos: 0, pacientes: 0, total: 0 });
+        setErrorResumen(true);
+      })
+      .finally(() => {
+        if (vigente) setCargandoResumen(false);
+      });
 
-      const coincideBusqueda =
-        !texto ||
-        usuario.nombre.toLowerCase().includes(texto) ||
-        usuario.documento.toLowerCase().includes(texto) ||
-        usuario.correo.toLowerCase().includes(texto);
+    return () => {
+      vigente = false;
+    };
+  }, []);
 
-      return coincidePerfil && coincideBusqueda;
-    });
-  }, [busqueda, perfil]);
+  useEffect(() => {
+    let vigente = true;
+    const temporizador = window.setTimeout(async () => {
+      setCargando(true);
+      setErrorCarga("");
+
+      try {
+        const roles = { Administrador: "ADMINISTRADOR", Médico: "MEDICO", Paciente: "PACIENTE" } as const;
+        const respuesta = await listarUsuariosHospitalariosApi({
+          busqueda,
+          pagina,
+          rol: perfil === "todos" ? undefined : roles[perfil as keyof typeof roles],
+          tamanoPagina: TAMANO_PAGINA,
+        });
+        if (!vigente) return;
+
+        setUsuarios(respuesta.resultados.map(convertirUsuarioApi));
+        setPaginasTotales(Math.max(1, respuesta.paginacion.paginasTotales));
+        setTotal(respuesta.paginacion.total);
+      } catch (error) {
+        if (!vigente) return;
+        setUsuarios([]);
+        setPaginasTotales(1);
+        setTotal(0);
+        setErrorCarga(`No fue posible cargar los usuarios. ${obtenerMensajeErrorApi(error)}`);
+      } finally {
+        if (vigente) setCargando(false);
+      }
+    }, 250);
+
+    return () => {
+      vigente = false;
+      window.clearTimeout(temporizador);
+    };
+  }, [busqueda, pagina, perfil]);
+
+  const usuariosFiltrados = usuarios;
 
   function evtClickNuevoUsuario() {
     redirigir("/admin/CrearUs");
   }
 
   function evtClickVerUsuario(usuario: UsuarioHospitalario) {
-    redirigir("/admin/detalleUs");
+    window.sessionStorage.setItem(
+      "hemoruta.admin.usuarioSeleccionado",
+      JSON.stringify(usuario),
+    );
+    redirigir(`/admin/detalleUs/${encodeURIComponent(usuario.id)}`);
   }
 
   function evtClickEditarUsuario(usuario: UsuarioHospitalario) {
@@ -386,11 +445,13 @@ function UsuariosHospitalariosPage() {
                 transition
                 hover:bg-[#f6f9fc]
               "
+              onClick={() => redirigir('/admin/inicio')}
               type="button"
             >
               <div
                 className="
                   grid
+                  relative
                   h-10
                   w-10
                   shrink-0
@@ -402,6 +463,9 @@ function UsuariosHospitalariosPage() {
                   bg-[#eaf8f8]
                 "
               >
+                {usuarioSesion?.fotoPerfil && (
+                  <img alt={`Foto de ${usuarioSesion.nombre}`} className="absolute inset-0 z-10 h-full w-full object-cover" src={usuarioSesion.fotoPerfil} />
+                )}
                 <svg
                   aria-hidden="true"
                   className="h-full w-full"
@@ -426,7 +490,7 @@ function UsuariosHospitalariosPage() {
 
               <div className="hidden md:block">
                 <p className="text-xs font-bold text-[#0b2b69]">
-                  Lic. Andrea Salazar
+                  {usuarioSesion?.nombre ?? "Administrador"}
                 </p>
 
                 <p className="mt-0.5 text-[10px] text-[#667794]">
@@ -622,7 +686,7 @@ function UsuariosHospitalariosPage() {
                   </p>
 
                   <p className="mt-0.5 text-3xl font-bold leading-none text-[#082767]">
-                    24
+                    {cargandoResumen ? "…" : errorResumen ? "—" : resumen.total}
                   </p>
 
                   <p className="mt-2 text-[11px] text-[#53647f]">
@@ -688,7 +752,7 @@ function UsuariosHospitalariosPage() {
                   </p>
 
                   <p className="mt-0.5 text-3xl font-bold leading-none text-[#082767]">
-                    8
+                    {cargandoResumen ? "…" : errorResumen ? "—" : resumen.pacientes}
                   </p>
 
                   <p className="mt-2 text-[11px] text-[#53647f]">
@@ -755,7 +819,7 @@ function UsuariosHospitalariosPage() {
                   </p>
 
                   <p className="mt-0.5 text-3xl font-bold leading-none text-[#082767]">
-                    16
+                    {cargandoResumen ? "…" : errorResumen ? "—" : resumen.medicos}
                   </p>
 
                   <p className="mt-2 text-[11px] text-[#53647f]">
@@ -764,6 +828,12 @@ function UsuariosHospitalariosPage() {
                 </div>
               </div>
             </section>
+
+            {errorResumen && (
+              <p className="mt-2 text-xs font-medium text-[#94620b]" role="status">
+                No fue posible cargar el resumen de usuarios.
+              </p>
+            )}
 
             {/* FILTROS */}
             <section
@@ -827,7 +897,10 @@ function UsuariosHospitalariosPage() {
                     focus:ring-3
                     focus:ring-[#08aeb5]/10
                   "
-                  onChange={(event) => setBusqueda(event.target.value)}
+                  onChange={(event) => {
+                    setBusqueda(event.target.value);
+                    setPagina(1);
+                  }}
                   placeholder="Buscar por nombre, documento o correo..."
                   type="text"
                   value={busqueda}
@@ -861,7 +934,10 @@ function UsuariosHospitalariosPage() {
                       focus:ring-3
                       focus:ring-[#08aeb5]/10
                     "
-                    onChange={(event) => setPerfil(event.target.value)}
+                    onChange={(event) => {
+                      setPerfil(event.target.value);
+                      setPagina(1);
+                    }}
                     value={perfil}
                   >
                     <option value="todos">Todos los perfiles</option>
@@ -896,6 +972,15 @@ function UsuariosHospitalariosPage() {
                 </div>
               </label>
             </section>
+
+            {errorCarga && (
+              <div
+                className="mt-3 rounded-xl border border-[#f4d9a8] bg-[#fff9ed] px-4 py-3 text-xs text-[#94620b]"
+                role="alert"
+              >
+                {errorCarga}
+              </div>
+            )}
 
             {/* TABLA */}
             <section
@@ -952,7 +1037,15 @@ function UsuariosHospitalariosPage() {
                   </thead>
 
                   <tbody>
-                    {usuariosFiltrados.map((usuario, index) => (
+                    {cargando && (
+                      <tr>
+                        <td className="px-6 py-12 text-center text-sm text-[#78879d]" colSpan={5}>
+                          Cargando usuarios hospitalarios...
+                        </td>
+                      </tr>
+                    )}
+
+                    {!cargando && usuariosFiltrados.map((usuario, index) => (
                       <tr
                         className={
                           index !== usuariosFiltrados.length - 1
@@ -986,7 +1079,7 @@ function UsuariosHospitalariosPage() {
                                   cx="24"
                                   cy="24"
                                   fill={
-                                    usuario.id % 2 === 0 ? "#DFF3F4" : "#F4E8DB"
+                                    index % 2 === 0 ? "#DFF3F4" : "#F4E8DB"
                                   }
                                   r="24"
                                 />
@@ -996,7 +1089,7 @@ function UsuariosHospitalariosPage() {
                                 <path
                                   d="M16 17c0-6 3.2-10 8.2-10 5.3 0 8.3 4.1 8.3 10-2.1-1.1-4.2-3.5-5-6.1-2.4 3.4-6.8 5.5-11.5 6.1Z"
                                   fill={
-                                    usuario.id % 2 === 0 ? "#183E57" : "#6D4435"
+                                    index % 2 === 0 ? "#183E57" : "#6D4435"
                                   }
                                 />
 
@@ -1007,9 +1100,13 @@ function UsuariosHospitalariosPage() {
                               </svg>
                             </div>
 
-                            <span className="text-xs font-bold text-[#17356e]">
+                            <button
+                              className="cursor-pointer text-left text-xs font-bold text-[#17356e] transition hover:text-[#009ca5] hover:underline"
+                              onClick={() => evtClickVerUsuario(usuario)}
+                              type="button"
+                            >
                               {usuario.nombre}
-                            </span>
+                            </button>
                           </div>
                         </td>
 
@@ -1133,7 +1230,7 @@ function UsuariosHospitalariosPage() {
                       </tr>
                     ))}
 
-                    {usuariosFiltrados.length === 0 && (
+                    {!cargando && usuariosFiltrados.length === 0 && (
                       <tr>
                         <td
                           className="
@@ -1145,8 +1242,9 @@ function UsuariosHospitalariosPage() {
                           "
                           colSpan={5}
                         >
-                          No se encontraron usuarios con los filtros
-                          seleccionados.
+                          {errorCarga
+                            ? "La lista de usuarios no está disponible en este momento."
+                            : "No se encontraron usuarios con los filtros seleccionados."}
                         </td>
                       </tr>
                     )}
@@ -1166,8 +1264,8 @@ function UsuariosHospitalariosPage() {
                 "
               >
                 <p className="text-[11px] text-[#687992]">
-                  Mostrando 1 a {usuariosFiltrados.length} de{" "}
-                  {usuariosFiltrados.length} usuarios
+                  Mostrando {total === 0 ? 0 : (pagina - 1) * TAMANO_PAGINA + 1} a{" "}
+                  {Math.min(pagina * TAMANO_PAGINA, total)} de {total} usuarios
                 </p>
 
                 <div className="flex items-center gap-2">
@@ -1187,6 +1285,8 @@ function UsuariosHospitalariosPage() {
                       transition
                       hover:bg-[#f6f9fb]
                     "
+                    disabled={pagina <= 1 || cargando}
+                    onClick={() => setPagina((actual) => Math.max(1, actual - 1))}
                     type="button"
                   >
                     <svg
@@ -1222,7 +1322,7 @@ function UsuariosHospitalariosPage() {
                     "
                     type="button"
                   >
-                    1
+                    {pagina}
                   </button>
 
                   <button
@@ -1241,6 +1341,8 @@ function UsuariosHospitalariosPage() {
                       transition
                       hover:bg-[#f6f9fb]
                     "
+                    disabled={pagina >= paginasTotales || cargando}
+                    onClick={() => setPagina((actual) => Math.min(paginasTotales, actual + 1))}
                     type="button"
                   >
                     <svg

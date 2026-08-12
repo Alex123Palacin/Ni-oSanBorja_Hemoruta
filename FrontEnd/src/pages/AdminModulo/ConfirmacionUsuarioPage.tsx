@@ -2,9 +2,43 @@ import iconoHemoRuta from "../../assets/iconoHemoRutaNoBg.png";
 import fondoNino from "../../assets/FondoNiño4.png";
 
 import useRedirrecion from "../../hooks/Redirrecion";
+import useAuth from "../../auth/useAuth";
+
+interface UsuarioCreadoLocal {
+  contrasenaTemporal: string;
+  correo: string;
+  documento: string;
+  nombreCompleto: string;
+  rol: "ADMINISTRADOR" | "MEDICO" | "PACIENTE";
+}
+
+function obtenerUsuarioCreado(): UsuarioCreadoLocal {
+  const respaldo: UsuarioCreadoLocal = {
+    contrasenaTemporal: "HemoRuta-44567891!",
+    correo: "sofia.gutierrez@hnsb.gob.pe",
+    documento: "44567891",
+    nombreCompleto: "Dra. Sofía Gutiérrez",
+    rol: "MEDICO",
+  };
+
+  try {
+    const guardado = window.sessionStorage.getItem("hemoruta.admin.ultimoUsuarioCreado");
+    return guardado ? { ...respaldo, ...JSON.parse(guardado) } : respaldo;
+  } catch {
+    return respaldo;
+  }
+}
 
 function ConfirmacionUsuarioPage() {
+  const { usuario: usuarioSesion } = useAuth();
   const redirigir = useRedirrecion();
+  const usuarioCreado = obtenerUsuarioCreado();
+  const perfiles = {
+    ADMINISTRADOR: "Administrador general",
+    MEDICO: "Médico",
+    PACIENTE: "Paciente o responsable",
+  } as const;
+  const perfilUsuario = perfiles[usuarioCreado.rol];
 
   function evtClickIrListado() {
     redirigir("/admin/UsuariosHospitalarios");
@@ -298,11 +332,13 @@ function ConfirmacionUsuarioPage() {
                 transition
                 hover:bg-[#f6f9fc]
               "
+              onClick={() => redirigir('/admin/inicio')}
               type="button"
             >
               <div
                 className="
                   grid
+                  relative
                   h-10
                   w-10
                   shrink-0
@@ -314,6 +350,9 @@ function ConfirmacionUsuarioPage() {
                   bg-[#eaf8f8]
                 "
               >
+                {usuarioSesion?.fotoPerfil && (
+                  <img alt={`Foto de ${usuarioSesion.nombre}`} className="absolute inset-0 z-10 h-full w-full object-cover" src={usuarioSesion.fotoPerfil} />
+                )}
                 <svg
                   aria-hidden="true"
                   className="h-full w-full"
@@ -339,7 +378,7 @@ function ConfirmacionUsuarioPage() {
 
               <div className="hidden md:block">
                 <p className="text-xs font-bold text-[#0b2b69]">
-                  Lic. Andrea Salazar
+                  {usuarioSesion?.nombre ?? "Administrador"}
                 </p>
 
                 <p className="mt-0.5 text-[10px] text-[#667794]">
@@ -389,8 +428,8 @@ function ConfirmacionUsuarioPage() {
               </h1>
 
               <p className="mt-1 text-xs text-[#65738d] sm:text-sm">
-                El usuario ha sido creado y se le ha enviado un enlace de
-                activación a su correo electrónico.
+                La cuenta está activa y lista para ingresar con su
+                contraseña temporal.
               </p>
 
               {/* =========================
@@ -520,7 +559,7 @@ function ConfirmacionUsuarioPage() {
                         strokeWidth="1.7"
                       />
                     </svg>
-                    Enlace de activación enviado
+                    Cuenta hospitalaria activa
                   </div>
                 </div>
 
@@ -633,7 +672,7 @@ function ConfirmacionUsuarioPage() {
                       <span className="text-[#60708a]">Nombre</span>
 
                       <strong className="font-semibold text-[#17356e]">
-                        Dra. Sofía Gutiérrez
+                        {usuarioCreado.nombreCompleto}
                       </strong>
                     </div>
 
@@ -684,7 +723,7 @@ function ConfirmacionUsuarioPage() {
                       <span className="text-[#60708a]">DNI</span>
 
                       <strong className="font-semibold text-[#17356e]">
-                        44567891
+                        {usuarioCreado.documento}
                       </strong>
                     </div>
 
@@ -735,7 +774,7 @@ function ConfirmacionUsuarioPage() {
                           text-[#17356e]
                         "
                       >
-                        sofia.gutierrez@hnsb.gob.pe
+                        {usuarioCreado.correo}
                       </strong>
                     </div>
 
@@ -781,7 +820,7 @@ function ConfirmacionUsuarioPage() {
                             text-[#2879d8]
                           "
                         >
-                          Médico
+                          {perfilUsuario}
                         </span>
                       </div>
                     </div>
@@ -816,15 +855,15 @@ function ConfirmacionUsuarioPage() {
                           className="
                             inline-flex
                             rounded-lg
-                            bg-[#fff3df]
+                            bg-[#e4f7eb]
                             px-3
                             py-1.5
                             text-[10px]
                             font-medium
-                            text-[#ef8b05]
+                            text-[#168b58]
                           "
                         >
-                          Pendiente de activación
+                          Activa
                         </span>
                       </div>
                     </div>
@@ -931,7 +970,7 @@ function ConfirmacionUsuarioPage() {
                         </div>
 
                         <p className="mt-2 text-xs font-semibold text-[#17356e]">
-                          Correo enviado
+                          Credenciales generadas
                         </p>
 
                         <p className="mt-1 text-[10px] text-[#65738d]">
@@ -960,7 +999,7 @@ function ConfirmacionUsuarioPage() {
                         </div>
 
                         <p className="mt-2 text-xs font-semibold text-[#17356e]">
-                          Pendiente de activación
+                          Listo para ingresar
                         </p>
 
                         <p
@@ -972,7 +1011,7 @@ function ConfirmacionUsuarioPage() {
                             text-[#65738d]
                           "
                         >
-                          A la espera de activación por parte del usuario
+                          Contraseña temporal: {usuarioCreado.contrasenaTemporal}
                         </p>
                       </div>
                     </div>

@@ -73,10 +73,33 @@ interface RegistrosSeguimientoCompProps {
   filtros: OpcionFiltroDetalle[]
   onCambiarBusqueda: (valor: string) => void
   onCambiarFiltro: (filtro: FiltroDetalleSeguimiento) => void
+  onCambiarPagina: (pagina: number) => void
   onLimpiarFiltros: () => void
   onVerRegistro: (registro: RegistroSeguimientoPaciente) => void
+  paginaActual: number
+  paginasTotales: number
   registros: RegistroSeguimientoPaciente[]
+  tamanoPagina: number
   totalRegistros: number
+}
+
+type ElementoPaginacion = number | `separador-${number}-${number}`
+
+function crearPaginasVisibles(paginaActual: number, paginasTotales: number): ElementoPaginacion[] {
+  if (paginasTotales <= 5) {
+    return Array.from({ length: paginasTotales }, (_, indice) => indice + 1)
+  }
+
+  const paginas = [...new Set([1, paginaActual - 1, paginaActual, paginaActual + 1, paginasTotales])]
+    .filter((pagina) => pagina >= 1 && pagina <= paginasTotales)
+    .sort((primera, segunda) => primera - segunda)
+
+  return paginas.flatMap<ElementoPaginacion>((pagina, indice) => {
+    const paginaAnterior = paginas[indice - 1]
+    return paginaAnterior && pagina - paginaAnterior > 1
+      ? [`separador-${paginaAnterior}-${pagina}`, pagina]
+      : [pagina]
+  })
 }
 
 function RegistrosSeguimientoComp({
@@ -85,12 +108,20 @@ function RegistrosSeguimientoComp({
   filtros,
   onCambiarBusqueda,
   onCambiarFiltro,
+  onCambiarPagina,
   onLimpiarFiltros,
   onVerRegistro,
+  paginaActual,
+  paginasTotales,
   registros,
+  tamanoPagina,
   totalRegistros,
 }: RegistrosSeguimientoCompProps) {
-  const tienePaginas = totalRegistros > 5
+  const paginasVisibles = crearPaginasVisibles(paginaActual, paginasTotales)
+  const primerRegistro = totalRegistros === 0 ? 0 : (paginaActual - 1) * tamanoPagina + 1
+  const ultimoRegistro = totalRegistros === 0
+    ? 0
+    : Math.min(paginaActual * tamanoPagina, totalRegistros)
 
   return (
     <section className='flex min-h-[410px] flex-col overflow-hidden rounded-xl border border-[#dce5ee] bg-white shadow-[0_2px_9px_rgba(18,52,91,0.06)]'>
@@ -221,48 +252,51 @@ function RegistrosSeguimientoComp({
 
       <footer className='flex min-h-10 flex-wrap items-center justify-between gap-2 border-t border-[#e1e9f0] px-3 py-1'>
         <p className='text-[9px] font-medium text-[#53688d]'>
-          Mostrando {registros.length === 0 ? 0 : 1} a {registros.length} de {totalRegistros} registros
+          Mostrando {primerRegistro} a {ultimoRegistro} de {totalRegistros} registros
         </p>
         <nav aria-label='Paginación de registros' className='flex items-center gap-1.5'>
           <button
             aria-label='Página anterior'
-            className='grid h-[30px] w-[30px] cursor-default place-items-center rounded-lg border border-[#d7e1ec] text-[#9aabc1]'
-            disabled
+            className='grid h-[30px] w-[30px] place-items-center rounded-lg border border-[#d7e1ec] text-[#49618b] transition hover:bg-[#f1fafb] disabled:cursor-default disabled:text-[#9aabc1] disabled:hover:bg-white'
+            disabled={paginaActual <= 1}
+            onClick={() => onCambiarPagina(paginaActual - 1)}
             type='button'
           >
             <IconoMedico className='h-3.5 w-3.5' nombre='arrowLeft' />
           </button>
-          {(tienePaginas ? [1, 2, 3] : [1]).map((pagina) => (
-            <button
-              aria-current={pagina === 1 ? 'page' : undefined}
-              className={`grid h-[30px] w-[30px] cursor-default place-items-center rounded-lg border text-[9px] font-bold ${
-                pagina === 1
-                  ? 'border-[#08aabb] bg-[#edfafa] text-[#079daf]'
-                  : 'border-[#d7e1ec] bg-white text-[#49618b]'
-              }`}
-              disabled
-              key={pagina}
-              type='button'
-            >
-              {pagina}
-            </button>
-          ))}
-          {tienePaginas && (
-            <>
-              <span className='px-1 text-[9px] text-[#60749a]'>...</span>
+          {paginasVisibles.map((elemento) => {
+            if (typeof elemento === 'string') {
+              return (
+                <span aria-hidden='true' className='px-1 text-[9px] text-[#60749a]' key={elemento}>
+                  ...
+                </span>
+              )
+            }
+
+            const esActual = elemento === paginaActual
+            return (
               <button
-                className='grid h-[30px] w-[30px] cursor-default place-items-center rounded-lg border border-[#d7e1ec] text-[9px] font-bold text-[#49618b]'
-                disabled
+                aria-current={esActual ? 'page' : undefined}
+                aria-label={`Página ${elemento}`}
+                className={`grid h-[30px] w-[30px] place-items-center rounded-lg border text-[9px] font-bold transition ${
+                  esActual
+                    ? 'cursor-default border-[#08aabb] bg-[#edfafa] text-[#079daf]'
+                    : 'cursor-pointer border-[#d7e1ec] bg-white text-[#49618b] hover:bg-[#f1fafb]'
+                }`}
+                disabled={esActual}
+                key={elemento}
+                onClick={() => onCambiarPagina(elemento)}
                 type='button'
               >
-                7
+                {elemento}
               </button>
-            </>
-          )}
+            )
+          })}
           <button
             aria-label='Página siguiente'
-            className='grid h-[30px] w-[30px] cursor-default place-items-center rounded-lg border border-[#d7e1ec] text-[#49618b]'
-            disabled
+            className='grid h-[30px] w-[30px] place-items-center rounded-lg border border-[#d7e1ec] text-[#49618b] transition hover:bg-[#f1fafb] disabled:cursor-default disabled:text-[#9aabc1] disabled:hover:bg-white'
+            disabled={paginaActual >= paginasTotales}
+            onClick={() => onCambiarPagina(paginaActual + 1)}
             type='button'
           >
             <IconoMedico className='h-3.5 w-3.5' nombre='arrowRight' />

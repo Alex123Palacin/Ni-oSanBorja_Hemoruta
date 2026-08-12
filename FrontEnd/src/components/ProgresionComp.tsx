@@ -10,8 +10,8 @@ interface ProgresionCompProps {
 function ProgresionComp({ paso }: ProgresionCompProps) {
   const pasos = [
     { numero: 1, titulo: 'Datos básicos' },
-    { numero: 2, titulo: 'Envío de activación' },
-    { numero: 3, titulo: paso === 3 ? 'Registro completado' : 'Esperando registro' },
+    { numero: 2, titulo: 'Credenciales de acceso' },
+    { numero: 3, titulo: 'Registro completado' },
   ] as const
 
   return (
@@ -26,11 +26,6 @@ function ProgresionComp({ paso }: ProgresionCompProps) {
           return (
             <Fragment key={item.numero}>
               <li className='relative flex items-center gap-2.5'>
-                {paso === 2 && item.numero === 3 && (
-                  <span className='absolute -top-4 left-0 text-[8px] font-bold text-[#173a82]'>
-                    Registro completado
-                  </span>
-                )}
                 <span
                   className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-extrabold ${
                     habilitado

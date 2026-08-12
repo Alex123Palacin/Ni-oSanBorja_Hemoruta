@@ -42,7 +42,14 @@ function MedicacionIndicadaComp({ medicamentos, notaHorario, titulo }: Medicacio
         </span>
       </div>
 
-      <div className='h-[156px] overflow-hidden rounded-xl border border-[#e0e7ee] bg-white shadow-[0_3px_10px_rgba(23,55,96,0.05)]'>
+      <div className='h-[156px] overflow-y-auto rounded-xl border border-[#e0e7ee] bg-white shadow-[0_3px_10px_rgba(23,55,96,0.05)]'>
+        {medicamentos.length === 0 && (
+          <div className='flex h-full flex-col items-center justify-center px-5 text-center text-[#6b7d98]' role='status'>
+            <IconoMedico className='h-8 w-8 text-[#9ccbd1]' nombre='calendar' strokeWidth={1.5} />
+            <p className='mt-2 text-[8px] font-bold text-[#36537f]'>No hay dosis programadas para este día.</p>
+            <p className='mt-0.5 text-[6.5px] font-medium'>Puedes elegir otro día en el calendario.</p>
+          </div>
+        )}
         {medicamentos.map((medicamento) => {
           const estilo = ESTILOS_TONO[medicamento.tono]
 

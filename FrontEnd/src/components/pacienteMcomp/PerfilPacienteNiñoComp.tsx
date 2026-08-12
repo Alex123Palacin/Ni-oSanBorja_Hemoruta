@@ -1,3 +1,4 @@
+import useAuth from '../../auth/useAuth'
 import IconoMedico from '../IconoMedico'
 
 export interface DatosPerfilPacienteNino {
@@ -14,7 +15,9 @@ interface PerfilPacienteNinoCompProps {
 }
 
 function PerfilPacienteNiñoComp({ paciente, tamano = 'normal' }: PerfilPacienteNinoCompProps) {
+  const { usuario } = useAuth()
   const esCompacto = tamano === 'compacto'
+  const fotoMostrada = usuario?.rol === 'PACIENTE' && usuario.fotoPerfil ? usuario.fotoPerfil : paciente.imagen
 
   return (
     <section
@@ -28,7 +31,7 @@ function PerfilPacienteNiñoComp({ paciente, tamano = 'normal' }: PerfilPaciente
             alt={`Foto de ${paciente.nombre}`}
             className='absolute left-1/2 top-[-18%] h-[185%] w-[185%] max-w-none -translate-x-1/2 object-cover'
             draggable={false}
-            src={paciente.imagen}
+            src={fotoMostrada}
           />
         </div>
         <span
@@ -45,14 +48,10 @@ function PerfilPacienteNiñoComp({ paciente, tamano = 'normal' }: PerfilPaciente
           {paciente.nombre}
         </strong>
 
-        <dl className={`grid grid-cols-[0.72fr_1.15fr_0.88fr] divide-x divide-[#e3e9f0] ${esCompacto ? 'mt-1.5' : 'mt-2'}`}>
+        <dl className={`grid grid-cols-2 divide-x divide-[#e3e9f0] ${esCompacto ? 'mt-1.5' : 'mt-2'}`}>
           <div className='flex min-w-0 flex-col items-center px-1 text-center'>
             <IconoMedico className={`${esCompacto ? 'h-[13px] w-[13px]' : 'h-[15px] w-[15px]'} text-[#617797]`} nombre='user' strokeWidth={1.6} />
             <dd className='mt-0.5 truncate text-[7px] font-medium text-[#53698d]'>{paciente.edad}</dd>
-          </div>
-          <div className='flex min-w-0 flex-col items-center px-1 text-center'>
-            <IconoMedico className={`${esCompacto ? 'h-[13px] w-[13px]' : 'h-[15px] w-[15px]'} text-[#617797]`} nombre='clipboard' strokeWidth={1.6} />
-            <dd className='mt-0.5 truncate text-[6.7px] font-medium text-[#53698d]'>{paciente.historiaClinica}</dd>
           </div>
           <div className='flex min-w-0 flex-col items-center px-1 text-center'>
             <dd className={`inline-flex items-center gap-1 rounded-full bg-[#e7f8e9] font-bold text-[#22973e] ${esCompacto ? 'px-2 py-0.5 text-[6.8px]' : 'px-2 py-1 text-[7px]'}`}>

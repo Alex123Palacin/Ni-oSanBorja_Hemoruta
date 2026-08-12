@@ -6,7 +6,8 @@ export type EvolucionSintomaPaciente = 'empeoro' | 'igual' | 'mejoro'
 export interface BorradorDetalleSintomasPaciente {
   duracion: DuracionSintomaPaciente | null
   evolucion: EvolucionSintomaPaciente | null
-  fechaHora: string
+  fecha: string
+  hora: string
   observacion: string
 }
 
@@ -44,22 +45,6 @@ const ESTILOS_EVOLUCION: Record<OpcionEvolucionSintomaPaciente['tono'], string> 
   azul: 'text-[#1b9eae]',
   rojo: 'text-[#f04f55]',
   verde: 'text-[#2fab42]',
-}
-
-function mostrarFechaHora(valor: string, placeholder: string) {
-  if (!valor) return placeholder
-
-  const fecha = new Date(valor)
-  if (Number.isNaN(fecha.getTime())) return valor
-
-  return new Intl.DateTimeFormat('es-PE', {
-    day: '2-digit',
-    hour: '2-digit',
-    hour12: true,
-    minute: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(fecha)
 }
 
 function DetalleSintomasPacienteComp({
@@ -104,22 +89,32 @@ function DetalleSintomasPacienteComp({
       </fieldset>
 
       <div className='mt-2'>
-        <label className='text-[10px] font-extrabold text-[#14366f]' htmlFor='fecha-hora-sintoma'>{etiquetas.fechaHora}</label>
-        <label
-          className='relative mt-1.5 flex h-[36px] cursor-pointer items-center rounded-lg border border-[#e0e7ee] bg-white px-2.5 text-[8px] font-medium text-[#6b7c98] shadow-[0_2px_7px_rgba(23,55,96,0.04)]'
-          htmlFor='fecha-hora-sintoma'
-        >
-          <IconoMedico className='mr-2 h-[16px] w-[16px] shrink-0 text-[#5d7192]' nombre='calendar' strokeWidth={1.7} />
-          <span className='truncate'>{mostrarFechaHora(valor.fechaHora, etiquetas.fechaPlaceholder)}</span>
-          <IconoMedico className='ml-auto h-[15px] w-[15px] shrink-0 text-[#1e57a0]' nombre='arrowRight' strokeWidth={1.8} />
-          <input
-            className='absolute inset-0 cursor-pointer opacity-0'
-            id='fecha-hora-sintoma'
-            onChange={(evento) => onCambiar({ fechaHora: evento.target.value })}
-            type='datetime-local'
-            value={valor.fechaHora}
-          />
-        </label>
+        <p className='text-[10px] font-extrabold text-[#14366f]'>{etiquetas.fechaHora}</p>
+        <div className='mt-1.5 grid grid-cols-[minmax(0,1.35fr)_minmax(0,.85fr)] gap-2'>
+          <label className='relative flex h-[42px] items-center rounded-lg border border-[#dce5ed] bg-white px-2.5 focus-within:border-[#05aeb0] focus-within:ring-2 focus-within:ring-[#05aeb0]/15'>
+            <IconoMedico className='mr-2 h-4 w-4 shrink-0 text-[#2688a1]' nombre='calendar' />
+            <span className='sr-only'>{etiquetas.fechaPlaceholder}</span>
+            <input
+              aria-label='Fecha en que iniciaron los síntomas'
+              className='min-w-0 flex-1 bg-transparent text-[9px] font-semibold text-[#314c76] outline-none'
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(evento) => onCambiar({ fecha: evento.target.value })}
+              type='date'
+              value={valor.fecha}
+            />
+          </label>
+          <label className='relative flex h-[42px] items-center rounded-lg border border-[#dce5ed] bg-white px-2.5 focus-within:border-[#05aeb0] focus-within:ring-2 focus-within:ring-[#05aeb0]/15'>
+            <IconoMedico className='mr-1.5 h-4 w-4 shrink-0 text-[#2688a1]' nombre='clock' />
+            <span className='sr-only'>Hora en que iniciaron los síntomas</span>
+            <input
+              aria-label='Hora en que iniciaron los síntomas'
+              className='min-w-0 flex-1 bg-transparent text-[9px] font-semibold text-[#314c76] outline-none'
+              onChange={(evento) => onCambiar({ hora: evento.target.value })}
+              type='time'
+              value={valor.hora}
+            />
+          </label>
+        </div>
       </div>
 
       <fieldset className='mt-2'>

@@ -1,14 +1,38 @@
 import { useState, type FormEvent } from 'react'
 
-import useRedirrecion from '../hooks/Redirrecion'
+export interface CredencialesPersonal {
+  contrasena: string
+  identificador: string
+  recordarme: boolean
+}
 
-function FormInicioComp() {
+interface FormInicioCompProps {
+  cargando?: boolean
+  error?: string | null
+  onIniciarSesion?: (credenciales: CredencialesPersonal) => void | Promise<void>
+  onRecuperarCuenta?: () => void
+}
+
+function FormInicioComp({
+  cargando = false,
+  error,
+  onIniciarSesion,
+  onRecuperarCuenta,
+}: FormInicioCompProps) {
+  const [identificador, setIdentificador] = useState('')
+  const [contrasena, setContrasena] = useState('')
+  const [recordarme, setRecordarme] = useState(false)
   const [mostrarContrasena, setMostrarContrasena] = useState(false)
-  const redirigir = useRedirrecion()
 
   function iniciarSesion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    redirigir('/antonella')
+    if (!onIniciarSesion) return
+
+    void onIniciarSesion({
+      contrasena,
+      identificador: identificador.trim(),
+      recordarme,
+    })
   }
 
   return (
@@ -50,8 +74,11 @@ function FormInicioComp() {
               className='h-full min-w-0 flex-1 bg-transparent px-4 text-base text-[#16366f] outline-none placeholder:text-[#8496b5]'
               id='correo-dni'
               name='correoDni'
+              onChange={(event) => setIdentificador(event.target.value)}
               placeholder='Ingresa tu correo institucional o DNI'
+              required
               type='text'
+              value={identificador}
             />
           </div>
         </div>
@@ -80,8 +107,11 @@ function FormInicioComp() {
               className='h-full min-w-0 flex-1 bg-transparent px-4 text-base text-[#16366f] outline-none placeholder:text-[#8496b5]'
               id='contrasena'
               name='contrasena'
+              onChange={(event) => setContrasena(event.target.value)}
               placeholder='Ingresa tu contraseña'
+              required
               type={mostrarContrasena ? 'text' : 'password'}
+              value={contrasena}
             />
             <button
               aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
@@ -119,22 +149,32 @@ function FormInicioComp() {
       <div className='mt-5 flex flex-wrap items-center justify-between gap-3 text-sm sm:text-base'>
         <label className='flex cursor-pointer items-center gap-2.5 font-medium text-[#5b7095]'>
           <input
+            checked={recordarme}
             className='h-5 w-5 cursor-pointer rounded accent-[#08adb5]'
             name='recordarme'
+            onChange={(event) => setRecordarme(event.target.checked)}
             type='checkbox'
           />
           Recordarme
         </label>
         <button
           className='cursor-pointer font-medium text-[#00aeb6] transition hover:text-[#008e99] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aeb5]'
+          onClick={onRecuperarCuenta}
           type='button'
         >
           ¿Olvidaste tu contraseña?
         </button>
       </div>
 
+      {error && (
+        <p aria-live='polite' className='mt-3 text-sm font-semibold text-[#d6424d]' role='alert'>
+          {error}
+        </p>
+      )}
+
       <button
-        className='mt-8 flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#0db8bc] to-[#08aab4] text-lg font-semibold text-white shadow-[0_8px_20px_rgba(5,171,181,0.20)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(5,171,181,0.28)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aeb5] active:translate-y-0'
+        className='mt-8 flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#0db8bc] to-[#08aab4] text-lg font-semibold text-white shadow-[0_8px_20px_rgba(5,171,181,0.20)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(5,171,181,0.28)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aeb5] active:translate-y-0 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0'
+        disabled={cargando}
         type='submit'
       >
         <svg aria-hidden='true' className='h-6 w-6' fill='none' viewBox='0 0 24 24'>
@@ -146,7 +186,7 @@ function FormInicioComp() {
             strokeWidth='1.9'
           />
         </svg>
-        Iniciar sesión
+        {cargando ? 'Ingresando…' : 'Iniciar sesión'}
       </button>
 
       <div className='my-8 flex items-center gap-5 text-sm font-medium text-[#637597] sm:text-base'>

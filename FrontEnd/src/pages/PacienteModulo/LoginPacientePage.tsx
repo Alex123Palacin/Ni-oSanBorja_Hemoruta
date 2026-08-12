@@ -1,5 +1,10 @@
+import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { obtenerMensajeErrorApi } from '../../api/compartido/ClienteApi'
 import FondoNino from '../../assets/FondoNiño5.png'
 import logoHemoRuta from '../../assets/iconoHemoRutaNoBg.png'
+import useAuth from '../../auth/useAuth'
 import AdaptadoMobil from '../../components/pacienteMcomp/AdaptadoMobil'
 import CabeceraLoginPacienteComp from '../../components/pacienteMcomp/CabeceraLoginPacienteComp'
 import FormLoginPacienteComp, {
@@ -29,11 +34,25 @@ const CONTENIDO_FORMULARIO: ContenidoFormLoginPaciente = {
 }
 
 function LoginPacientePage() {
+  const [cargando, setCargando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { iniciarSesionPaciente } = useAuth()
+  const ubicacion = useLocation()
+  const navegar = useNavigate()
   const redirigir = useRedirrecion()
 
-  function iniciarSesion({ contrasena, identificador }: CredencialesPaciente) {
-    if (identificador && contrasena) {
-      redirigir('/paciente/inicio')
+  async function iniciarSesion(credenciales: CredencialesPaciente) {
+    setCargando(true)
+    setError(null)
+
+    try {
+      await iniciarSesionPaciente(credenciales)
+      const origen = (ubicacion.state as { from?: { pathname?: string } } | null)?.from?.pathname
+      navegar(origen?.startsWith('/paciente/') ? origen : '/paciente/inicio', { replace: true })
+    } catch (errorSesion) {
+      setError(obtenerMensajeErrorApi(errorSesion))
+    } finally {
+      setCargando(false)
     }
   }
 
@@ -42,7 +61,9 @@ function LoginPacientePage() {
       <main className='flex min-h-full w-full flex-col bg-white'>
         <CabeceraLoginPacienteComp {...PRESENTACION_LOGIN} />
         <FormLoginPacienteComp
+          cargando={cargando}
           contenido={CONTENIDO_FORMULARIO}
+          error={error}
           onIniciarSesion={iniciarSesion}
           onRecuperarCuenta={() => redirigir('/paciente/recuperacion')}
           onWhatsApp={() => redirigir('/paciente/verificacion')}
