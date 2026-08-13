@@ -15,7 +15,7 @@ function FormRecuperarComp() {
       return;
     }
 
-    redirigir("/antonella");
+    redirigir("/verificacion");
   }
 
   function evtClickButtonVolverLogin() {

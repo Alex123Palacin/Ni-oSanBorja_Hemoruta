@@ -151,6 +151,94 @@ class ConsultaVozAPITests(APITestCase):
         self.assertEqual(respuesta.data["preguntaActual"], "¿Cuál es el motivo de consulta?")
 
     @patch("ML_core.servicios.obtener_cliente_ollama")
+    def test_instruccion_dirigida_actualiza_solo_esa_seccion(self, obtener_cliente):
+        sesion = self.crear_sesion().data
+        cliente = Mock()
+        cliente.estructurar.return_value = {
+            "secciones": {"tratamientoIndicado": "Continuar mantenimiento por tres días."},
+            "preguntaAdicional": {"seccion": "", "pregunta": ""},
+        }
+        obtener_cliente.return_value = cliente
+
+        respuesta = self.client.post(
+            reverse("ml_core:transcribir-sesion-voz", kwargs={"sesion_id": sesion["id"]}),
+            {"texto": "En tratamiento pon continuar mantenimiento por tres días"},
+            format="json",
+        )
+
+        self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.data)
+        self.assertEqual(
+            respuesta.data["secciones"]["tratamientoIndicado"],
+            "Continuar mantenimiento por tres días.",
+        )
+        self.assertEqual(respuesta.data["secciones"]["motivoConsulta"], "")
+        self.assertEqual(respuesta.data["transcripcion"], "")
+        self.assertEqual(
+            cliente.estructurar.call_args.kwargs["seccion_objetivo"],
+            "tratamientoIndicado",
+        )
+
+    @patch("ML_core.servicios.obtener_cliente_ollama")
+    def test_referencia_ambigua_pide_confirmacion_y_no_contamina(self, obtener_cliente):
+        sesion = self.crear_sesion().data
+        objeto = SesionConsultaVoz.objects.get(pk=sesion["id"])
+        objeto.datos_estructurados = {
+            **objeto.datos_estructurados,
+            "tratamientoIndicado": "Mantener hidratación y reposo.",
+        }
+        objeto.save(update_fields=("datos_estructurados", "actualizado_en"))
+        url = reverse("ml_core:transcribir-sesion-voz", kwargs={"sesion_id": sesion["id"]})
+
+        propuesta = self.client.post(url, {"texto": "En tratamiento deja solo eso"}, format="json")
+        confirmada = self.client.post(url, {"texto": "Sí, confirmado"}, format="json")
+
+        self.assertEqual(propuesta.status_code, status.HTTP_200_OK, propuesta.data)
+        self.assertIn("¿Confirmo", propuesta.data["preguntaActual"])
+        self.assertEqual(confirmada.status_code, status.HTTP_200_OK, confirmada.data)
+        self.assertEqual(
+            confirmada.data["secciones"]["tratamientoIndicado"],
+            "Mantener hidratación y reposo.",
+        )
+        self.assertEqual(confirmada.data["transcripcion"], "")
+        obtener_cliente.assert_not_called()
+
+    def test_no_hay_cita_omite_solo_proximo_control(self):
+        sesion = self.crear_sesion().data
+
+        respuesta = self.client.post(
+            reverse("ml_core:transcribir-sesion-voz", kwargs={"sesion_id": sesion["id"]}),
+            {"texto": "No hay cita programada por ahora"},
+            format="json",
+        )
+
+        self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.data)
+        self.assertEqual(respuesta.data["preguntasOmitidas"], ["proximoControl"])
+        self.assertEqual(respuesta.data["transcripcion"], "")
+
+    @patch("ML_core.servicios.obtener_cliente_ollama")
+    def test_ia_puede_hacer_una_pregunta_clinica_adicional(self, obtener_cliente):
+        sesion = self.crear_sesion().data
+        cliente = Mock()
+        cliente.estructurar.return_value = {
+            "secciones": {"motivoConsulta": "Fiebre desde ayer."},
+            "preguntaAdicional": {
+                "seccion": "motivoConsulta",
+                "pregunta": "¿Cuál fue la temperatura máxima registrada?",
+            },
+        }
+        obtener_cliente.return_value = cliente
+
+        respuesta = self.client.post(
+            reverse("ml_core:transcribir-sesion-voz", kwargs={"sesion_id": sesion["id"]}),
+            {"texto": "Consulta por fiebre desde ayer"},
+            format="json",
+        )
+
+        self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.data)
+        self.assertEqual(respuesta.data["preguntaActual"], "¿Cuál fue la temperatura máxima registrada?")
+        self.assertTrue(respuesta.data["intervenciones"][-1]["adicional"])
+
+    @patch("ML_core.servicios.obtener_cliente_ollama")
     def test_puede_omitir_toda_la_entrevista_con_comandos_breves(self, obtener_cliente):
         sesion = self.crear_sesion().data
         url = reverse("ml_core:transcribir-sesion-voz", kwargs={"sesion_id": sesion["id"]})

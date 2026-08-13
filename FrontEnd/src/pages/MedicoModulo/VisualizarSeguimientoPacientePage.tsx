@@ -456,7 +456,11 @@ function VisualizarSeguimientoPacientePage() {
                     onCambiarFiltro={cambiarFiltro}
                     onCambiarPagina={setPaginaActual}
                     onLimpiarFiltros={limpiarFiltros}
-                    onVerRegistro={() => redirigir('/doctor/ficha')}
+                    onVerRegistro={(registro) => {
+                      if (registro.tipo === 'documento') redirigir('/doctor/ficha?panel=documentos')
+                      else if (registro.tipo === 'sintomas') redirigir('/doctor/ficha?panel=sintomas')
+                      else redirigir('/doctor/historial')
+                    }}
                     paginaActual={paginaActual}
                     paginasTotales={paginasTotales}
                     registros={registrosVisibles}
@@ -479,8 +483,8 @@ function VisualizarSeguimientoPacientePage() {
                   <PanelLateralSeguimientoComp
                     filtroActivo={filtroActivo}
                     onRegistrarAccion={() => redirigir('/doctor/consulta')}
-                    onVerDocumento={() => redirigir('/doctor/ficha')}
-                    onVerDocumentos={() => redirigir('/doctor/ficha')}
+                    onVerDocumento={() => redirigir('/doctor/ficha?panel=documentos')}
+                    onVerDocumentos={() => redirigir('/doctor/ficha?panel=documentos')}
                     onVerFicha={() => redirigir('/doctor/ficha')}
                     onVerHistorial={() => redirigir('/doctor/historial')}
                     resumen={resumen}

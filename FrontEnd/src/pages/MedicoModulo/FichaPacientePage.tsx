@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import useAuth from '../../auth/useAuth'
 import {
@@ -362,6 +363,8 @@ function mapearSemaforo(ficha: FichaPacienteMedicoApi): SemaforoFichaPaciente {
 function FichaPacientePage() {
   const { usuario } = useAuth()
   const redirigir = useRedirrecion()
+  const [parametrosBusqueda] = useSearchParams()
+  const panelInicialAtendido = useRef(false)
   const [perfilPaciente, setPerfilPaciente] = useState(PERFIL_PACIENTE)
   const [proximaCita, setProximaCita] = useState<ProximaCitaFichaPaciente>(PROXIMA_CITA)
   const [documentos, setDocumentos] = useState<DocumentoFichaPaciente[]>([])
@@ -520,6 +523,16 @@ function FichaPacientePage() {
     setDocumentosAbiertos(false)
   }
 
+  useEffect(() => {
+    if (panelInicialAtendido.current) return
+    panelInicialAtendido.current = true
+
+    const panel = parametrosBusqueda.get('panel')
+    if (panel === 'agenda') void abrirAgenda()
+    if (panel === 'documentos') void abrirTodosLosDocumentos()
+    if (panel === 'sintomas') void abrirHistorialSintomas()
+  }, [parametrosBusqueda])
+
   return (
     <div className='flex min-h-dvh bg-[#fbfdff] font-sans'>
       <MenuMedicoComp />
@@ -552,7 +565,9 @@ function FichaPacientePage() {
                   Volver al listado
                 </button>
                 <button
-                  className='flex h-10 cursor-pointer items-center gap-2 rounded-lg bg-gradient-to-r from-[#08aabc] to-[#078da9] px-5 text-[11px] font-bold text-white shadow-[0_4px_10px_rgba(5,111,124,0.16)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08aabb] active:translate-y-0'
+                  className='flex h-10 cursor-not-allowed items-center gap-2 rounded-lg bg-gradient-to-r from-[#08aabc] to-[#078da9] px-5 text-[11px] font-bold text-white opacity-55 shadow-[0_4px_10px_rgba(5,111,124,0.16)]'
+                  disabled
+                  title='La edición de la ficha todavía no está habilitada'
                   type='button'
                 >
                   <IconoMedico className='h-[18px] w-[18px]' nombre='edit' />

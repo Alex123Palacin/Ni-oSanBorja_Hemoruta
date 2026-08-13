@@ -133,14 +133,6 @@ function UsuariosHospitalariosPage() {
     redirigir(`/admin/detalleUs/${encodeURIComponent(usuario.id)}`);
   }
 
-  function evtClickEditarUsuario(usuario: UsuarioHospitalario) {
-    console.log("Editar usuario", usuario);
-  }
-
-  function evtClickOpcionesUsuario(usuario: UsuarioHospitalario) {
-    console.log("Opciones usuario", usuario);
-  }
-
   function perfilClass(perfilUsuario: PerfilUsuario) {
     switch (perfilUsuario) {
       case "Médico":
@@ -238,6 +230,7 @@ function UsuariosHospitalariosPage() {
                 transition
                 hover:bg-[#f4fafb]
               "
+              onClick={() => redirigir('/admin/inicio')}
               type="button"
             >
               <svg
@@ -257,6 +250,7 @@ function UsuariosHospitalariosPage() {
             </button>
 
             <button
+              aria-current="page"
               className="
                 relative
                 mt-1
@@ -274,6 +268,7 @@ function UsuariosHospitalariosPage() {
                 font-semibold
                 text-[#029ca5]
               "
+              disabled
               type="button"
             >
               <span
@@ -322,6 +317,8 @@ function UsuariosHospitalariosPage() {
                 transition
                 hover:bg-[#f4fafb]
               "
+              disabled
+              title="La vista de actividad todavía no está habilitada"
               type="button"
             >
               <svg
@@ -553,7 +550,7 @@ function UsuariosHospitalariosPage() {
                 </p>
               </div>
 
-              <button
+            <button
                 className="
                   flex
                   h-12
@@ -1173,12 +1170,12 @@ function UsuariosHospitalariosPage() {
                             <button
                               aria-label={`Editar ${usuario.nombre}`}
                               className="
-                                cursor-pointer
+                                cursor-not-allowed
+                                opacity-45
                                 text-[#00a7ae]
-                                transition
-                                hover:text-[#007f87]
                               "
-                              onClick={() => evtClickEditarUsuario(usuario)}
+                              disabled
+                              title="La edición de usuarios todavía no está habilitada"
                               type="button"
                             >
                               <svg
@@ -1206,12 +1203,12 @@ function UsuariosHospitalariosPage() {
                             <button
                               aria-label={`Opciones de ${usuario.nombre}`}
                               className="
-                                cursor-pointer
+                                cursor-not-allowed
+                                opacity-45
                                 text-[#17356e]
-                                transition
-                                hover:text-[#00a7ae]
                               "
-                              onClick={() => evtClickOpcionesUsuario(usuario)}
+                              disabled
+                              title="No hay acciones adicionales disponibles"
                               type="button"
                             >
                               <svg

@@ -32,6 +32,7 @@ class ClienteOllama:
         intervenciones: list[dict],
         pregunta_actual: str = "",
         preguntas_omitidas: list[str] | None = None,
+        seccion_objetivo: str = "",
     ) -> dict:
         esquema = {
             "secciones": {
@@ -55,6 +56,10 @@ class ClienteOllama:
                 "proximoControl": {"fecha": "AAAA-MM-DD", "hora": "HH:MM", "detalle": "texto"},
             },
             "preguntaSiguiente": "una sola pregunta breve en español o cadena vacía",
+            "preguntaAdicional": {
+                "seccion": "clave de la sección que necesita precisión o cadena vacía",
+                "pregunta": "pregunta clínica adicional breve o cadena vacía",
+            },
             "listo": False,
         }
         prompt = (
@@ -66,10 +71,15 @@ class ClienteOllama:
             "unidad, duración, días y todas las horas mencionadas; no completes datos que no fueron dichos. "
             "Si se indica por N días sin mencionar días de la semana, representa que es diario con "
             "diasSemana=[0,1,2,3,4,5,6] y duracionDias=N. "
+            "Si una respuesta clínica relevante queda ambigua, puedes proponer una sola pregunta adicional "
+            "útil para precisar temporalidad, signos de alarma, dosis, duración o seguimiento. No repitas una "
+            "pregunta ya realizada y deja preguntaAdicional vacía cuando no aporte información clínica. "
+            "Si se indica una seccionObjetivo, modifica exclusivamente esa sección y conserva todas las demás. "
             "Los días usan 0=lunes y 6=domingo. Responde solo JSON válido, sin razonamiento ni Markdown.\n"
             f"Esquema obligatorio: {json.dumps(esquema, ensure_ascii=False)}\n"
             f"Datos actuales: {json.dumps(datos_actuales, ensure_ascii=False)}\n"
             f"Pregunta actual: {json.dumps(pregunta_actual, ensure_ascii=False)}\n"
+            f"Sección objetivo: {json.dumps(seccion_objetivo, ensure_ascii=False)}\n"
             f"Secciones omitidas: {json.dumps(preguntas_omitidas or [], ensure_ascii=False)}\n"
             f"Conversación: {json.dumps(intervenciones, ensure_ascii=False)}"
         )
@@ -116,12 +126,13 @@ class ClienteOllama:
         pregunta_actual: str = "",
     ) -> str:
         prompt = (
-            "Eres un copiloto de documentacion clinica pediatrica para un medico. "
-            "Tu prioridad es ayudar a completar el formulario de consulta por voz. "
-            "Puedes responder dudas breves del medico, sugerir que detalle dosis, frecuencia, duracion, "
-            "evolucion o control, y luego invitarlo a continuar con la pregunta actual. "
-            "No contradigas la decision del medico, no prescribas por tu cuenta y no agregues datos no dichos. "
-            "Responde en maximo 45 palabras, sin Markdown.\n"
+            "Eres un copiloto clínico conversacional para un médico pediatra. Tu prioridad es ayudarle a "
+            "completar el formulario por voz con claridad y naturalidad. Responde sus dudas, sugiere una "
+            "redacción clínica breve o señala qué dato falta (temporalidad, signos de alarma, dosis, vía, "
+            "frecuencia, duración o próximo control). La decisión final siempre es del médico: si confirma "
+            "una indicación, se respeta. No diagnostiques ni prescribas por iniciativa propia y no inventes "
+            "datos del paciente. Termina ayudándole a retomar la pregunta actual. Responde en máximo 60 "
+            "palabras, sin Markdown.\n"
             f"Pregunta actual: {pregunta_actual}\n"
             f"Resumen actual: {json.dumps(datos_actuales, ensure_ascii=False)}\n"
             f"Mensaje del medico: {mensaje_medico}"

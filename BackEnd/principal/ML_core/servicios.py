@@ -26,12 +26,19 @@ from medicacion.models import (
 from seguimiento.models import EventoSeguimiento
 
 from .esquemas import (
+    CLAVES_PREGUNTAS,
+    ETIQUETAS_SECCIONES,
     combinar_estructura,
     clave_siguiente_pregunta,
+    detectar_instruccion_seccion,
+    detectar_omision_seccion,
     es_comando_siguiente,
+    es_confirmacion_afirmativa,
+    es_confirmacion_negativa,
     es_duda_del_medico,
     es_peticion_volver_preguntas,
     estructura_lista,
+    normalizar_texto_intencion,
     normalizar_estructura,
     normalizar_preguntas_omitidas,
     siguiente_pregunta,
@@ -42,6 +49,142 @@ from .proveedores import ErrorProveedorIA, obtener_cliente_ollama
 
 
 PREGUNTA_INICIAL = "¿Cuál es el motivo de consulta?"
+
+SECCIONES_TEXTO = {
+    "motivoConsulta",
+    "evolucionClinica",
+    "tratamientoIndicado",
+    "indicacionesCasa",
+}
+
+
+def _confirmacion_pendiente(intervenciones: list[dict]) -> tuple[int, dict] | None:
+    for indice in range(len(intervenciones) - 1, -1, -1):
+        intervencion = intervenciones[indice]
+        if intervencion.get("tipo") == "confirmacion" and intervencion.get("estado") == "PENDIENTE":
+            return indice, intervencion
+    return None
+
+
+def _ultima_pregunta_adicional(intervenciones: list[dict]) -> dict | None:
+    for intervencion in reversed(intervenciones):
+        if intervencion.get("rol") == "IA" and intervencion.get("tipo") == "pregunta":
+            return intervencion if intervencion.get("adicional") else None
+    return None
+
+
+def _ultima_respuesta_clinica(intervenciones: list[dict]) -> str:
+    for intervencion in reversed(intervenciones):
+        if intervencion.get("rol") == "MEDICO" and intervencion.get("tipo") == "dato_clinico":
+            return str(intervencion.get("texto", "")).strip()
+    return ""
+
+
+def _valor_vacio_seccion(clave: str):
+    if clave == "medicacionIndicada":
+        return []
+    if clave == "proximoControl":
+        return {"fecha": "", "hora": "", "detalle": ""}
+    return ""
+
+
+def _seccion_tiene_datos(estructura: dict, clave: str) -> bool:
+    valor = normalizar_estructura(estructura).get(clave)
+    if isinstance(valor, dict):
+        return any(valor.values())
+    return bool(valor)
+
+
+def _resumen_valor_confirmacion(valor: object) -> str:
+    if isinstance(valor, str):
+        return valor
+    if isinstance(valor, list):
+        nombres = [str(item.get("nombre", "")).strip() for item in valor if isinstance(item, dict)]
+        return ", ".join(nombre for nombre in nombres if nombre) or "la medicación ya registrada"
+    if isinstance(valor, dict):
+        partes = [str(valor.get(clave, "")).strip() for clave in ("fecha", "hora", "detalle")]
+        return " ".join(parte for parte in partes if parte) or "el control ya registrado"
+    return ""
+
+
+def _propuesta_referencia_ambigua(sesion: SesionConsultaVoz, clave: str) -> dict | None:
+    estructura = normalizar_estructura(sesion.datos_estructurados)
+    valor_actual = estructura.get(clave)
+    if (
+        valor_actual
+        and (not isinstance(valor_actual, dict) or any(valor_actual.values()))
+        and clave_siguiente_pregunta(estructura, []) != clave
+    ):
+        return {"seccion": clave, "cambios": {clave: valor_actual}}
+    anterior = _ultima_respuesta_clinica(sesion.intervenciones)
+    if anterior:
+        return {"seccion": clave, "contenido": anterior}
+    return None
+
+
+def _pregunta_adicional_desde_resultado(
+    resultado: object,
+    intervenciones: list[dict],
+) -> tuple[str, str] | None:
+    if not isinstance(resultado, dict):
+        return None
+    adicional = resultado.get("preguntaAdicional")
+    if not isinstance(adicional, dict):
+        return None
+    seccion = str(adicional.get("seccion", "")).strip()
+    pregunta = " ".join(str(adicional.get("pregunta", "")).split()).strip()
+    if seccion not in CLAVES_PREGUNTAS or not pregunta or len(pregunta) > 240:
+        return None
+    if "?" not in pregunta:
+        pregunta = f"{pregunta.rstrip('.')}?"
+    if sum(
+        bool(item.get("rol") == "IA" and item.get("adicional") and item.get("seccion") == seccion)
+        for item in intervenciones
+    ) >= 2:
+        return None
+    pregunta_normalizada = normalizar_texto_intencion(pregunta)
+    if any(
+        item.get("rol") == "IA"
+        and normalizar_texto_intencion(str(item.get("texto", ""))) == pregunta_normalizada
+        for item in intervenciones
+    ):
+        return None
+    return seccion, pregunta
+
+
+def _estructura_desde_instruccion(
+    *,
+    sesion: SesionConsultaVoz,
+    seccion: str,
+    contenido: str,
+) -> tuple[dict, dict, bool]:
+    estructura_actual = normalizar_estructura(sesion.datos_estructurados)
+    intervenciones_clinicas = [
+        item
+        for item in sesion.intervenciones
+        if (item.get("rol") == "IA" and item.get("tipo", "pregunta") == "pregunta")
+        or (item.get("rol") == "MEDICO" and item.get("tipo", "dato_clinico") == "dato_clinico")
+    ]
+    intervenciones_clinicas.append(
+        {"rol": "MEDICO", "texto": contenido, "tipo": "dato_clinico", "seccionObjetivo": seccion}
+    )
+    resultado: dict = {}
+    try:
+        resultado = obtener_cliente_ollama().estructurar(
+            datos_actuales=estructura_actual,
+            intervenciones=intervenciones_clinicas,
+            pregunta_actual=f"Registre únicamente {ETIQUETAS_SECCIONES[seccion]}.",
+            preguntas_omitidas=normalizar_preguntas_omitidas(sesion.preguntas_omitidas),
+            seccion_objetivo=seccion,
+        )
+        secciones = resultado.get("secciones", {}) if isinstance(resultado, dict) else {}
+        if isinstance(secciones, dict) and seccion in secciones:
+            return combinar_estructura(estructura_actual, {seccion: secciones[seccion]}), resultado, True
+    except ErrorProveedorIA:
+        pass
+    if seccion in SECCIONES_TEXTO:
+        return combinar_estructura(estructura_actual, {seccion: contenido}), resultado, False
+    return estructura_actual, resultado, False
 
 
 @transaction.atomic
@@ -57,7 +200,15 @@ def crear_sesion(*, paciente, medico) -> SesionConsultaVoz:
     return SesionConsultaVoz.objects.create(
         consulta=consulta,
         pregunta_actual=PREGUNTA_INICIAL,
-        intervenciones=[{"rol": "IA", "texto": PREGUNTA_INICIAL, "fecha": ahora}],
+        intervenciones=[
+            {
+                "rol": "IA",
+                "texto": PREGUNTA_INICIAL,
+                "fecha": ahora,
+                "tipo": "pregunta",
+                "seccion": "motivoConsulta",
+            }
+        ],
     )
 
 
@@ -75,6 +226,83 @@ def incorporar_respuesta(*, sesion: SesionConsultaVoz, texto: str) -> SesionCons
     ahora = timezone.now()
     estructura_actual = normalizar_estructura(sesion.datos_estructurados)
 
+    confirmacion = _confirmacion_pendiente(sesion.intervenciones)
+    if confirmacion:
+        indice_confirmacion, pendiente = confirmacion
+        if es_confirmacion_afirmativa(texto):
+            intervenciones = [dict(item) for item in sesion.intervenciones]
+            intervenciones[indice_confirmacion] = {**pendiente, "estado": "CONFIRMADA"}
+            propuesta = pendiente.get("propuesta", {})
+            seccion = str(propuesta.get("seccion", ""))
+            resultado: dict = {}
+            ia_disponible = True
+            if isinstance(propuesta.get("cambios"), dict):
+                estructura = combinar_estructura(estructura_actual, propuesta["cambios"])
+            else:
+                estructura, resultado, ia_disponible = _estructura_desde_instruccion(
+                    sesion=sesion,
+                    seccion=seccion,
+                    contenido=str(propuesta.get("contenido", "")),
+                )
+            omitidas = normalizar_preguntas_omitidas(sesion.preguntas_omitidas)
+            if _seccion_tiene_datos(estructura, seccion) and seccion in omitidas:
+                omitidas.remove(seccion)
+            pregunta = siguiente_pregunta(estructura, omitidas)
+            estado = (
+                SesionConsultaVoz.Estado.LISTO
+                if estructura_lista(estructura, omitidas)
+                else SesionConsultaVoz.Estado.BORRADOR
+            )
+            intervenciones.extend(
+                [
+                    {"rol": "MEDICO", "texto": texto, "fecha": ahora.isoformat(), "tipo": "control"},
+                    {
+                        "rol": "IA",
+                        "texto": f"Confirmado. Actualicé {ETIQUETAS_SECCIONES.get(seccion, 'la sección')}.",
+                        "fecha": ahora.isoformat(),
+                        "tipo": "confirmacion_resuelta",
+                    },
+                    {"rol": "IA", "texto": pregunta, "fecha": ahora.isoformat(), "tipo": "pregunta"},
+                ]
+            )
+            SesionConsultaVoz.objects.filter(pk=sesion.pk).update(
+                datos_estructurados=estructura,
+                preguntas_omitidas=omitidas,
+                pregunta_actual=pregunta,
+                intervenciones=intervenciones,
+                estado=estado,
+                ia_disponible=ia_disponible,
+                mensaje_ia=(
+                    "Cambio confirmado e incorporado al resumen clínico."
+                    if ia_disponible or _seccion_tiene_datos(estructura, seccion)
+                    else "No pude interpretar el cambio. Indíquelo nuevamente con más detalle."
+                ),
+                actualizado_en=ahora,
+            )
+            return SesionConsultaVoz.objects.select_related("consulta__paciente").get(pk=sesion.pk)
+        if es_confirmacion_negativa(texto):
+            intervenciones = [dict(item) for item in sesion.intervenciones]
+            intervenciones[indice_confirmacion] = {**pendiente, "estado": "CANCELADA"}
+            seccion = str(pendiente.get("propuesta", {}).get("seccion", ""))
+            pregunta = f"De acuerdo. ¿Qué desea registrar en {ETIQUETAS_SECCIONES.get(seccion, 'esa sección')}?"
+            intervenciones.extend(
+                [
+                    {"rol": "MEDICO", "texto": texto, "fecha": ahora.isoformat(), "tipo": "control"},
+                    {"rol": "IA", "texto": pregunta, "fecha": ahora.isoformat(), "tipo": "pregunta"},
+                ]
+            )
+            SesionConsultaVoz.objects.filter(pk=sesion.pk).update(
+                pregunta_actual=pregunta,
+                intervenciones=intervenciones,
+                ia_disponible=True,
+                mensaje_ia="Cambio cancelado; indique el contenido correcto.",
+                actualizado_en=ahora,
+            )
+            return SesionConsultaVoz.objects.select_related("consulta__paciente").get(pk=sesion.pk)
+        intervenciones = [dict(item) for item in sesion.intervenciones]
+        intervenciones[indice_confirmacion] = {**pendiente, "estado": "REEMPLAZADA"}
+        sesion.intervenciones = intervenciones
+
     if es_peticion_volver_preguntas(texto):
         pregunta = siguiente_pregunta(estructura_actual, sesion.preguntas_omitidas)
         intervenciones = [
@@ -91,10 +319,154 @@ def incorporar_respuesta(*, sesion: SesionConsultaVoz, texto: str) -> SesionCons
         )
         return SesionConsultaVoz.objects.select_related("consulta__paciente").get(pk=sesion.pk)
 
+    seccion_omitida = detectar_omision_seccion(texto)
+    if seccion_omitida:
+        omitidas = normalizar_preguntas_omitidas(sesion.preguntas_omitidas)
+        if seccion_omitida not in omitidas:
+            omitidas.append(seccion_omitida)
+        estructura = combinar_estructura(
+            estructura_actual,
+            {seccion_omitida: _valor_vacio_seccion(seccion_omitida)},
+        )
+        pregunta = siguiente_pregunta(estructura, omitidas)
+        estado = (
+            SesionConsultaVoz.Estado.LISTO
+            if estructura_lista(estructura, omitidas)
+            else SesionConsultaVoz.Estado.BORRADOR
+        )
+        intervenciones = [
+            *sesion.intervenciones,
+            {
+                "rol": "MEDICO",
+                "texto": texto,
+                "fecha": ahora.isoformat(),
+                "tipo": "control",
+                "seccion": seccion_omitida,
+            },
+            {"rol": "IA", "texto": pregunta, "fecha": ahora.isoformat(), "tipo": "pregunta"},
+        ]
+        SesionConsultaVoz.objects.filter(pk=sesion.pk).update(
+            datos_estructurados=estructura,
+            preguntas_omitidas=omitidas,
+            pregunta_actual=pregunta,
+            intervenciones=intervenciones,
+            estado=estado,
+            ia_disponible=True,
+            mensaje_ia=f"Se registró que no aplica {ETIQUETAS_SECCIONES[seccion_omitida]}.",
+            actualizado_en=ahora,
+        )
+        return SesionConsultaVoz.objects.select_related("consulta__paciente").get(pk=sesion.pk)
+
+    instruccion = detectar_instruccion_seccion(texto)
+    if instruccion:
+        seccion = str(instruccion["seccion"])
+        contenido = str(instruccion["contenido"])
+        if instruccion["ambigua"]:
+            propuesta = _propuesta_referencia_ambigua(sesion, seccion)
+            if propuesta:
+                valor = propuesta.get("cambios", {}).get(seccion) or propuesta.get("contenido", "")
+                resumen = _resumen_valor_confirmacion(valor)
+                pregunta = (
+                    f"¿Confirmo que {ETIQUETAS_SECCIONES[seccion]} quede como «{resumen[:180]}»?"
+                )
+                intervencion_ia = {
+                    "rol": "IA",
+                    "texto": pregunta,
+                    "fecha": ahora.isoformat(),
+                    "tipo": "confirmacion",
+                    "estado": "PENDIENTE",
+                    "propuesta": propuesta,
+                }
+                mensaje_ia = "Necesito su confirmación antes de modificar el resumen."
+            else:
+                pregunta = f"¿Qué contenido desea registrar en {ETIQUETAS_SECCIONES[seccion]}?"
+                intervencion_ia = {
+                    "rol": "IA",
+                    "texto": pregunta,
+                    "fecha": ahora.isoformat(),
+                    "tipo": "pregunta",
+                    "seccion": seccion,
+                }
+                mensaje_ia = "La referencia no era suficientemente clara; solicité el dato exacto."
+            intervenciones = [
+                *sesion.intervenciones,
+                {
+                    "rol": "MEDICO",
+                    "texto": texto,
+                    "fecha": ahora.isoformat(),
+                    "tipo": "instruccion",
+                    "seccion": seccion,
+                },
+                intervencion_ia,
+            ]
+            SesionConsultaVoz.objects.filter(pk=sesion.pk).update(
+                pregunta_actual=pregunta,
+                intervenciones=intervenciones,
+                ia_disponible=True,
+                mensaje_ia=mensaje_ia,
+                actualizado_en=ahora,
+            )
+            return SesionConsultaVoz.objects.select_related("consulta__paciente").get(pk=sesion.pk)
+
+        estructura, resultado, ia_disponible = _estructura_desde_instruccion(
+            sesion=sesion,
+            seccion=seccion,
+            contenido=contenido,
+        )
+        omitidas = normalizar_preguntas_omitidas(sesion.preguntas_omitidas)
+        if _seccion_tiene_datos(estructura, seccion) and seccion in omitidas:
+            omitidas.remove(seccion)
+        adicional = _pregunta_adicional_desde_resultado(resultado, sesion.intervenciones)
+        pregunta = adicional[1] if adicional else siguiente_pregunta(estructura, omitidas)
+        estado = (
+            SesionConsultaVoz.Estado.BORRADOR
+            if adicional
+            else (
+                SesionConsultaVoz.Estado.LISTO
+                if estructura_lista(estructura, omitidas)
+                else SesionConsultaVoz.Estado.BORRADOR
+            )
+        )
+        intervencion_pregunta = {
+            "rol": "IA",
+            "texto": pregunta,
+            "fecha": ahora.isoformat(),
+            "tipo": "pregunta",
+        }
+        if adicional:
+            intervencion_pregunta.update({"adicional": True, "seccion": adicional[0]})
+        intervenciones = [
+            *sesion.intervenciones,
+            {
+                "rol": "MEDICO",
+                "texto": texto,
+                "fecha": ahora.isoformat(),
+                "tipo": "instruccion",
+                "seccion": seccion,
+            },
+            intervencion_pregunta,
+        ]
+        SesionConsultaVoz.objects.filter(pk=sesion.pk).update(
+            datos_estructurados=estructura,
+            preguntas_omitidas=omitidas,
+            pregunta_actual=pregunta,
+            intervenciones=intervenciones,
+            estado=estado,
+            ia_disponible=ia_disponible,
+            mensaje_ia=(
+                f"Actualicé únicamente {ETIQUETAS_SECCIONES[seccion]}."
+                if _seccion_tiene_datos(estructura, seccion)
+                else f"Necesito más detalle para completar {ETIQUETAS_SECCIONES[seccion]}."
+            ),
+            actualizado_en=ahora,
+        )
+        return SesionConsultaVoz.objects.select_related("consulta__paciente").get(pk=sesion.pk)
+
     if es_comando_siguiente(texto):
         omitidas = normalizar_preguntas_omitidas(sesion.preguntas_omitidas)
+        pregunta_adicional = _ultima_pregunta_adicional(sesion.intervenciones)
         clave_actual = clave_siguiente_pregunta(estructura_actual, omitidas)
-        if clave_actual and clave_actual not in omitidas:
+        if not pregunta_adicional and clave_actual and clave_actual not in omitidas:
             omitidas.append(clave_actual)
         pregunta = siguiente_pregunta(estructura_actual, omitidas)
         estado = (
@@ -113,7 +485,11 @@ def incorporar_respuesta(*, sesion: SesionConsultaVoz, texto: str) -> SesionCons
             intervenciones=intervenciones,
             estado=estado,
             ia_disponible=True,
-            mensaje_ia="Pregunta omitida. La entrevista continúa con el siguiente punto.",
+            mensaje_ia=(
+                "Pregunta adicional omitida. La entrevista continúa con el siguiente punto."
+                if pregunta_adicional
+                else "Pregunta omitida. La entrevista continúa con el siguiente punto."
+            ),
             actualizado_en=ahora,
         )
         return SesionConsultaVoz.objects.select_related("consulta__paciente").get(pk=sesion.pk)
@@ -165,7 +541,7 @@ def incorporar_respuesta(*, sesion: SesionConsultaVoz, texto: str) -> SesionCons
         intervenciones_clinicas = [
             item
             for item in intervenciones
-            if item.get("rol") == "IA"
+            if (item.get("rol") == "IA" and item.get("tipo", "pregunta") == "pregunta")
             or (item.get("rol") == "MEDICO" and item.get("tipo", "dato_clinico") == "dato_clinico")
         ]
         resultado = obtener_cliente_ollama().estructurar(
@@ -176,17 +552,28 @@ def incorporar_respuesta(*, sesion: SesionConsultaVoz, texto: str) -> SesionCons
         )
         cambios = resultado.get("secciones", {}) if isinstance(resultado, dict) else {}
         estructura = combinar_estructura(sesion.datos_estructurados, cambios)
-        pregunta = siguiente_pregunta(estructura, sesion.preguntas_omitidas)
+        adicional = _pregunta_adicional_desde_resultado(resultado, intervenciones)
+        pregunta = adicional[1] if adicional else siguiente_pregunta(estructura, sesion.preguntas_omitidas)
         pregunta = pregunta[:300]
         estado = (
-            SesionConsultaVoz.Estado.LISTO
-            if estructura_lista(estructura, sesion.preguntas_omitidas)
-            else SesionConsultaVoz.Estado.BORRADOR
+            SesionConsultaVoz.Estado.BORRADOR
+            if adicional
+            else (
+                SesionConsultaVoz.Estado.LISTO
+                if estructura_lista(estructura, sesion.preguntas_omitidas)
+                else SesionConsultaVoz.Estado.BORRADOR
+            )
         )
         if estado != SesionConsultaVoz.Estado.LISTO:
-            intervenciones.append(
-                {"rol": "IA", "texto": pregunta, "fecha": timezone.now().isoformat(), "tipo": "pregunta"}
-            )
+            intervencion_pregunta = {
+                "rol": "IA",
+                "texto": pregunta,
+                "fecha": timezone.now().isoformat(),
+                "tipo": "pregunta",
+            }
+            if adicional:
+                intervencion_pregunta.update({"adicional": True, "seccion": adicional[0]})
+            intervenciones.append(intervencion_pregunta)
         else:
             pregunta = "El resumen está listo. Revíselo y edítelo antes de guardarlo."
             intervenciones.append(

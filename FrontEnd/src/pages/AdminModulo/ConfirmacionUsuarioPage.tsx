@@ -1,3 +1,5 @@
+import { Navigate } from "react-router-dom";
+
 import iconoHemoRuta from "../../assets/iconoHemoRutaNoBg.png";
 import fondoNino from "../../assets/FondoNiño4.png";
 
@@ -12,20 +14,24 @@ interface UsuarioCreadoLocal {
   rol: "ADMINISTRADOR" | "MEDICO" | "PACIENTE";
 }
 
-function obtenerUsuarioCreado(): UsuarioCreadoLocal {
-  const respaldo: UsuarioCreadoLocal = {
-    contrasenaTemporal: "HemoRuta-44567891!",
-    correo: "sofia.gutierrez@hnsb.gob.pe",
-    documento: "44567891",
-    nombreCompleto: "Dra. Sofía Gutiérrez",
-    rol: "MEDICO",
-  };
-
+function obtenerUsuarioCreado(): UsuarioCreadoLocal | null {
   try {
     const guardado = window.sessionStorage.getItem("hemoruta.admin.ultimoUsuarioCreado");
-    return guardado ? { ...respaldo, ...JSON.parse(guardado) } : respaldo;
+    if (!guardado) return null;
+    const usuario = JSON.parse(guardado) as Partial<UsuarioCreadoLocal>;
+    if (
+      !usuario.contrasenaTemporal ||
+      !usuario.correo ||
+      !usuario.documento ||
+      !usuario.nombreCompleto ||
+      !usuario.rol ||
+      !["ADMINISTRADOR", "MEDICO", "PACIENTE"].includes(usuario.rol)
+    ) {
+      return null;
+    }
+    return usuario as UsuarioCreadoLocal;
   } catch {
-    return respaldo;
+    return null;
   }
 }
 
@@ -38,7 +44,6 @@ function ConfirmacionUsuarioPage() {
     MEDICO: "Médico",
     PACIENTE: "Paciente o responsable",
   } as const;
-  const perfilUsuario = perfiles[usuarioCreado.rol];
 
   function evtClickIrListado() {
     redirigir("/admin/UsuariosHospitalarios");
@@ -51,6 +56,11 @@ function ConfirmacionUsuarioPage() {
   function evtClickUsuariosHospitalarios() {
     redirigir("/admin/UsuariosHospitalarios");
   }
+
+  if (!usuarioCreado) {
+    return <Navigate replace to="/admin/UsuariosHospitalarios" />;
+  }
+  const perfilUsuario = perfiles[usuarioCreado.rol];
 
   return (
     <div className="min-h-dvh bg-[#fbfdff] text-[#0b2b69]">
@@ -133,6 +143,7 @@ function ConfirmacionUsuarioPage() {
                 transition
                 hover:bg-[#f4fafb]
               "
+              onClick={() => redirigir('/admin/inicio')}
               type="button"
             >
               <svg
@@ -218,6 +229,8 @@ function ConfirmacionUsuarioPage() {
                 transition
                 hover:bg-[#f4fafb]
               "
+              disabled
+              title="La vista de actividad todavía no está habilitada"
               type="button"
             >
               <svg

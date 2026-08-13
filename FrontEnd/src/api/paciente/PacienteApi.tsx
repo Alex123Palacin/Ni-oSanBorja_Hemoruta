@@ -16,6 +16,69 @@ export interface InicioPacienteApi {
   proximaCita: { estado: string; fechaHora: string } | null
 }
 
+export interface TutorPerfilPacienteApi {
+  apellidos: string
+  autorizado: boolean
+  direccion: string
+  distrito: string
+  dni: string
+  email: string
+  es_principal: boolean
+  horario_contacto: string
+  id: string
+  nombres: string
+  parentesco: 'MADRE' | 'OTRO' | 'PADRE' | 'TUTOR'
+  persona_autorizada: string
+  preferencia_contacto: 'APP' | 'CORREO' | 'LLAMADA'
+  telefono_alternativo: string
+  telefono_emergencia: string
+  telefono_principal: string
+}
+
+export interface DetallePerfilPacienteApi {
+  apellidos: string
+  direccion: string
+  distrito: string
+  dni: string | null
+  estado: string
+  fecha_nacimiento: string | null
+  grupo_sanguineo: string
+  historia_clinica: string
+  id: string
+  nombres: string
+  perfil_completo: boolean
+  procedencia: string
+  sexo: 'F' | 'M' | 'N' | 'O'
+  tutores: TutorPerfilPacienteApi[]
+}
+
+export interface ActualizarDatosPersonalesPacienteApi {
+  apellidos?: string
+  dni?: string | null
+  fecha_nacimiento?: string
+  grupo_sanguineo?: string
+  nombres?: string
+  perfil_completo?: boolean
+  procedencia?: string
+  sexo?: 'F' | 'M' | 'N' | 'O'
+}
+
+export interface ActualizarTutorPacienteApi {
+  apellidos?: string
+  direccion?: string
+  distrito?: string
+  dni?: string
+  email?: string
+  horario_contacto?: string
+  nombres?: string
+  parentesco?: 'MADRE' | 'OTRO' | 'PADRE' | 'TUTOR'
+  persona_autorizada?: string
+  preferencia_contacto?: 'APP' | 'CORREO' | 'LLAMADA'
+  telefono_alternativo?: string
+  telefono_emergencia?: string
+  telefono_principal?: string
+}
+
 export interface MedicamentoPacienteApi {
   dosis: string
   estadoHoy: string
@@ -192,6 +255,49 @@ export async function iniciarSesionPacienteApi(credenciales: CredencialesPacient
 
 export function obtenerInicioPacienteApi() {
   return solicitarApi<InicioPacienteApi>('/paciente/inicio/')
+}
+
+export function obtenerDetallePerfilPacienteApi(pacienteId: string) {
+  return solicitarApi<DetallePerfilPacienteApi>(`/pacientes/${encodeURIComponent(pacienteId)}/`)
+}
+
+export function actualizarDatosPersonalesPacienteApi(
+  pacienteId: string,
+  datos: ActualizarDatosPersonalesPacienteApi,
+) {
+  return solicitarApi<DetallePerfilPacienteApi>(`/pacientes/${encodeURIComponent(pacienteId)}/`, {
+    cuerpo: datos,
+    method: 'PATCH',
+  })
+}
+
+export function actualizarTutorPacienteApi(
+  tutorId: string,
+  datos: ActualizarTutorPacienteApi,
+) {
+  return solicitarApi<TutorPerfilPacienteApi>(`/tutores-paciente/${encodeURIComponent(tutorId)}/`, {
+    cuerpo: datos,
+    method: 'PATCH',
+  })
+}
+
+export function registrarCitaDeclaradaPacienteApi(datos: {
+  inicio: string
+  medicoConocido?: string
+  pacienteId: string
+}) {
+  return solicitarApi<{ id: string; inicio: string; estado: string }>('/citas/', {
+    cuerpo: {
+      inicio: datos.inicio,
+      motivo: 'Próxima cita declarada por la familia',
+      observaciones: datos.medicoConocido
+        ? `Médico informado por la familia: ${datos.medicoConocido}`
+        : '',
+      paciente: datos.pacienteId,
+      tipo: 'CONSULTA',
+    },
+    method: 'POST',
+  })
 }
 
 export function obtenerMedicacionPacienteApi(mes?: string) {

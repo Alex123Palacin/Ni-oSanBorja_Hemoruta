@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   listarPacientesMedicoApi,
@@ -22,6 +22,8 @@ const DOCTORA = {
 }
 
 const CLAVE_PACIENTE_SELECCIONADO = 'hemoruta.medico.pacienteId'
+const TAMANO_CARGA_FILTROS = 100
+const TAMANO_PAGINA = 5
 
 const OPCIONES_DIAGNOSTICO: OpcionComboBox[] = [
   { etiqueta: 'Todos los diagnósticos', valor: 'todos' },
@@ -119,6 +121,8 @@ function GestionarPacientesPage() {
   const [cargando, setCargando] = useState(true)
   const [errorCarga, setErrorCarga] = useState('')
   const [intentoCarga, setIntentoCarga] = useState(0)
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [avisoLimite, setAvisoLimite] = useState('')
 
   useEffect(() => {
     let estaMontado = true
@@ -128,14 +132,20 @@ function GestionarPacientesPage() {
       setErrorCarga('')
 
       try {
-        const respuesta = await listarPacientesMedicoApi({ tamanoPagina: 100 })
+        const respuesta = await listarPacientesMedicoApi({ pagina: 1, tamanoPagina: TAMANO_CARGA_FILTROS })
         if (!estaMontado) return
         setPacientes(respuesta.resultados.map(adaptarPacienteApi))
         setTotalPacientes(respuesta.paginacion.total)
+        setAvisoLimite(
+          respuesta.paginacion.total > respuesta.resultados.length
+            ? `La búsqueda y los filtros abarcan ${respuesta.resultados.length} de ${respuesta.paginacion.total} pacientes registrados.`
+            : '',
+        )
       } catch (error) {
         if (!estaMontado) return
         setPacientes([])
         setTotalPacientes(0)
+        setAvisoLimite('')
         setErrorCarga(obtenerMensajeErrorApi(error))
       } finally {
         if (estaMontado) setCargando(false)
@@ -160,6 +170,45 @@ function GestionarPacientesPage() {
     setTipoBusqueda,
     tipoBusqueda,
   } = useGestionarPacientes(pacientes)
+
+  const totalPacientesFiltrados = pacientesFiltrados.length
+  const paginasTotales = Math.max(1, Math.ceil(totalPacientesFiltrados / TAMANO_PAGINA))
+  const pacientesPagina = useMemo(
+    () => pacientesFiltrados.slice(
+      (paginaActual - 1) * TAMANO_PAGINA,
+      paginaActual * TAMANO_PAGINA,
+    ),
+    [pacientesFiltrados, paginaActual],
+  )
+
+  useEffect(() => {
+    if (paginaActual > paginasTotales) setPaginaActual(paginasTotales)
+  }, [paginaActual, paginasTotales])
+
+  function cambiarBusqueda(valor: string) {
+    setBusqueda(valor)
+    setPaginaActual(1)
+  }
+
+  function cambiarDiagnostico(valor: string) {
+    setDiagnostico(valor)
+    setPaginaActual(1)
+  }
+
+  function cambiarEstado(valor: string) {
+    setEstado(valor)
+    setPaginaActual(1)
+  }
+
+  function cambiarTipoBusqueda(valor: TipoBusqueda) {
+    setTipoBusqueda(valor)
+    setPaginaActual(1)
+  }
+
+  function limpiarFiltrosYPagina() {
+    limpiarFiltros()
+    setPaginaActual(1)
+  }
 
   function verFichaPaciente(paciente: Paciente) {
     window.sessionStorage.setItem(CLAVE_PACIENTE_SELECCIONADO, paciente.id)
@@ -195,6 +244,12 @@ function GestionarPacientesPage() {
               <ResumenPacientesRegistradosComp totalPacientes={totalPacientes} />
             )}
 
+            {!cargando && !errorCarga && avisoLimite && (
+              <p className='mt-2 px-1 text-[10px] font-medium text-[#607596]' role='status'>
+                {avisoLimite}
+              </p>
+            )}
+
             {cargando && (
               <div
                 aria-live='polite'
@@ -226,11 +281,11 @@ function GestionarPacientesPage() {
               camposBusqueda={CAMPOS_BUSQUEDA}
               diagnostico={diagnostico}
               estado={estado}
-              onCambiarBusqueda={setBusqueda}
-              onCambiarDiagnostico={setDiagnostico}
-              onCambiarEstado={setEstado}
-              onCambiarTipoBusqueda={setTipoBusqueda}
-              onLimpiarFiltros={limpiarFiltros}
+              onCambiarBusqueda={cambiarBusqueda}
+              onCambiarDiagnostico={cambiarDiagnostico}
+              onCambiarEstado={cambiarEstado}
+              onCambiarTipoBusqueda={cambiarTipoBusqueda}
+              onLimpiarFiltros={limpiarFiltrosYPagina}
               opcionesDiagnostico={OPCIONES_DIAGNOSTICO}
               opcionesEstado={OPCIONES_ESTADO}
               tipoBusqueda={tipoBusqueda}
@@ -239,9 +294,13 @@ function GestionarPacientesPage() {
             {!cargando && !errorCarga && totalPacientes > 0 && (
               <TablaPacientesComp
                 columnas={COLUMNAS}
+                onCambiarPagina={setPaginaActual}
                 onVerFicha={verFichaPaciente}
-                pacientes={pacientesFiltrados}
-                totalPacientes={totalPacientes}
+                paginaActual={paginaActual}
+                pacientes={pacientesPagina}
+                paginasTotales={paginasTotales}
+                tamanoPagina={TAMANO_PAGINA}
+                totalPacientes={totalPacientesFiltrados}
               />
             )}
 

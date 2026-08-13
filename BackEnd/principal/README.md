@@ -43,7 +43,29 @@ python manage.py crear_admin_inicial
 python manage.py seed_hemoruta_demo --password alex
 ```
 
-Los comandos son idempotentes y pueden ejecutarse nuevamente sin duplicar el escenario demo.
+`seed_hemoruta_demo` no elimina registros. Crea o actualiza un escenario de prueba con un
+administrador, dos médicos, cinco pacientes con sus cuentas familiares, tutores, asignaciones
+compartidas, diagnósticos, citas, consultas, planes, prescripciones, horarios, dosis, reportes de
+adherencia, síntomas, semáforos, alertas, eventos de seguimiento y metadatos de documentos.
+
+Opciones útiles:
+
+```powershell
+# Misma clave para todas las cuentas demo
+python manage.py seed_hemoruta_demo --password alex
+
+# Claves separadas y una fecha reproducible para pruebas
+python manage.py seed_hemoruta_demo `
+  --admin-password admin-demo `
+  --doctor-password medico-demo `
+  --patient-password familia-demo `
+  --fecha-base 2026-08-11
+```
+
+La contraseña común también se puede definir con `HEMORUTA_DEMO_PASSWORD`. Si no se proporciona
+una contraseña, el comando conserva las claves de las cuentas existentes y deja las cuentas nuevas
+sin una clave utilizable. La repetición con la misma `--fecha-base` es idempotente; usar otra fecha
+desplaza la agenda y añade las dosis correspondientes a la nueva semana de demostración.
 
 Credenciales locales:
 
@@ -51,7 +73,11 @@ Credenciales locales:
 | --- | --- | --- |
 | Administrador Django/HemoRuta | `alex` | `alex` |
 | Medico | `valeria.ruiz` | `alex` |
+| Medico | `luis.paredes` | `alex` |
 | Paciente o responsable | `maria.flores` o DNI `45678912` | `alex` |
+
+Las otras familias demo usan `carlos.rojas`, `veronica.medina`, `jorge.torres` y
+`katherine.perez`; reciben la contraseña indicada en `--password` o `--patient-password`.
 
 ## Iniciar
 

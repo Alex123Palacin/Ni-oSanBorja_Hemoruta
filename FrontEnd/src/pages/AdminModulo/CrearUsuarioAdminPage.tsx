@@ -144,6 +144,7 @@ function CrearUsuarioAdminPage() {
                 transition
                 hover:bg-[#f4fafb]
               "
+              onClick={() => redirigir('/admin/inicio')}
               type="button"
             >
               <svg
@@ -229,6 +230,8 @@ function CrearUsuarioAdminPage() {
                 transition
                 hover:bg-[#f4fafb]
               "
+              disabled
+              title="La vista de actividad todavía no está habilitada"
               type="button"
             >
               <svg

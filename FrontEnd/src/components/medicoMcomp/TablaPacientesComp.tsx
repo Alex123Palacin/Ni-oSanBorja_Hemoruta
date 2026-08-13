@@ -5,12 +5,47 @@ import EstadoBadgeComp from './EstadoBadgeComp'
 
 interface TablaPacientesCompProps {
   columnas: readonly string[]
+  onCambiarPagina: (pagina: number) => void
   onVerFicha: (paciente: Paciente) => void
+  paginaActual: number
   pacientes: readonly Paciente[]
+  paginasTotales: number
+  tamanoPagina: number
   totalPacientes: number
 }
 
-function TablaPacientesComp({ columnas, onVerFicha, pacientes, totalPacientes }: TablaPacientesCompProps) {
+type ElementoPaginacion = number | `separador-${number}-${number}`
+
+function crearPaginasVisibles(paginaActual: number, paginasTotales: number): ElementoPaginacion[] {
+  if (paginasTotales <= 5) {
+    return Array.from({ length: paginasTotales }, (_, indice) => indice + 1)
+  }
+
+  const paginas = [...new Set([1, paginaActual - 1, paginaActual, paginaActual + 1, paginasTotales])]
+    .filter((pagina) => pagina >= 1 && pagina <= paginasTotales)
+    .sort((a, b) => a - b)
+
+  return paginas.flatMap((pagina, indice) => {
+    const anterior = paginas[indice - 1]
+    return anterior && pagina - anterior > 1
+      ? [`separador-${anterior}-${pagina}` as const, pagina]
+      : [pagina]
+  })
+}
+
+function TablaPacientesComp({
+  columnas,
+  onCambiarPagina,
+  onVerFicha,
+  paginaActual,
+  pacientes,
+  paginasTotales,
+  tamanoPagina,
+  totalPacientes,
+}: TablaPacientesCompProps) {
+  const paginasVisibles = crearPaginasVisibles(paginaActual, paginasTotales)
+  const primerPaciente = totalPacientes === 0 ? 0 : (paginaActual - 1) * tamanoPagina + 1
+  const ultimoPaciente = Math.min(paginaActual * tamanoPagina, totalPacientes)
   return (
     <section className='mt-2.5 overflow-hidden rounded-xl border border-[#dce5ee] bg-white shadow-[0_5px_16px_rgba(18,52,91,0.08)]'>
       <div aria-label='Tabla de pacientes' className='overflow-x-auto' tabIndex={0}>
@@ -91,14 +126,18 @@ function TablaPacientesComp({ columnas, onVerFicha, pacientes, totalPacientes }:
                     </button>
                     <button
                       aria-label={`Editar a ${paciente.nombre}`}
-                      className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg transition hover:bg-[#eaf8fa] focus-visible:outline-2 focus-visible:outline-[#08aabb]'
+                      className='grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg opacity-45'
+                      disabled
+                      title='La edición de la ficha todavía no está habilitada'
                       type='button'
                     >
                       <IconoMedico className='h-[18px] w-[18px]' nombre='edit' />
                     </button>
                     <button
                       aria-label={`Más acciones para ${paciente.nombre}`}
-                      className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-[#173478] transition hover:bg-[#eaf8fa] focus-visible:outline-2 focus-visible:outline-[#08aabb]'
+                      className='grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg text-[#173478] opacity-45'
+                      disabled
+                      title='No hay acciones adicionales disponibles'
                       type='button'
                     >
                       <IconoMedico className='h-[18px] w-[18px]' nombre='moreVertical' strokeWidth={2.5} />
@@ -119,41 +158,46 @@ function TablaPacientesComp({ columnas, onVerFicha, pacientes, totalPacientes }:
 
       <footer className='flex min-h-[54px] flex-wrap items-center justify-between gap-3 border-t border-[#e1e9f0] px-4 py-2'>
         <p className='text-[10px] font-medium text-[#53688d]'>
-          Mostrando {pacientes.length === 0 ? 0 : 1} a {pacientes.length} de {totalPacientes} pacientes
+          Mostrando {primerPaciente} a {ultimoPaciente} de {totalPacientes} pacientes
         </p>
         <nav aria-label='Paginación de pacientes' className='flex items-center gap-2'>
           <button
             aria-label='Página anterior'
-            className='grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-[#d7e1ec] text-[#8a9bb5]'
-            disabled
+            className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-[#d7e1ec] text-[#49618b] transition hover:bg-[#f4fafb] disabled:cursor-not-allowed disabled:text-[#8a9bb5] disabled:opacity-55'
+            disabled={paginaActual <= 1 || totalPacientes === 0}
+            onClick={() => onCambiarPagina(paginaActual - 1)}
             type='button'
           >
             <IconoMedico className='h-4 w-4' nombre='arrowLeft' />
           </button>
-          {[1, 2, 3].map((pagina) => (
-            <button
-              aria-current={pagina === 1 ? 'page' : undefined}
-              className={`grid h-8 w-8 cursor-pointer place-items-center rounded-lg border text-[11px] font-bold transition ${
-                pagina === 1
-                  ? 'border-[#08aabb] bg-[#edfafa] text-[#079daf]'
-                  : 'border-[#d7e1ec] bg-white text-[#49618b] hover:bg-[#f4fafb]'
-              }`}
-              key={pagina}
-              type='button'
-            >
-              {pagina}
-            </button>
-          ))}
-          <span aria-hidden='true' className='px-1 text-[11px] text-[#60749a]'>...</span>
-          <button
-            className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-[#d7e1ec] text-[11px] font-bold text-[#49618b] transition hover:bg-[#f4fafb]'
-            type='button'
-          >
-            29
-          </button>
+          {paginasVisibles.map((elemento) => {
+            if (typeof elemento === 'string') {
+              return <span aria-hidden='true' className='px-1 text-[11px] text-[#60749a]' key={elemento}>…</span>
+            }
+
+            const esActual = elemento === paginaActual
+            return (
+              <button
+                aria-current={esActual ? 'page' : undefined}
+                className={`grid h-8 w-8 cursor-pointer place-items-center rounded-lg border text-[11px] font-bold transition ${
+                  esActual
+                    ? 'border-[#08aabb] bg-[#edfafa] text-[#079daf]'
+                    : 'border-[#d7e1ec] bg-white text-[#49618b] hover:bg-[#f4fafb]'
+                }`}
+                disabled={esActual}
+                key={elemento}
+                onClick={() => onCambiarPagina(elemento)}
+                type='button'
+              >
+                {elemento}
+              </button>
+            )
+          })}
           <button
             aria-label='Página siguiente'
-            className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-[#d7e1ec] text-[#49618b] transition hover:bg-[#f4fafb]'
+            className='grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-[#d7e1ec] text-[#49618b] transition hover:bg-[#f4fafb] disabled:cursor-not-allowed disabled:text-[#8a9bb5] disabled:opacity-55'
+            disabled={paginaActual >= paginasTotales || totalPacientes === 0}
+            onClick={() => onCambiarPagina(paginaActual + 1)}
             type='button'
           >
             <IconoMedico className='h-4 w-4' nombre='arrowRight' />

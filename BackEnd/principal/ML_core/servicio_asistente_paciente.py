@@ -9,9 +9,11 @@ from django.utils import timezone
 
 from citas.models import Cita
 from clinica.models import PlanTratamiento
+from documentos.models import DocumentoPaciente
 from medicacion.models import DiaHorarioPrescripcion, DosisProgramada, Prescripcion, ReporteDosis
 from medicacion.services import registrar_reporte_dosis
 from pacientes.models import Paciente
+from seguimiento.models import ReporteSintomas
 
 from .proveedor_asistente_paciente import obtener_cliente_asistente_paciente
 from .proveedores import ErrorProveedorIA
@@ -63,8 +65,10 @@ def _contexto_medicacion(paciente: Paciente) -> list[dict]:
     if dosis:
         return [
             {
+                "dosisId": str(item.id),
                 "medicamento": item.prescripcion.medicamento.nombre_generico,
                 "dosis": _texto_dosis(item.prescripcion),
+                "fecha": timezone.localtime(item.programada_para).date().isoformat(),
                 "hora": timezone.localtime(item.programada_para).strftime("%H:%M"),
                 "estado": item.get_estado_display(),
             }
@@ -97,11 +101,68 @@ def _contexto_medicacion(paciente: Paciente) -> list[dict]:
                 {
                     "medicamento": prescripcion.medicamento.nombre_generico,
                     "dosis": _texto_dosis(prescripcion),
+                    "fecha": hoy.isoformat(),
                     "hora": horario.hora.strftime("%H:%M") if horario.hora else prescripcion.frecuencia_texto,
                     "estado": "Pendiente",
                 }
             )
     return resultado
+
+
+def _contexto_medicacion_proxima(paciente: Paciente) -> list[dict]:
+    _, inicio, _ = _limites_hoy()
+    fin = inicio + timedelta(days=8)
+    dosis = (
+        DosisProgramada.objects.filter(
+            prescripcion__paciente=paciente,
+            programada_para__gte=inicio,
+            programada_para__lt=fin,
+        )
+        .exclude(estado=DosisProgramada.Estado.CANCELADA)
+        .select_related("prescripcion__medicamento")
+        .order_by("programada_para")[:40]
+    )
+    return [
+        {
+            "medicamento": item.prescripcion.medicamento.nombre_generico,
+            "dosis": _texto_dosis(item.prescripcion),
+            "fecha": timezone.localtime(item.programada_para).date().isoformat(),
+            "hora": timezone.localtime(item.programada_para).strftime("%H:%M"),
+            "estado": item.get_estado_display(),
+        }
+        for item in dosis
+    ]
+
+
+def _contexto_sintomas_recientes(paciente: Paciente) -> list[dict]:
+    reportes = (
+        ReporteSintomas.objects.filter(paciente=paciente)
+        .prefetch_related("sintomas")
+        .order_by("-observado_en")[:5]
+    )
+    return [
+        {
+            "fecha": timezone.localtime(reporte.observado_en).isoformat(),
+            "sintomas": [sintoma.nombre for sintoma in reporte.sintomas.all()],
+            "intensidad": reporte.get_intensidad_display(),
+            "evolucion": reporte.get_evolucion_display(),
+            "descripcion": reporte.descripcion,
+        }
+        for reporte in reportes
+    ]
+
+
+def _contexto_documentos_recientes(paciente: Paciente) -> list[dict]:
+    documentos = DocumentoPaciente.objects.filter(paciente=paciente).order_by("-fecha_documento", "-creado_en")[:5]
+    return [
+        {
+            "titulo": documento.titulo,
+            "tipo": documento.get_tipo_display(),
+            "fecha": documento.fecha_documento.isoformat() if documento.fecha_documento else "",
+            "estado": documento.get_estado_display(),
+        }
+        for documento in documentos
+    ]
 
 
 def construir_contexto_asistente(paciente: Paciente) -> dict:
@@ -144,11 +205,18 @@ def construir_contexto_asistente(paciente: Paciente) -> dict:
             ],
         }
     return {
-        "paciente": paciente.nombre_completo,
+        "paciente": {
+            "nombre": paciente.nombre_completo,
+            "edad": paciente.edad,
+            "estado": paciente.get_estado_display(),
+        },
         "fechaActual": timezone.localdate().isoformat(),
         "medicacionHoy": _contexto_medicacion(paciente),
+        "medicacionProximosDias": _contexto_medicacion_proxima(paciente),
         "proximaCita": cita,
         "tratamientoVigente": tratamiento,
+        "sintomasRecientes": _contexto_sintomas_recientes(paciente),
+        "documentosRecientes": _contexto_documentos_recientes(paciente),
         "navegacionPermitida": RUTAS_PACIENTE,
     }
 
@@ -183,14 +251,23 @@ def _respuesta_respaldo(mensaje: str, contexto: dict) -> tuple[str, str]:
     ruta = _ruta_por_intencion(mensaje)
     consulta = _normalizar_texto(mensaje)
     if ruta == "/paciente/medicamento":
-        medicamentos = contexto["medicacionHoy"]
+        fecha_consulta = contexto["fechaActual"]
+        if "manana" in consulta:
+            fecha_consulta = (timezone.localdate() + timedelta(days=1)).isoformat()
+        medicamentos = (
+            [item for item in contexto["medicacionProximosDias"] if item["fecha"] == fecha_consulta]
+            if fecha_consulta != contexto["fechaActual"]
+            else contexto["medicacionHoy"]
+        )
         if not medicamentos:
-            return "No encuentro dosis programadas para hoy. Puedes revisar la sección Medicación.", ruta
+            periodo = "mañana" if fecha_consulta != contexto["fechaActual"] else "hoy"
+            return f"No encuentro dosis programadas para {periodo}. Puedes revisar la sección Medicación.", ruta
         detalle = "; ".join(
             f'{item["medicamento"]} {item["dosis"]} a las {item["hora"]} ({item["estado"]})'
             for item in medicamentos[:4]
         )
-        return f"Para hoy figura: {detalle}. Sigue siempre la indicación registrada por tu médico.", ruta
+        periodo = "mañana" if fecha_consulta != contexto["fechaActual"] else "hoy"
+        return f"Para {periodo} figura: {detalle}. Sigue siempre la indicación registrada por tu médico.", ruta
     if "cita" in consulta or "consulta" in consulta or "control" in consulta:
         cita = contexto["proximaCita"]
         if not cita:
@@ -206,9 +283,26 @@ def _respuesta_respaldo(mensaje: str, contexto: dict) -> tuple[str, str]:
             return "No encuentro un tratamiento vigente registrado. Consulta al hospital si esperabas una indicación.", ruta
         return f'El tratamiento vigente es "{plan["nombre"]}". Puedes consultar todas sus indicaciones en Tratamiento.', ruta
     if ruta == "/paciente/sintomas":
+        recientes = contexto["sintomasRecientes"]
+        if recientes and any(palabra in consulta for palabra in ("ultimo", "reciente", "registre", "registrado")):
+            ultimo = recientes[0]
+            nombres = ", ".join(ultimo["sintomas"]) or "síntomas sin detalle"
+            return (
+                f'Tu último registro indica {nombres}, intensidad {ultimo["intensidad"].lower()} '
+                f'y evolución {ultimo["evolucion"].lower()}.',
+                ruta,
+            )
         return "Puedes registrar lo que sientes en Síntomas. Ante una emergencia, comunícate de inmediato con el hospital.", ruta
     if ruta == "/paciente/documentos":
+        documentos = contexto["documentosRecientes"]
+        if documentos and any(palabra in consulta for palabra in ("ultimo", "reciente", "cual", "ver")):
+            detalle = "; ".join(
+                f'{item["titulo"]} ({item["fecha"] or item["estado"]})' for item in documentos[:3]
+            )
+            return f"Tus documentos recientes son: {detalle}. Puedes abrirlos en Documentos.", ruta
         return "Puedes subir y revisar tus exámenes en la sección Documentos.", ruta
+    if any(palabra in consulta for palabra in ("cuenta", "perfil", "contrasena", "foto")):
+        return "Puedes actualizar tu foto o contraseña desde Inicio, en las opciones de tu perfil.", "/paciente/inicio"
     return (
         "Puedo ayudarte a encontrar tu medicación, próxima cita, tratamiento, síntomas o documentos. ¿Qué deseas consultar?",
         "",
@@ -224,9 +318,16 @@ def _respuesta_segura_obligatoria(mensaje: str, contexto: dict) -> tuple[str, st
         "convulsion",
         "desmayo",
         "sangrado abundante",
+        "dolor intenso",
+        "dolor muy fuerte",
+        "vomitos repetidos",
+        "vomita todo",
+        "labios morados",
         "inconsciente",
     )
-    if any(frase in consulta for frase in emergencias):
+    temperatura = re.search(r"(?:fiebre|temperatura)[^0-9]{0,12}(\d{2}(?:[.,]\d)?)", consulta)
+    fiebre_alarma = bool(temperatura and float(temperatura.group(1).replace(",", ".")) >= 38)
+    if any(frase in consulta for frase in emergencias) or "fiebre alta" in consulta or fiebre_alarma:
         return (
             "Esto puede requerir atención inmediata. Comunícate ahora con el hospital o el servicio de emergencias; no esperes una respuesta de la aplicación.",
             "/paciente/sintomas",
@@ -248,7 +349,8 @@ def _respuesta_segura_obligatoria(mensaje: str, contexto: dict) -> tuple[str, st
         )
     cambios_medicacion = (
         "puedo tomar",
-        "debo tomar",
+        "debo dejar",
+        "debo tomar mas",
         "dejo de tomar",
         "dejar de tomar",
         "cambiar dosis",
@@ -263,9 +365,26 @@ def _respuesta_segura_obligatoria(mensaje: str, contexto: dict) -> tuple[str, st
     return None
 
 
-def _marcar_dosis_por_mensaje(*, paciente: Paciente, usuario, mensaje: str) -> tuple[str, str] | None:
-    consulta = _normalizar_texto(mensaje)
-    accion_toma = any(
+def _intencion_reporte_dosis(consulta: str) -> tuple[str, str] | None:
+    if any(
+        frase in consulta
+        for frase in ("no la tome", "no lo tome", "no tome", "no pude tomar", "olvide tomar", "se me olvido")
+    ):
+        if any(frase in consulta for frase in ("no habia", "se termino", "sin medicamento")):
+            motivo = ReporteDosis.MotivoNoToma.SIN_MEDICAMENTO
+        elif any(frase in consulta for frase in ("malestar", "me hizo mal", "me senti mal")):
+            motivo = ReporteDosis.MotivoNoToma.MALESTAR
+        elif any(frase in consulta for frase in ("olvide", "se me olvido")):
+            motivo = ReporteDosis.MotivoNoToma.OLVIDO
+        else:
+            motivo = ReporteDosis.MotivoNoToma.OTRO
+        return ReporteDosis.Respuesta.NO_TOMADA, motivo
+    if (
+        "tarde" in consulta
+        and any(palabra in consulta for palabra in ("tome", "tomada", "tomado"))
+    ) or "con retraso" in consulta:
+        return ReporteDosis.Respuesta.TARDE, ""
+    if any(
         frase in consulta
         for frase in (
             "ya la tome",
@@ -273,16 +392,47 @@ def _marcar_dosis_por_mensaje(*, paciente: Paciente, usuario, mensaje: str) -> t
             "la tome",
             "lo tome",
             "marcar tomada",
+            "marcar como tomada",
             "marcala como tomada",
             "marcalo como tomado",
-            "listo",
-            "cumpli",
+            "cumpli la dosis",
         )
+    ):
+        return ReporteDosis.Respuesta.TOMADA, ""
+    return None
+
+
+def _seleccionar_dosis_mencionada(dosis: list[DosisProgramada], consulta: str) -> list[DosisProgramada]:
+    nombres_mencionados = [
+        item
+        for item in dosis
+        if _normalizar_texto(item.prescripcion.medicamento.nombre_generico) in consulta
+    ]
+    candidatas = nombres_mencionados or dosis
+    hora_mencionada = re.search(
+        r"(?:\b(?:a|de)\s+las\s+)?\b([01]?\d|2[0-3])(?::([0-5]\d))\b",
+        consulta,
     )
-    if not accion_toma or any(frase in consulta for frase in ("tarde", "no la tome", "no lo tome", "no tome")):
+    if hora_mencionada:
+        hora = int(hora_mencionada.group(1))
+        minuto = int(hora_mencionada.group(2) or 0)
+        candidatas = [
+            item
+            for item in candidatas
+            if timezone.localtime(item.programada_para).hour == hora
+            and timezone.localtime(item.programada_para).minute == minuto
+        ]
+    return candidatas
+
+
+def _marcar_dosis_por_mensaje(*, paciente: Paciente, usuario, mensaje: str) -> dict | None:
+    consulta = _normalizar_texto(mensaje)
+    intencion = _intencion_reporte_dosis(consulta)
+    if not intencion:
         return None
+    respuesta_dosis, motivo_no_toma = intencion
     _, inicio, fin = _limites_hoy()
-    dosis = (
+    pendientes = list(
         DosisProgramada.objects.filter(
             prescripcion__paciente=paciente,
             programada_para__gte=inicio,
@@ -291,36 +441,68 @@ def _marcar_dosis_por_mensaje(*, paciente: Paciente, usuario, mensaje: str) -> t
         )
         .select_related("prescripcion__medicamento")
         .order_by("programada_para")
-        .first()
     )
-    if not dosis:
-        return (
-            "No encuentro dosis pendientes para marcar como tomada hoy. Puedes revisar Medicacion para confirmar tus horarios.",
-            "/paciente/medicamento",
+    if not pendientes:
+        return {
+            "respuesta": "No encuentro dosis pendientes para reportar hoy. Puedes revisar Medicación para confirmar tus horarios.",
+            "ruta": "/paciente/medicamento",
+            "accion": None,
+        }
+    candidatas = _seleccionar_dosis_mencionada(pendientes, consulta)
+    if not candidatas:
+        return {
+            "respuesta": "No encuentro una dosis pendiente que coincida con ese medicamento u horario. Revísala en Medicación.",
+            "ruta": "/paciente/medicamento",
+            "accion": None,
+        }
+    if len(candidatas) > 1:
+        opciones = "; ".join(
+            f"{item.prescripcion.medicamento.nombre_generico} de las "
+            f"{timezone.localtime(item.programada_para).strftime('%H:%M')}"
+            for item in candidatas[:4]
         )
-    reporte = registrar_reporte_dosis(
+        return {
+            "respuesta": f"Tienes más de una dosis pendiente: {opciones}. Dime el medicamento o la hora para confirmar cuál deseas reportar.",
+            "ruta": "/paciente/medicamento",
+            "accion": None,
+        }
+    dosis = candidatas[0]
+    registrar_reporte_dosis(
         dosis_programada=dosis,
         reportada_por=usuario,
-        respuesta=ReporteDosis.Respuesta.TOMADA,
-        motivo_no_toma="",
+        respuesta=respuesta_dosis,
+        motivo_no_toma=motivo_no_toma,
         observacion="Registrado desde el asistente del paciente.",
         ocurrida_en=timezone.now(),
         origen=ReporteDosis.Origen.APP,
     )
     hora = timezone.localtime(dosis.programada_para).strftime("%H:%M")
     nombre = dosis.prescripcion.medicamento.nombre_generico
-    return (
-        f"Listo, marque {nombre} de las {hora} como tomada. Puedes verlo actualizado en Medicacion.",
-        "/paciente/medicamento",
-    )
+    estado_texto = {
+        ReporteDosis.Respuesta.TOMADA: "tomada",
+        ReporteDosis.Respuesta.TARDE: "tomada tarde",
+        ReporteDosis.Respuesta.NO_TOMADA: "no tomada",
+    }[respuesta_dosis]
+    accion = {
+        ReporteDosis.Respuesta.TOMADA: "MARCAR_DOSIS_TOMADA",
+        ReporteDosis.Respuesta.TARDE: "MARCAR_DOSIS_TARDE",
+        ReporteDosis.Respuesta.NO_TOMADA: "MARCAR_DOSIS_NO_TOMADA",
+    }[respuesta_dosis]
+    return {
+        "respuesta": f"Listo, marqué {nombre} de las {hora} como {estado_texto}. Puedes verlo actualizado en Medicación.",
+        "ruta": "/paciente/medicamento",
+        "accion": accion,
+    }
 
 
 def _es_tema_permitido(mensaje: str) -> bool:
     consulta = _normalizar_texto(mensaje)
     palabras = (
         "medicamento",
+        "medicamentos",
         "medicacion",
         "pastilla",
+        "pastillas",
         "dosis",
         "tomar",
         "cita",
@@ -329,11 +511,13 @@ def _es_tema_permitido(mensaje: str) -> bool:
         "tratamiento",
         "indicacion",
         "sintoma",
+        "sintomas",
         "fiebre",
         "dolor",
         "nausea",
         "vomito",
         "documento",
+        "documentos",
         "examen",
         "archivo",
         "pdf",
@@ -351,6 +535,9 @@ def _es_tema_permitido(mensaje: str) -> bool:
         "guardar",
         "listo",
         "tomada",
+        "hospital",
+        "emergencia",
+        "manana",
     )
     salud_general = ("me siento", "tengo", "me duele", "sangrado", "cansancio", "malestar")
     tokens = set(re.findall(r"[a-z0-9]+", consulta))
@@ -361,13 +548,22 @@ def consultar_asistente_paciente(*, paciente: Paciente, mensaje: str, ruta_actua
     contexto = construir_contexto_asistente(paciente)
     accion = _marcar_dosis_por_mensaje(paciente=paciente, usuario=usuario, mensaje=mensaje)
     if accion:
-        respuesta, ruta = accion
+        ruta = accion["ruta"]
+        return {
+            "respuesta": accion["respuesta"],
+            "rutaSugerida": ruta,
+            "etiquetaRuta": RUTAS_PACIENTE[ruta],
+            "iaDisponible": True,
+            "accionEjecutada": accion["accion"],
+        }
+    respuesta_obligatoria = _respuesta_segura_obligatoria(mensaje, contexto)
+    if respuesta_obligatoria:
+        respuesta, ruta = respuesta_obligatoria
         return {
             "respuesta": respuesta,
             "rutaSugerida": ruta,
             "etiquetaRuta": RUTAS_PACIENTE[ruta],
             "iaDisponible": True,
-            "accionEjecutada": "MARCAR_DOSIS_TOMADA" if "marque" in respuesta.lower() else None,
         }
     if not _es_tema_permitido(mensaje):
         return {
@@ -377,15 +573,6 @@ def consultar_asistente_paciente(*, paciente: Paciente, mensaje: str, ruta_actua
             ),
             "rutaSugerida": None,
             "etiquetaRuta": None,
-            "iaDisponible": True,
-        }
-    respuesta_obligatoria = _respuesta_segura_obligatoria(mensaje, contexto)
-    if respuesta_obligatoria:
-        respuesta, ruta = respuesta_obligatoria
-        return {
-            "respuesta": respuesta,
-            "rutaSugerida": ruta,
-            "etiquetaRuta": RUTAS_PACIENTE[ruta],
             "iaDisponible": True,
         }
     try:

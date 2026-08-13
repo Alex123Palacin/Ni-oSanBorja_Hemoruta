@@ -133,11 +133,7 @@ function FormVerificacionComp() {
       return;
     }
 
-    const codigoVerificacion = codigo.join("");
-
-    console.log("Código de verificación:", codigoVerificacion);
-
-    redirigir("/antonella");
+    redirigir("/login");
   }
 
   return (

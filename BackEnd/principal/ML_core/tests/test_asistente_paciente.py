@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 
 from citas.models import Cita
 from clinica.models import ItemPlanTratamiento, PlanTratamiento
+from documentos.models import DocumentoPaciente
 from medicacion.models import DosisProgramada, HorarioPrescripcion, Medicamento, Prescripcion, ReporteDosis
 from pacientes.models import CuentaMovilPaciente, Paciente
 from usuarios.models import Usuario
@@ -192,3 +193,103 @@ class AsistentePacienteAPITests(APITestCase):
         self.assertEqual(dosis.estado, DosisProgramada.Estado.TOMADA)
         self.assertEqual(dosis.reporte.respuesta, ReporteDosis.Respuesta.TOMADA)
         obtener_cliente.assert_not_called()
+
+    @patch("ML_core.servicio_asistente_paciente.obtener_cliente_asistente_paciente")
+    def test_no_ejecuta_accion_ambigua_si_hay_varias_dosis(self, obtener_cliente):
+        self.crear_contexto_clinico()
+        medicamento = Medicamento.objects.create(
+            nombre_generico="Omeprazol",
+            forma_farmaceutica="Cápsula",
+            concentracion="20 mg",
+        )
+        medico = Usuario.objects.get(username="medico-asistente")
+        prescripcion = Prescripcion.objects.create(
+            paciente=self.paciente,
+            medicamento=medicamento,
+            medico=medico,
+            cantidad_dosis=1,
+            unidad_dosis="cápsula",
+            frecuencia_texto="Diaria",
+            estado=Prescripcion.Estado.ACTIVA,
+        )
+        horario = HorarioPrescripcion.objects.create(prescripcion=prescripcion, hora=time(20, 0))
+        DosisProgramada.objects.create(
+            prescripcion=prescripcion,
+            horario=horario,
+            programada_para=timezone.make_aware(
+                datetime.combine(timezone.localdate(), time(20, 0)),
+                timezone.get_current_timezone(),
+            ),
+        )
+
+        respuesta = self.client.post(
+            self.url,
+            {"mensaje": "Ya la tomé", "rutaActual": "/paciente/medicamento"},
+            format="json",
+        )
+
+        self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.data)
+        self.assertIsNone(respuesta.data["accionEjecutada"])
+        self.assertIn("más de una dosis pendiente", respuesta.data["respuesta"])
+        self.assertEqual(DosisProgramada.objects.filter(estado=DosisProgramada.Estado.PENDIENTE).count(), 2)
+        obtener_cliente.assert_not_called()
+
+    @patch("ML_core.servicio_asistente_paciente.obtener_cliente_asistente_paciente")
+    def test_puede_reportar_dosis_tarde_identificada_por_nombre(self, obtener_cliente):
+        dosis = self.crear_contexto_clinico()
+
+        respuesta = self.client.post(
+            self.url,
+            {"mensaje": "Tomé Paracetamol tarde", "rutaActual": "/paciente/medicamento"},
+            format="json",
+        )
+
+        self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.data)
+        self.assertEqual(respuesta.data["accionEjecutada"], "MARCAR_DOSIS_TARDE")
+        dosis.refresh_from_db()
+        self.assertEqual(dosis.estado, DosisProgramada.Estado.TARDE)
+        self.assertEqual(dosis.reporte.respuesta, ReporteDosis.Respuesta.TARDE)
+        obtener_cliente.assert_not_called()
+
+    @patch("ML_core.servicio_asistente_paciente.obtener_cliente_asistente_paciente")
+    def test_urgencia_se_responde_antes_de_filtrar_tema(self, obtener_cliente):
+        respuesta = self.client.post(
+            self.url,
+            {"mensaje": "No puedo respirar", "rutaActual": "/paciente/inicio"},
+            format="json",
+        )
+
+        self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.data)
+        self.assertIn("atención inmediata", respuesta.data["respuesta"])
+        self.assertEqual(respuesta.data["rutaSugerida"], "/paciente/sintomas")
+        obtener_cliente.assert_not_called()
+
+    @patch("ML_core.servicio_asistente_paciente.obtener_cliente_asistente_paciente")
+    def test_contexto_del_modelo_incluye_solo_datos_clinicos_del_paciente(self, obtener_cliente):
+        self.crear_contexto_clinico()
+        otro = Paciente.objects.create(
+            historia_clinica="HC-ASIST-OTRO",
+            nombres="Paciente",
+            apellidos="Ajeno",
+            fecha_nacimiento=date(2016, 1, 1),
+        )
+        DocumentoPaciente.objects.create(
+            paciente=otro,
+            titulo="Documento secreto ajeno",
+            tipo=DocumentoPaciente.Tipo.LABORATORIO,
+            subido_por=self.usuario,
+        )
+        cliente = Mock()
+        cliente.responder.return_value = {"respuesta": "Revisa tus documentos.", "rutaSugerida": "/paciente/documentos"}
+        obtener_cliente.return_value = cliente
+
+        respuesta = self.client.post(
+            self.url,
+            {"mensaje": "¿Cuáles son mis documentos?", "rutaActual": "/paciente/inicio"},
+            format="json",
+        )
+
+        self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.data)
+        contexto = cliente.responder.call_args.kwargs["contexto"]
+        self.assertNotIn("Documento secreto ajeno", str(contexto))
+        self.assertEqual(contexto["paciente"]["nombre"], self.paciente.nombre_completo)

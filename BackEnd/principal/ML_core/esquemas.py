@@ -22,6 +22,42 @@ PREGUNTAS = (
 
 CLAVES_PREGUNTAS = tuple(clave for clave, _ in PREGUNTAS)
 
+ETIQUETAS_SECCIONES = {
+    "motivoConsulta": "motivo de consulta",
+    "evolucionClinica": "evolución clínica",
+    "tratamientoIndicado": "tratamiento indicado",
+    "medicacionIndicada": "medicación indicada",
+    "indicacionesCasa": "indicaciones para casa",
+    "proximoControl": "próximo control",
+}
+
+_ALIAS_SECCIONES = {
+    "motivo": "motivoConsulta",
+    "motivo de consulta": "motivoConsulta",
+    "evolucion": "evolucionClinica",
+    "evolucion clinica": "evolucionClinica",
+    "tratamiento": "tratamientoIndicado",
+    "tratamiento indicado": "tratamientoIndicado",
+    "medicacion": "medicacionIndicada",
+    "medicamentos": "medicacionIndicada",
+    "medicacion indicada": "medicacionIndicada",
+    "indicaciones": "indicacionesCasa",
+    "indicaciones para casa": "indicacionesCasa",
+    "cuidados en casa": "indicacionesCasa",
+    "proximo control": "proximoControl",
+    "control": "proximoControl",
+    "cita": "proximoControl",
+    "proxima cita": "proximoControl",
+}
+
+_PATRON_SECCION = (
+    r"motivo(?:\s+de\s+consulta)?|evoluci[oó]n(?:\s+cl[ií]nica)?|"
+    r"tratamiento(?:\s+indicado)?|medicaci[oó]n(?:\s+indicada)?|medicamentos|"
+    r"indicaciones(?:\s+para\s+casa)?|cuidados\s+en\s+casa|"
+    r"pr[oó]xim[oa]\s+(?:control|cita)|control|cita"
+)
+_PATRON_VERBO_SECCION = r"pon|poner|coloca|colocar|escribe|anota|agrega|registra|deja|indica"
+
 
 def normalizar_estructura(datos: object) -> dict:
     base = estructura_consulta_vacia()
@@ -209,6 +245,97 @@ def normalizar_texto_intencion(texto: str) -> str:
     normalizado = unicodedata.normalize("NFKD", texto.lower())
     normalizado = "".join(caracter for caracter in normalizado if not unicodedata.combining(caracter))
     return " ".join(re.findall(r"[a-z0-9]+", normalizado))
+
+
+def clave_seccion_desde_texto(texto: str) -> str | None:
+    """Traduce una sección mencionada por el médico a la clave del resumen."""
+
+    normalizado = normalizar_texto_intencion(texto)
+    return _ALIAS_SECCIONES.get(normalizado)
+
+
+def detectar_instruccion_seccion(texto: str) -> dict[str, object] | None:
+    """Detecta órdenes como «en tratamiento pon...» sin tratarlas como dato clínico libre."""
+
+    patrones = (
+        rf"\b(?:en|para)\s+(?:el\s+|la\s+)?(?P<seccion>{_PATRON_SECCION})\s*,?\s*"
+        rf"(?:solo\s+)?(?:{_PATRON_VERBO_SECCION})\s*(?:que\s+)?(?P<contenido>.*)$",
+        rf"\b(?:{_PATRON_VERBO_SECCION})\s+(?:solo\s+)?(?:en\s+)?(?:el\s+|la\s+)?"
+        rf"(?P<seccion>{_PATRON_SECCION})\s*(?::|que)?\s*(?P<contenido>.*)$",
+    )
+    for patron in patrones:
+        coincidencia = re.search(patron, texto.strip(), flags=re.IGNORECASE)
+        if not coincidencia:
+            continue
+        clave = clave_seccion_desde_texto(coincidencia.group("seccion"))
+        if not clave:
+            continue
+        contenido = coincidencia.group("contenido").strip(" .,:;-")
+        referencia = normalizar_texto_intencion(contenido)
+        ambigua = not contenido or referencia in {
+            "asi",
+            "eso",
+            "esto",
+            "igual",
+            "lo anterior",
+            "lo de antes",
+            "lo mismo",
+            "solamente eso",
+            "solo eso",
+        }
+        return {"seccion": clave, "contenido": contenido, "ambigua": ambigua}
+    return None
+
+
+def detectar_omision_seccion(texto: str) -> str | None:
+    """Reconoce una omisión explícita, incluida la ausencia de próxima cita."""
+
+    frase = normalizar_texto_intencion(texto)
+    if not frase:
+        return None
+    for alias in sorted(_ALIAS_SECCIONES, key=len, reverse=True):
+        clave = _ALIAS_SECCIONES[alias]
+        expresiones = (
+            f"omite {alias}",
+            f"omitir {alias}",
+            f"salta {alias}",
+            f"sin {alias}",
+            f"no hay {alias}",
+            f"no tiene {alias}",
+        )
+        if any(expresion in frase for expresion in expresiones):
+            return clave
+    if any(frase in expresion for expresion in ("no hay cita programada", "no tiene cita programada")):
+        return "proximoControl"
+    return None
+
+
+def es_confirmacion_afirmativa(texto: str) -> bool:
+    frase = normalizar_texto_intencion(texto)
+    return frase in {
+        "confirmado",
+        "correcto",
+        "de acuerdo",
+        "hazlo",
+        "ponlo",
+        "si",
+        "si confirmo",
+        "si confirmado",
+        "si guardalo",
+        "si ponlo",
+    }
+
+
+def es_confirmacion_negativa(texto: str) -> bool:
+    frase = normalizar_texto_intencion(texto)
+    return frase in {
+        "cancela",
+        "cancelalo",
+        "mejor no",
+        "no",
+        "no confirmo",
+        "no lo pongas",
+    }
 
 
 def es_peticion_volver_preguntas(texto: str) -> bool:
