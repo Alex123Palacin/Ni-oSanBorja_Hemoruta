@@ -4,7 +4,8 @@ Luego abrir:
 
 Aplicación: http://localhost:8090
 Django Admin: http://localhost:8090/django-admin/
-Credenciales:
+
+CredenciAlex:
 
 Administrador: alex / alex
 Médico: valeria.ruiz / alex
