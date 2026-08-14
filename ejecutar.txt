@@ -1,0 +1,31 @@
+docker compose up --build
+
+Luego abrir:
+
+Aplicación: http://localhost:8090
+Django Admin: http://localhost:8090/django-admin/
+Credenciales:
+
+Administrador: alex / alex
+Médico: valeria.ruiz / alex
+Médico: luis.paredes / alex
+Paciente/tutor: maria.flores / alex
+Otros pacientes: carlos.rojas, veronica.medina, jorge.torres, katherine.perez / alex
+PostgreSQL: usuario postgres, contraseña admin
+Base: NiñoSanBorjaDataBase
+
+
+guia :
+poner el archivo de base de datos en un query de posggresql
+ y ejecutarlo pero antes crear la base de datos con este nombre
+ NiñoSanBorjaDataBase  , para la contraseña de posgresq es "admin"
+ para el django admin el usuario es alex y la contra alex
+
+
+
+ detener
+ docker compose down
+
+
+pausa
+docker compose stop

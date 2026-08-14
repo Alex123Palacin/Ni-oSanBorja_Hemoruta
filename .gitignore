@@ -32,3 +32,15 @@ dist/
 # Logs
 *.log
 
+# Docker delivery files must remain versioned
+!Dockerfile
+!**/Dockerfile
+!Dockerfile.*
+!**/Dockerfile.*
+!docker-compose*.yml
+!docker-compose*.yaml
+!compose*.yml
+!compose*.yaml
+!.dockerignore
+!**/.dockerignore
+!baseDatos.txt

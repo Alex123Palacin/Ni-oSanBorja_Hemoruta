@@ -1,0 +1,98 @@
+name: hemoruta-nino-san-borja
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: NiñoSanBorjaDataBase
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      TZ: America/Lima
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - hemoruta_postgres:/var/lib/postgresql
+
+  ollama:
+    image: ollama/ollama:0.18.2
+    restart: unless-stopped
+    volumes:
+      - hemoruta_ollama:/root/.ollama
+
+  ollama-model:
+    image: curlimages/curl:8.18.0
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_started
+    environment:
+      OLLAMA_MODELO: deepseek-r1:8b
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        until curl -fsS http://ollama:11434/api/tags >/dev/null; do sleep 2; done;
+        if ! curl -fsS http://ollama:11434/api/tags | grep -q 'deepseek-r1:8b'; then
+          curl -fsS http://ollama:11434/api/pull -d '{"name":"deepseek-r1:8b","stream":false}';
+        fi
+
+  backend:
+    build:
+      context: .
+      dockerfile: BackEnd/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama-model:
+        condition: service_completed_successfully
+    environment:
+      DJANGO_SECRET_KEY: hackaton-hemoruta-nino-san-borja-2026
+      DJANGO_DEBUG: "True"
+      DJANGO_ALLOWED_HOSTS: "*"
+      DB_ENGINE: postgresql
+      DB_NAME: NiñoSanBorjaDataBase
+      DB_USER: postgres
+      DB_PASSWORD: admin
+      DB_HOST: db
+      DB_PORT: "5432"
+      CORS_ALLOWED_ORIGINS: http://localhost:8090,http://127.0.0.1:8090
+      ML_OLLAMA_URL: http://ollama:11434
+      ML_OLLAMA_MODELO: deepseek-r1:8b
+      ML_ASISTENTE_PACIENTE_MODELO: deepseek-r1:8b
+      ML_OLLAMA_TIMEOUT: "300"
+      ML_STT_MODELO: small
+      ML_STT_DISPOSITIVO: cpu
+      ML_STT_COMPUTE_TYPE: int8
+      HEMORUTA_DEMO_PASSWORD: alex
+      HEMORUTA_DEMO_FECHA_BASE: "2026-08-13"
+    volumes:
+      - hemoruta_media:/app/media
+      - hemoruta_static:/app/staticfiles
+      - hemoruta_whisper:/opt/hemoruta/modelos
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: FrontEnd/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8090/api/v1
+        VITE_API_TOKEN_SCHEME: Bearer
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "8090:80"
+
+volumes:
+  hemoruta_postgres:
+  hemoruta_media:
+  hemoruta_static:
+  hemoruta_ollama:
+  hemoruta_whisper:
