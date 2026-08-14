@@ -41,7 +41,7 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          <Route path='/alex' element={<AlexExperimentos />} />
+          <Route path='/whassapp' element={<AlexExperimentos />} />
 
           <Route path='/login' element={<LoginAdminPage />} />
           <Route path='/recuperacion' element={<RecuperacionCuentaAdminsPage />} />
