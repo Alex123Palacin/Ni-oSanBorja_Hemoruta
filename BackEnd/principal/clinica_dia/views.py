@@ -45,6 +45,7 @@ from .services import (
     confirmar_agenda,
     confirmar_programacion,
     crear_programacion,
+    es_dia_habil,
     generar_agenda_automatica,
     siguiente_dia_habil,
 )
@@ -274,10 +275,21 @@ class GenerarAgendaAPIView(APIView):
     def post(self, request):
         serializer = GenerarAgendaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        fecha_efectiva = siguiente_dia_habil(serializer.validated_data["fecha_desde"])
+        fecha_seleccionada = serializer.validated_data["fecha_desde"]
+        if not es_dia_habil(fecha_seleccionada):
+            raise ValidationError(
+                {"fecha_desde": "Seleccione un día hábil para generar la agenda."}
+            )
+        # La acción del tablero agenda exclusivamente la fecha seleccionada.
+        # Las solicitudes que no alcancen cama conservan su estado pendiente.
+        datos_generacion = {
+            **serializer.validated_data,
+            "fecha_desde": fecha_seleccionada,
+            "fecha_hasta": fecha_seleccionada,
+        }
         try:
             creadas, no_programadas = generar_agenda_automatica(
-                usuario=request.user, **serializer.validated_data
+                usuario=request.user, **datos_generacion
             )
         except DjangoValidationError as error:
             raise _error_drf(error) from error
@@ -289,7 +301,7 @@ class GenerarAgendaAPIView(APIView):
                 ),
                 "programadas": len(creadas),
                 "no_programadas": len(no_programadas),
-                "fecha_desde_efectiva": fecha_efectiva.isoformat(),
+                "fecha_desde_efectiva": fecha_seleccionada.isoformat(),
                 "errores": no_programadas,
                 "programaciones": ProgramacionQuimioterapiaSerializer(creadas, many=True).data,
             },

@@ -341,11 +341,11 @@ export function descargarPlantillaClinicaDiaApi() {
   return solicitarArchivoApi(`${RUTA_CLINICA_DIA}/plantilla/`)
 }
 
-export async function generarAgendaClinicaDiaApi(fechaDesde: string, fechaHasta?: string) {
+export async function generarAgendaClinicaDiaApi(fecha: string) {
   const respuesta = await solicitarApi<RespuestaAccionClinicaDiaBackend>(
     `${RUTA_CLINICA_DIA}/generar-agenda/`,
     {
-      cuerpo: { fecha_desde: fechaDesde, fecha_hasta: fechaHasta || undefined },
+      cuerpo: { fecha_desde: fecha },
       method: 'POST',
     },
   )

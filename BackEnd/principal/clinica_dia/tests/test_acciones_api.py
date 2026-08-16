@@ -41,14 +41,20 @@ class AccionesClinicaDiaAPITests(APITestCase):
         token, _ = Token.objects.get_or_create(user=usuario)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.key}")
 
-    def _solicitud(self, codigo, *, procedencia="Hematología"):
+    def _solicitud(
+        self,
+        codigo,
+        *,
+        procedencia="Hematología",
+        prioridad=SolicitudQuimioterapia.Prioridad.ALTA,
+    ):
         return SolicitudQuimioterapia.objects.create(
             codigo_externo=codigo,
             dni="71234567",
             nombre_completo_importado=f"Paciente {codigo}",
             telefono="987654321",
             procedencia=procedencia,
-            prioridad=SolicitudQuimioterapia.Prioridad.ALTA,
+            prioridad=prioridad,
             fecha_preferida=self.fecha,
             duracion_minutos=60,
             origen=SolicitudQuimioterapia.Origen.MANUAL,
@@ -72,6 +78,43 @@ class AccionesClinicaDiaAPITests(APITestCase):
         self._autenticar(self.medico)
         respuesta = self.client.get(reverse("clinica_dia:panel"), {"fecha": self.fecha})
         self.assertEqual(respuesta.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_generacion_automatica_solo_usa_el_dia_y_respeta_prioridad(self):
+        baja = self._solicitud(
+            "AUTO-BAJA", prioridad=SolicitudQuimioterapia.Prioridad.BAJA
+        )
+        media = self._solicitud(
+            "AUTO-MEDIA", prioridad=SolicitudQuimioterapia.Prioridad.MEDIA
+        )
+        alta = self._solicitud(
+            "AUTO-ALTA", prioridad=SolicitudQuimioterapia.Prioridad.ALTA
+        )
+
+        respuesta = self.client.post(
+            reverse("clinica_dia:generar-agenda"),
+            {
+                "fecha_desde": self.fecha.isoformat(),
+                "fecha_hasta": (self.fecha + timedelta(days=7)).isoformat(),
+                "solicitud_ids": [str(baja.id), str(media.id), str(alta.id)],
+            },
+            format="json",
+        )
+
+        self.assertEqual(respuesta.status_code, status.HTTP_201_CREATED, respuesta.data)
+        programaciones = list(
+            ProgramacionQuimioterapia.objects.order_by("creado_en").select_related(
+                "solicitud"
+            )
+        )
+        self.assertEqual(
+            [item.solicitud.prioridad for item in programaciones],
+            [
+                SolicitudQuimioterapia.Prioridad.ALTA,
+                SolicitudQuimioterapia.Prioridad.MEDIA,
+                SolicitudQuimioterapia.Prioridad.BAJA,
+            ],
+        )
+        self.assertTrue(all(item.fecha == self.fecha for item in programaciones))
 
     def test_panel_programar_colision_confirmar_agenda_recordatorio_y_completar(self):
         solicitud = self._solicitud("ACC-001", procedencia="Hospitalización")
