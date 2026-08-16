@@ -40,7 +40,7 @@ function obtenerEsquemaTokenApi() {
 
 function construirUrlApi(ruta: string, consulta?: Record<string, ValorConsultaApi>) {
   const rutaNormalizada = ruta.startsWith('/') ? ruta : `/${ruta}`
-  const url = new URL(`${obtenerUrlBaseApi()}${rutaNormalizada}`)
+  const url = new URL(`${obtenerUrlBaseApi()}${rutaNormalizada}`, window.location.origin)
 
   Object.entries(consulta ?? {}).forEach(([clave, valor]) => {
     if (valor !== undefined && valor !== null && valor !== '') {

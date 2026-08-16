@@ -1,8 +1,8 @@
 INICIAR TODO
-$env:COMPOSE_BAKE="false"; $env:DOCKER_BUILDKIT="0"; docker compose up --build
+powershell -ExecutionPolicy Bypass -File .\iniciar-docker.ps1
 
 Iniciar en segundo plano:
-$env:COMPOSE_BAKE="false"; $env:DOCKER_BUILDKIT="0"; docker compose up --build -d
+El iniciador ya deja todos los servicios en segundo plano.
 
 ABRIR
 Aplicación: http://localhost:8090
@@ -31,4 +31,9 @@ docker compose down
 
 REINICIO TOTAL (BORRA LOS VOLÚMENES Y LA BASE DE DOCKER)
 docker compose down -v
-$env:COMPOSE_BAKE="false"; $env:DOCKER_BUILDKIT="0"; docker compose up --build
+powershell -ExecutionPolicy Bypass -File .\iniciar-docker.ps1
+
+
+ejecutar
+docker compose up --build
+docker compose up -d
