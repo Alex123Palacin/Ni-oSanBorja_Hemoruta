@@ -9,7 +9,6 @@ import MenuMedicoComp from '../../components/MenuMedicoComp'
 const accesos = [
   { descripcion: 'Consulta y administra las fichas del hospital.', icono: 'users' as const, ruta: '/doctor/pacientes', titulo: 'Ver pacientes' },
   { descripcion: 'Revisa alertas, síntomas y adherencia.', icono: 'activity' as const, ruta: '/doctor/seguimiento', titulo: 'Seguimiento' },
-  { descripcion: 'Registra y habilita una nueva cuenta.', icono: 'plusCircle' as const, ruta: '/doctor/nuevoRegistro', titulo: 'Nuevo paciente' },
 ]
 
 function InicioDoctorPage() {
@@ -35,7 +34,7 @@ function InicioDoctorPage() {
             </div>
           </section>
 
-          <section className='mt-5 grid gap-3 md:grid-cols-3'>
+          <section className='mt-5 grid gap-3 md:grid-cols-2'>
             {accesos.map((acceso) => (
               <Link className='group rounded-2xl border border-[#dce7ee] bg-white p-5 shadow-[0_8px_22px_rgba(23,57,92,0.05)] transition hover:-translate-y-0.5 hover:border-[#8bd6da]' key={acceso.ruta} to={acceso.ruta}>
                 <span className='grid h-11 w-11 place-items-center rounded-2xl bg-[#e9f9f9] text-[#079eaa] transition group-hover:bg-[#08aab3] group-hover:text-white'>

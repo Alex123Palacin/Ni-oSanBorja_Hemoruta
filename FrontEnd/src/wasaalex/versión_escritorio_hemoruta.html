@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HemoRuta Pediátrica - WhatsApp Web</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wa: {
+                            header: '#f0f2f5',
+                            bg: '#efeae2',
+                            bubbleIn: '#ffffff',
+                            bubbleOut: '#d9fdd3',
+                            greenBtn: '#00a884',
+                            timeText: '#667781',
+                            checkBlue: '#53bdeb'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['SF Pro Text', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* WhatsApp Wallpaper Background */
+        .wa-wallpaper {
+            background-color: #efeae2;
+            background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1.2px, transparent 0);
+            background-size: 16px 16px;
+        }
+        
+        /* Smooth Scrollbar for Desktop */
+        .chat-scroll {
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        .message-bubble-in {
+            box-shadow: 0 1px 1px rgba(11, 20, 26, 0.12);
+            border-top-left-radius: 2px !important;
+        }
+
+        .message-bubble-out {
+            box-shadow: 0 1px 1px rgba(11, 20, 26, 0.12);
+            border-top-right-radius: 2px !important;
+        }
+
+        @keyframes fadeInMsg {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeInMsg 0.22s ease-out forwards;
+        }
+
+        @keyframes scanLine {
+            0% { top: 10%; }
+            50% { top: 85%; }
+            100% { top: 10%; }
+        }
+        .animate-scan {
+            animation: scanLine 2.2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-[#d1d7db] text-slate-800 antialiased h-screen w-screen flex overflow-hidden font-sans select-none">
+
+    <!-- WhatsApp Web Main Container -->
+    <div class="flex h-full w-full bg-[#f0f2f5] overflow-hidden">
+
+        <!-- 1. Left Nav Rail (Icons Sidebar) -->
+        <div class="w-[60px] bg-[#e9edef] border-r border-slate-300/70 flex flex-col justify-between items-center py-3 shrink-0 z-20">
+            <div class="flex flex-col items-center gap-5 text-slate-600">
+                <button class="p-2 hover:bg-slate-200/80 rounded-lg transition text-[#008069] relative" title="Chats">
+                    <i data-lucide="message-square" class="w-5 h-5 fill-current"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full"></span>
+                </button>
+                <button class="p-2 hover:bg-slate-200/80 rounded-lg transition text-slate-600" title="Llamadas">
+                    <i data-lucide="phone" class="w-5 h-5"></i>
+                </button>
+                <button class="p-2 hover:bg-slate-200/80 rounded-lg transition text-slate-600" title="Novedades / Estados">
+                    <i data-lucide="circle-dot" class="w-5 h-5"></i>
+                </button>
+                <button class="p-2 hover:bg-slate-200/80 rounded-lg transition text-slate-600" title="Comunidades">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                </button>
+                <button class="p-2 hover:bg-slate-200/80 rounded-lg transition text-purple-600" title="Meta AI">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex flex-col items-center gap-4 text-slate-600">
+                <button class="p-2 hover:bg-slate-200/80 rounded-lg transition text-slate-600" title="Configuración">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-slate-300 overflow-hidden flex items-center justify-center text-slate-600 border border-slate-300 cursor-pointer">
+                    <i data-lucide="user" class="w-5 h-5"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Left Chat List Panel -->
+        <div class="w-80 md:w-96 bg-white border-r border-slate-300/80 flex flex-col shrink-0">
+            
+            <!-- Panel Header -->
+            <div class="p-3 bg-[#f0f2f5] flex items-center justify-between border-b border-slate-200/60">
+                <h1 class="text-xl font-bold text-[#008069] tracking-tight">WhatsApp</h1>
+                <div class="flex items-center gap-3 text-slate-600">
+                    <button class="p-1.5 hover:bg-slate-200 rounded-full transition" title="Nuevo chat">
+                        <i data-lucide="square-plus" class="w-5 h-5"></i>
+                    </button>
+                    <button class="p-1.5 hover:bg-slate-200 rounded-full transition" title="Menú">
+                        <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="p-2 bg-white">
+                <div class="bg-[#f0f2f5] rounded-lg px-3 py-1.5 flex items-center gap-3 border border-transparent focus-within:border-emerald-500">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-500 shrink-0"></i>
+                    <input type="text" placeholder="Buscar un chat o iniciar uno nuevo" class="bg-transparent w-full text-xs text-slate-800 focus:outline-none placeholder:text-slate-500">
+                </div>
+            </div>
+
+            <!-- Category Filters -->
+            <div class="px-3 py-1.5 flex items-center gap-2 border-b border-slate-100 text-xs">
+                <span class="px-3 py-1 bg-emerald-100/80 text-[#008069] font-semibold rounded-full cursor-pointer">Todos</span>
+                <span class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-full cursor-pointer transition">No leídos</span>
+                <button class="p-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+            </div>
+
+            <!-- Single Active Chat Item (Only HemoRuta Pediátrica) -->
+            <div class="flex-1 overflow-y-auto">
+                <div class="flex items-center gap-3 p-3 bg-[#f0f2f5] cursor-pointer border-b border-slate-100 hover:bg-[#e9edef] transition">
+                    <div class="relative shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border border-emerald-100 p-0.5">
+                            <svg viewBox="0 0 100 100" class="w-full h-full">
+                                <path d="M 50,10 C 72,36 84,50 84,62 A 34,34 0 0,1 16,62 C 16,50 28,36 50,10 Z" fill="#00b4bd"/>
+                                <path d="M 50,23 C 64,38 73,48 73,58 A 23,23 0 0,1 27,58 C 27,48 36,38 50,23 Z" fill="#ffffff"/>
+                                <circle cx="42" cy="51" r="3.2" fill="#00b4bd"/>
+                                <path d="M 60,40 C 66,47 65,53 60,54 C 55,53 54,47 60,40 Z" fill="#ff5a52"/>
+                                <path d="M 43,60 Q 50,66 57,60" fill="none" stroke="#00b4bd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-baseline mb-0.5">
+                            <h3 class="font-semibold text-sm text-slate-900 truncate flex items-center gap-1">
+                                HemoRuta Pediátrica
+                                <svg class="w-3.5 h-3.5 text-wa-checkBlue fill-current shrink-0" viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </h3>
+                            <span class="text-[11px] text-slate-500 shrink-0">10:26</span>
+                        </div>
+                        <p class="text-xs text-slate-500 truncate">Canal Oficial • Hospital del Niño San Borja</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WhatsApp Windows App Banner -->
+            <div class="p-2.5 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-3 text-xs text-slate-700 font-medium cursor-pointer hover:bg-slate-200/60 transition">
+                <div class="w-6 h-6 rounded bg-[#00a884] flex items-center justify-center text-white shrink-0">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                </div>
+                <span>Obtener WhatsApp para Windows</span>
+            </div>
+        </div>
+
+        <!-- 3. Right Main Active Chat View -->
+        <div class="flex-1 flex flex-col bg-wa-bg relative h-full min-w-0">
+            
+            <!-- Desktop Chat Header Bar -->
+            <div class="bg-[#f0f2f5] px-4 py-2.5 flex items-center justify-between border-b border-slate-300/70 z-20 shrink-0 shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="relative shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-emerald-100 p-0.5">
+                            <svg viewBox="0 0 100 100" class="w-full h-full">
+                                <path d="M 50,10 C 72,36 84,50 84,62 A 34,34 0 0,1 16,62 C 16,50 28,36 50,10 Z" fill="#00b4bd"/>
+                                <path d="M 50,23 C 64,38 73,48 73,58 A 23,23 0 0,1 27,58 C 27,48 36,38 50,23 Z" fill="#ffffff"/>
+                                <circle cx="42" cy="51" r="3.2" fill="#00b4bd"/>
+                                <path d="M 60,40 C 66,47 65,53 60,54 C 55,53 54,47 60,40 Z" fill="#ff5a52"/>
+                                <path d="M 43,60 Q 50,66 57,60" fill="none" stroke="#00b4bd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <h2 class="font-semibold text-sm leading-tight flex items-center gap-1 text-slate-900">
+                            HemoRuta Pediátrica
+                            <svg class="w-4 h-4 text-wa-checkBlue fill-current shrink-0" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </h2>
+                        <span class="text-[11px] text-slate-500 font-normal">Cuenta oficial del Hospital</span>
+                    </div>
+                </div>
+                
+                <!-- Action Icons -->
+                <div class="flex items-center gap-4 text-slate-600">
+                    <button onclick="resetChat()" title="Reiniciar chat" class="p-1.5 hover:bg-slate-200 rounded-full transition">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    </button>
+                    <button title="Videollamada" class="p-1.5 hover:bg-slate-200 rounded-full transition">
+                        <i data-lucide="video" class="w-5 h-5"></i>
+                    </button>
+                    <button title="Llamada" class="p-1.5 hover:bg-slate-200 rounded-full transition">
+                        <i data-lucide="phone" class="w-5 h-5"></i>
+                    </button>
+                    <div class="h-4 w-px bg-slate-300"></div>
+                    <button title="Buscar" class="p-1.5 hover:bg-slate-200 rounded-full transition">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </button>
+                    <button title="Menú" class="p-1.5 hover:bg-slate-200 rounded-full transition">
+                        <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Body viewport -->
+            <div id="chatBox" class="flex-1 min-h-0 wa-wallpaper px-6 md:px-16 pt-4 pb-12 overflow-y-auto chat-scroll flex flex-col gap-3 relative z-10" onclick="closeAttachmentSheet()">
+                
+                <!-- Today Badge -->
+                <div class="self-center bg-[#e1f3fb]/95 backdrop-blur-xs text-slate-700 text-[11px] font-medium px-3 py-0.5 rounded-md shadow-2xs border border-sky-200/50 my-1">
+                    Hoy
+                </div>
+
+                <!-- End-to-end Security Notice -->
+                <div class="self-center bg-[#fff5c4] text-slate-700 text-xs px-4 py-2 rounded-lg shadow-2xs text-center max-w-[85%] lg:max-w-[70%] border border-amber-200/70 leading-snug">
+                    <i data-lucide="lock" class="w-3.5 h-3.5 inline mr-1 text-amber-700 -mt-0.5"></i>
+                    Los mensajes están cifrados de extremo a extremo. Canal oficial de HemoRuta Pediátrica.
+                </div>
+
+                <!-- Dynamic Messages injected here -->
+
+            </div>
+
+            <!-- WhatsApp Input Bar -->
+            <form id="chatForm" onsubmit="handleUserSubmit(event)" class="bg-[#f0f2f5] px-4 py-2.5 flex items-center gap-3 border-t border-slate-300/70 z-30 shrink-0 relative">
+                
+                <button type="button" class="text-slate-600 hover:text-slate-800 transition active:scale-95 shrink-0 p-1">
+                    <i data-lucide="smile" class="w-6 h-6"></i>
+                </button>
+
+                <button type="button" onclick="toggleAttachmentSheet()" class="text-slate-600 hover:text-slate-800 active:scale-95 transition shrink-0 p-1" title="Adjuntar archivo">
+                    <i data-lucide="paperclip" class="w-6 h-6"></i>
+                </button>
+
+                <button type="button" id="cameraBtnInBar" onclick="openCameraOverlay()" class="text-slate-600 hover:text-slate-800 active:scale-95 transition shrink-0 p-1" title="Escanear documento o tomar foto">
+                    <i data-lucide="camera" class="w-6 h-6"></i>
+                </button>
+
+                <div class="flex-1 bg-white rounded-lg px-4 py-2.5 flex items-center shadow-2xs border border-slate-200">
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        placeholder="Escribe un mensaje" 
+                        oninput="handleInputChange()"
+                        class="w-full bg-transparent text-slate-800 text-sm focus:outline-none placeholder:text-slate-500"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <!-- Action Button (Mic / Send) -->
+                <button type="button" id="actionBtn" onclick="handleActionButtonClick(event)" class="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#008f70] text-white flex items-center justify-center shadow transition-transform active:scale-95 shrink-0 cursor-pointer" title="Grabar audio">
+                    <svg id="actionBtnIcon" class="w-5 h-5 fill-white text-white" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                </button>
+            </form>
+
+            <!-- Attachment Backdrop Overlay -->
+            <div id="attachmentBackdrop" onclick="closeAttachmentSheet()" class="absolute inset-0 bg-black/20 z-30 hidden transition-opacity duration-300 opacity-0 pointer-events-none"></div>
+
+            <!-- Desktop Attachment Menu Popover -->
+            <div id="attachmentSheet" class="absolute bottom-16 left-12 bg-white rounded-2xl p-4 shadow-2xl z-40 transform translate-y-4 opacity-0 transition-all duration-200 border border-slate-200 pointer-events-none hidden w-80">
+                <div class="grid grid-cols-4 gap-3 text-center">
+                    <button onclick="handleAttachmentSelect('Galería')" class="flex flex-col items-center gap-1.5 group">
+                        <div class="w-11 h-11 border border-slate-100 rounded-full flex items-center justify-center bg-blue-50 group-hover:scale-105 transition shadow-2xs">
+                            <i data-lucide="image" class="w-5 h-5 text-blue-500"></i>
+                        </div>
+                        <span class="text-[11px] text-slate-700 font-normal">Fotos</span>
+                    </button>
+
+                    <button onclick="openCameraOverlay()" class="flex flex-col items-center gap-1.5 group">
+                        <div class="w-11 h-11 border border-slate-100 rounded-full flex items-center justify-center bg-rose-50 group-hover:scale-105 transition shadow-2xs">
+                            <i data-lucide="camera" class="w-5 h-5 text-rose-500"></i>
+                        </div>
+                        <span class="text-[11px] text-slate-700 font-normal">Cámara</span>
+                    </button>
+
+                    <button onclick="handleAttachmentSelect('Documento')" class="flex flex-col items-center gap-1.5 group">
+                        <div class="w-11 h-11 border border-slate-100 rounded-full flex items-center justify-center bg-purple-50 group-hover:scale-105 transition shadow-2xs">
+                            <i data-lucide="file-text" class="w-5 h-5 text-purple-600"></i>
+                        </div>
+                        <span class="text-[11px] text-slate-700 font-normal">Documento</span>
+                    </button>
+
+                    <button onclick="handleAttachmentSelect('Ubicación')" class="flex flex-col items-center gap-1.5 group">
+                        <div class="w-11 h-11 border border-slate-100 rounded-full flex items-center justify-center bg-emerald-50 group-hover:scale-105 transition shadow-2xs">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-emerald-500"></i>
+                        </div>
+                        <span class="text-[11px] text-slate-700 font-normal">Ubicación</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Simulated Camera Screen Overlay Modal -->
+            <div id="cameraOverlay" class="absolute inset-0 bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-6 animate-fade-in">
+                <div class="w-full max-w-lg h-[82vh] bg-slate-900 rounded-2xl flex flex-col justify-between p-4 relative overflow-hidden shadow-2xl border border-slate-700">
+                    <div id="cameraFlash" class="absolute inset-0 bg-white opacity-0 pointer-events-none z-50 transition-opacity duration-150"></div>
+
+                    <div class="flex items-center justify-between text-white z-10 px-1">
+                        <button onclick="closeCameraOverlay()" class="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition active:scale-90">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                        <span class="text-xs bg-emerald-600/90 text-white px-3 py-1 rounded-full font-semibold tracking-wider uppercase">ESCÁNER MÉDICO</span>
+                        <button onclick="toggleFlash()" id="flashBtn" class="p-2 rounded-full bg-black/50 text-white">
+                            <i data-lucide="zap-off" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="relative flex-1 my-3 border border-emerald-500/40 rounded-xl flex items-center justify-center overflow-hidden bg-slate-950/90">
+                        <div class="w-[85%] h-[82%] border-2 border-emerald-400 rounded-xl flex flex-col justify-between p-4 relative shadow-[0_0_25px_rgba(16,185,129,0.25)] bg-emerald-950/20">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[9.5px] text-emerald-300 font-mono tracking-widest uppercase bg-black/70 px-2 py-0.5 rounded">Alinee el documento</span>
+                                <span class="text-[9.5px] text-emerald-400 font-mono font-bold">HD SCAN</span>
+                            </div>
+                            
+                            <div class="self-center my-auto text-center opacity-85">
+                                <i data-lucide="file-check-2" class="w-12 h-12 text-emerald-400 mx-auto mb-2"></i>
+                                <p class="text-xs text-slate-100 font-semibold">Examen / Ficha HemoRuta</p>
+                                <p class="text-[10px] text-slate-300 mt-0.5">Captura automática de alta precisión</p>
+                            </div>
+
+                            <div class="flex justify-between text-[9px] text-emerald-300 font-mono">
+                                <span>HEMORUTA CAM</span>
+                                <span>AUTO-FOCUS OK</span>
+                            </div>
+                        </div>
+                        <div class="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#34d399] animate-scan"></div>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-6 z-10 pt-1">
+                        <button onclick="capturePhoto()" class="w-14 h-14 rounded-full border-4 border-white flex items-center justify-center p-1 active:scale-90 transition shadow-lg" title="Capturar e Integrar">
+                            <div class="w-full h-full rounded-full bg-white hover:bg-slate-200 transition"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Patient session state
+        const patientData = {
+            name: "",
+            dniLast4: "",
+            targetDniLast4: "5684", // Demo target 4 digits
+            birthDate: "",
+            sex: "",
+            hc: "",
+            diagnosis: "",
+            bloodType: "",
+            origin: "",
+            firstAttentionDate: "",
+            tutorName: "",
+            tutorRelationship: "",
+            tutorDni: "",
+            tutorPhone: "",
+            tutorEmail: "",
+            address: "",
+            district: "",
+            emergencyPhone: "",
+            nextApptDate: "Pendiente",
+            nextApptTime: "",
+            isVerified: false
+        };
+
+        // Chatbot state machine tracker
+        let currentStep = "STEP_WELCOME";
+        let tempFormData = {};
+        let isAttachmentOpen = false;
+
+        // DOM elements
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+        const attachmentSheet = document.getElementById('attachmentSheet');
+        const attachmentBackdrop = document.getElementById('attachmentBackdrop');
+        const cameraOverlay = document.getElementById('cameraOverlay');
+
+        // Smooth Scrolling Mechanism
+        function scrollToBottom() {
+            requestAnimationFrame(() => {
+                chatBox.scrollTop = chatBox.scrollHeight;
+                setTimeout(() => {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 60);
+                setTimeout(() => {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 180);
+            });
+        }
+
+        function handleInputChange() {
+            const val = userInput.value.trim();
+            const actionBtn = document.getElementById('actionBtn');
+            const actionIcon = document.getElementById('actionBtnIcon');
+            const cameraBtn = document.getElementById('cameraBtnInBar');
+
+            if (val.length > 0) {
+                actionBtn.title = "Enviar";
+                actionIcon.setAttribute('class', 'w-5 h-5 fill-white text-white translate-x-[2px]');
+                actionIcon.innerHTML = `<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>`;
+            } else {
+                actionBtn.title = "Grabar audio";
+                actionIcon.setAttribute('class', 'w-5 h-5 fill-white text-white');
+                actionIcon.innerHTML = `
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                `;
+            }
+        }
+
+        function handleActionButtonClick(e) {
+            const val = userInput.value.trim();
+            if (val.length > 0) {
+                handleUserSubmit(e);
+            } else {
+                addMessage("🎤 *Nota de voz*: [Grabación de audio simulada en HemoRuta]", "user");
+                setTimeout(() => {
+                    addMessage("Audio recibido. Procesando solicitud...", "bot", ["Menú principal"]);
+                }, 600);
+            }
+        }
+
+        function getCurrentTimeFormatted() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        /* ATTACHMENT SHEET LOGIC */
+        function toggleAttachmentSheet(forceState) {
+            if (typeof forceState === 'boolean') {
+                isAttachmentOpen = forceState;
+            } else {
+                isAttachmentOpen = !isAttachmentOpen;
+            }
+
+            if (isAttachmentOpen) {
+                attachmentSheet.classList.remove('hidden', 'pointer-events-none');
+                attachmentBackdrop.classList.remove('hidden', 'pointer-events-none');
+                setTimeout(() => {
+                    attachmentSheet.classList.remove('translate-y-4', 'opacity-0');
+                    attachmentSheet.classList.add('translate-y-0', 'opacity-100');
+                    attachmentBackdrop.classList.remove('opacity-0');
+                    attachmentBackdrop.classList.add('opacity-100');
+                }, 10);
+            } else {
+                attachmentSheet.classList.remove('translate-y-0', 'opacity-100');
+                attachmentSheet.classList.add('translate-y-4', 'opacity-0');
+                attachmentBackdrop.classList.remove('opacity-100');
+                attachmentBackdrop.classList.add('opacity-0');
+                setTimeout(() => {
+                    attachmentSheet.classList.add('hidden', 'pointer-events-none');
+                    attachmentBackdrop.classList.add('hidden', 'pointer-events-none');
+                }, 200);
+            }
+        }
+
+        function closeAttachmentSheet() {
+            if (isAttachmentOpen) {
+                toggleAttachmentSheet(false);
+            }
+        }
+
+        /* CAMERA OVERLAY LOGIC */
+        function openCameraOverlay() {
+            closeAttachmentSheet();
+            cameraOverlay.classList.remove('hidden');
+            cameraOverlay.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeCameraOverlay() {
+            cameraOverlay.classList.add('hidden');
+            cameraOverlay.classList.remove('flex');
+        }
+
+        function toggleFlash() {
+            const flashBtn = document.getElementById('flashBtn');
+            if (flashBtn.innerHTML.includes('zap-off')) {
+                flashBtn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 text-amber-300"></i>`;
+            } else {
+                flashBtn.innerHTML = `<i data-lucide="zap-off" class="w-4 h-4"></i>`;
+            }
+            lucide.createIcons();
+        }
+
+        function capturePhoto() {
+            const flash = document.getElementById('cameraFlash');
+            flash.classList.remove('opacity-0');
+            flash.classList.add('opacity-90');
+            setTimeout(() => {
+                flash.classList.remove('opacity-90');
+                flash.classList.add('opacity-0');
+            }, 100);
+
+            setTimeout(() => {
+                closeCameraOverlay();
+                addAttachmentMessage("📷 Scan_Documento_HemoRuta.pdf", "1.4 MB • Documento escaneado");
+                setTimeout(() => {
+                    addMessage("✅ *Documento escaneado y recibido.*\n\nEl archivo '*Scan_Documento_HemoRuta.pdf*' se ha adjuntado correctamente a la Ficha Médica Pediátrica del paciente.", "bot", ["Menú principal"]);
+                }, 600);
+            }, 200);
+        }
+
+        function handleAttachmentSelect(type) {
+            closeAttachmentSheet();
+            if (type === 'Documento' || type === 'Galería') {
+                addAttachmentMessage(`📄 Examen_Laboratorio_${type}.pdf`, "2.1 MB • Documento PDF");
+                setTimeout(() => {
+                    addMessage(`✅ *Archivo de ${type} recibido.*\n\nSe ha sincronizado con el historial médico del paciente en HemoRuta.`, "bot", ["Menú principal"]);
+                }, 500);
+            } else if (type === 'Ubicación') {
+                addMessage("📍 *Ubicación compartida*: Instituto Nacional de Salud del Niño San Borja", "user");
+                setTimeout(() => {
+                    addMessage("Ubicación registrada para la cita presencial.", "bot", ["Menú principal"]);
+                }, 500);
+            } else {
+                addMessage(`📎 Opción de adjunto seleccionada: *${type}*`, "user");
+                setTimeout(() => {
+                    addMessage(`Recibido registro de *${type}*. Toda la información se gestiona de forma confidencial.`, "bot", ["Menú principal"]);
+                }, 500);
+            }
+        }
+
+        function addAttachmentMessage(filename, filesize) {
+            const timeStr = getCurrentTimeFormatted();
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'self-end max-w-[80%] md:max-w-[420px] bg-wa-bubbleOut text-slate-800 rounded-2xl p-2.5 px-3 shadow-2xs text-[13px] border border-emerald-100 message-bubble-out animate-fade-in';
+            
+            msgDiv.innerHTML = `
+                <div class="flex items-center gap-2.5 bg-emerald-800/10 p-2.5 rounded-xl border border-emerald-600/20 mb-1">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="font-semibold text-xs text-slate-900 truncate">${filename}</p>
+                        <p class="text-[10px] text-slate-600">${filesize}</p>
+                    </div>
+                </div>
+                <div class="text-[10px] text-wa-timeText text-right flex items-center justify-end gap-1 font-normal">
+                    <span>${timeStr}</span>
+                    <i data-lucide="check-check" class="w-3.5 h-3.5 text-wa-checkBlue inline"></i>
+                </div>
+            `;
+
+            chatBox.appendChild(msgDiv);
+            lucide.createIcons();
+            scrollToBottom();
+        }
+
+        function addMessage(text, sender = 'bot', buttons = []) {
+            const timeStr = getCurrentTimeFormatted();
+            const msgDiv = document.createElement('div');
+            
+            if (sender === 'bot') {
+                msgDiv.className = 'self-start max-w-[85%] md:max-w-[580px] bg-white text-slate-800 rounded-2xl shadow-2xs text-[13px] leading-relaxed border border-slate-200/80 message-bubble-in animate-fade-in flex flex-col justify-between overflow-hidden shrink-0';
+                
+                let formattedText = text.replace(/\*(.*?)\*/g, '<strong class="font-semibold text-slate-900">$1</strong>');
+                formattedText = formattedText.replace(/\n/g, '<br>');
+
+                let buttonsHtml = '';
+                if (buttons && buttons.length > 0) {
+                    buttonsHtml = `<div class="mt-2.5 border-t border-slate-100 flex flex-col bg-slate-50/50 divide-y divide-slate-100/80">`;
+                    buttons.forEach((btnText) => {
+                        const safeBtnText = btnText.replace(/'/g, "\\'");
+                        buttonsHtml += `
+                            <button type="button" 
+                                    onclick="handleUserSelection('${safeBtnText}')" 
+                                    class="w-full py-2.5 px-4 hover:bg-emerald-50 active:bg-emerald-100/80 text-[#008069] font-medium text-[13px] flex items-center justify-center gap-2 transition-colors cursor-pointer text-center leading-snug">
+                                <i data-lucide="corner-up-left" class="w-3.5 h-3.5 text-[#008069] stroke-[2.2] shrink-0"></i>
+                                <span class="break-words">${btnText}</span>
+                            </button>
+                        `;
+                    });
+                    buttonsHtml += `</div>`;
+                }
+
+                msgDiv.innerHTML = `
+                    <div class="p-3.5 pb-1 font-sans">
+                        <div class="text-slate-800 break-words">${formattedText}</div>
+                        <div class="text-[10px] text-wa-timeText text-right mt-1 font-normal">${timeStr}</div>
+                    </div>
+                    ${buttonsHtml}
+                `;
+            } else if (sender === 'user') {
+                msgDiv.className = 'self-end max-w-[80%] md:max-w-[480px] bg-wa-bubbleOut text-slate-800 rounded-2xl p-3 px-3.5 shadow-2xs text-[13px] leading-relaxed border border-emerald-100 message-bubble-out animate-fade-in shrink-0';
+                
+                let formattedText = text.replace(/\*(.*?)\*/g, '<strong class="font-semibold text-slate-900">$1</strong>');
+                formattedText = formattedText.replace(/\n/g, '<br>');
+                msgDiv.innerHTML = `
+                    <div class="font-sans break-words">${formattedText}</div>
+                    <div class="text-[10px] text-wa-timeText text-right mt-0.5 flex items-center justify-end gap-1 font-normal">
+                        <span>${timeStr}</span>
+                        <i data-lucide="check-check" class="w-3.5 h-3.5 text-wa-checkBlue inline"></i>
+                    </div>
+                `;
+            } else if (sender === 'error') {
+                msgDiv.className = 'self-start max-w-[85%] md:max-w-[500px] bg-rose-50 text-rose-900 border border-rose-200/90 rounded-2xl p-3.5 text-[12.5px] leading-relaxed shadow-2xs animate-fade-in message-bubble-in shrink-0';
+                let formattedText = text.replace(/\*(.*?)\*/g, '<strong class="font-bold">$1</strong>');
+                msgDiv.innerHTML = `
+                    <div class="font-sans font-normal flex items-start gap-2">
+                        <span class="text-base shrink-0">⚠️</span>
+                        <div class="break-words">${formattedText}</div>
+                    </div>
+                    <div class="text-[10px] text-rose-500 text-right mt-1 font-normal">${timeStr}</div>
+                `;
+            }
+
+            chatBox.appendChild(msgDiv);
+            lucide.createIcons();
+            scrollToBottom();
+        }
+
+        function triggerInputError(customErrorText) {
+            addMessage(customErrorText, "error");
+        }
+
+        function normalizeStr(str) {
+            return str ? str.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+        }
+
+        function isGibberish(text) {
+            if (!text) return true;
+            const cleaned = text.trim();
+            if (cleaned.length < 2) return true;
+            if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(cleaned)) return true;
+            return false;
+        }
+
+        function processStep(userInputVal) {
+            const rawInput = userInputVal ? userInputVal.trim() : "";
+            const normInput = normalizeStr(rawInput);
+
+            if (
+                normInput === "menu principal" || 
+                normInput === "menu" || 
+                normInput === "0" ||
+                normInput.includes("menu principal")
+            ) {
+                showMainMenu();
+                return;
+            }
+
+            if (normInput === "ayuda") {
+                addMessage("ℹ️ *Ayuda HemoRuta Pediátrica*\n\nPuedes enviar mensajes de texto o usar los botones interactivos.\nTambién puedes presionar el icono del clip/cámara para adjuntar/escanear tus documentos clínicos.\nPara regresar al menú en cualquier momento escribe *MENU*.", "bot", ["Menú principal"]);
+                return;
+            }
+
+            switch (currentStep) {
+                
+                case "STEP_WELCOME":
+                    if (normInput.includes("iniciar") || normInput === "1" || normInput.includes("activacion")) {
+                        currentStep = "STEP_CONFIRM_PHONE";
+                        addMessage("Para proteger la privacidad de la información médica, confirma si eres el tutor o responsable registrado del paciente.", "bot", [
+                            "Sí, soy el responsable", 
+                            "No soy el responsable", 
+                            "Necesito información"
+                        ]);
+                    } else if (normInput.includes("no soy")) {
+                        addMessage("Entendido. Se ha cancelado la activación por seguridad. Si se trata de un error, comunícate con Admisión del Hospital del Niño San Borja.", "bot", ["Reiniciar proceso"]);
+                    } else {
+                        triggerInputError("Entrada no entendida. Por favor, selecciona una de las opciones del mensaje.");
+                    }
+                    break;
+
+                case "STEP_CONFIRM_PHONE":
+                    if (normInput.includes("si") || normInput.includes("responsable") || normInput === "1") {
+                        currentStep = "STEP_CONSENT";
+                        addMessage("Antes de continuar, solicitamos tu autorización para registrar las respuestas en la ficha médica de HemoRuta Pediátrica.\n\nEl sistema no realiza diagnósticos ni altera prescripciones.", "bot", [
+                            "Acepto y continuar", 
+                            "Leer aviso de privacidad", 
+                            "Cancelar proceso"
+                        ]);
+                    } else if (normInput.includes("no") || normInput.includes("cancelar")) {
+                        addMessage("Proceso cancelado por motivos de seguridad.", "bot", ["Iniciar activación"]);
+                    } else {
+                        addMessage("ℹ️ *HemoRuta Pediátrica* permite el seguimiento seguro del tratamiento del menor en coordinación con su hospital.", "bot", ["Sí, soy el responsable", "No soy el responsable"]);
+                    }
+                    break;
+
+                case "STEP_CONSENT":
+                    if (normInput.includes("acepto") || normInput === "1") {
+                        currentStep = "STEP_VERIFY_DNI";
+                        addMessage("Por seguridad y privacidad, ingresa los *últimos 4 dígitos del DNI* del paciente para verificar la cuenta.", "bot");
+                    } else if (normInput.includes("aviso") || normInput.includes("privacidad")) {
+                        addMessage("🔒 *Aviso de Privacidad*: Los datos están protegidos según la Ley N° 29733 en el Perú y son de uso exclusivo del equipo médico tratante.", "bot", [
+                            "Acepto y continuar", 
+                            "Cancelar proceso"
+                        ]);
+                    } else {
+                        addMessage("Proceso cancelado. Escribe *INICIAR* o presiona el botón para intentar nuevamente.", "bot", ["Iniciar activación"]);
+                    }
+                    break;
+
+                case "STEP_VERIFY_DNI":
+                    if (!/^\d{4}$/.test(rawInput)) {
+                        triggerInputError(`La respuesta "*${rawInput}*" no es válida. Debes digitar exactamente los *4 dígitos numéricos* del DNI del paciente.`);
+                        return;
+                    }
+
+                    if (rawInput === patientData.targetDniLast4) {
+                        patientData.isVerified = true;
+                        patientData.dniLast4 = rawInput;
+                        currentStep = "STEP_CONFIRM_NAME";
+                        addMessage("Verificación de identidad exitosa.\n\nEscribe los *nombres y apellidos completos* del paciente para su ficha clínica.", "bot");
+                    } else {
+                        triggerInputError(`Los 4 dígitos ingresados no coinciden con nuestros registros. Por favor verifica los datos e inténtalo de nuevo.`);
+                    }
+                    break;
+
+                case "STEP_CONFIRM_NAME":
+                    if (isGibberish(rawInput) || rawInput.length < 3 || !/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(rawInput)) {
+                        triggerInputError(`La respuesta "*${rawInput}*" no es un nombre válido. Por favor digita los nombres y apellidos reales del paciente.`);
+                        return;
+                    }
+                    patientData.name = rawInput;
+                    currentStep = "STEP_BIRTH_DATE";
+                    addMessage(`Nombres registrados correctamente: *${patientData.name}*.\n\nIngresa la fecha de nacimiento del paciente en formato *DD/MM/AAAA*.`, "bot");
+                    break;
+
+                case "STEP_BIRTH_DATE":
+                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawInput)) {
+                        patientData.birthDate = rawInput;
+                        currentStep = "STEP_SEX";
+                        addMessage("Selecciona el sexo del paciente.", "bot", ["Masculino", "Femenino"]);
+                    } else {
+                        triggerInputError(`La fecha "*${rawInput}*" no tiene el formato requerido. Debes escribirla exactamente en formato *DD/MM/AAAA*.`);
+                    }
+                    break;
+
+                case "STEP_SEX":
+                    if (normInput === "masculino" || normInput === "femenino") {
+                        patientData.sex = rawInput;
+                        currentStep = "STEP_HC";
+                        addMessage("Escribe el número de Historia Clínica (HC) del paciente.", "bot", ["No conozco el número"]);
+                    } else {
+                        triggerInputError(`Opción "*${rawInput}*" no válida. Por favor selecciona *Masculino* o *Femenino*.`);
+                    }
+                    break;
+
+                case "STEP_HC":
+                    if (normInput.includes("no conozco") || normInput.includes("no se")) {
+                        patientData.hc = "Pendiente de validación";
+                    } else if (isGibberish(rawInput) || rawInput.length < 3) {
+                        triggerInputError(`Respuesta "*${rawInput}*" no válida. Digita el código de la Historia Clínica o selecciona *No conozco el número*.`);
+                        return;
+                    } else {
+                        patientData.hc = rawInput;
+                    }
+                    currentStep = "STEP_DIAGNOSIS";
+                    addMessage("Escribe o selecciona el diagnóstico principal del paciente.", "bot", [
+                        "Leucemia linfoblástica aguda (LLA)", 
+                        "Hemofilia A / B", 
+                        "No conozco el diagnóstico"
+                    ]);
+                    break;
+
+                case "STEP_DIAGNOSIS":
+                    if (isGibberish(rawInput)) {
+                        triggerInputError(`Esa respuesta "*${rawInput}*" no es entendible. Escribe un diagnóstico médico válido o selecciona una opción.`);
+                        return;
+                    }
+                    patientData.diagnosis = rawInput;
+                    currentStep = "STEP_BLOOD_TYPE";
+                    addMessage("Selecciona el grupo sanguíneo del paciente.", "bot", [
+                        "O+", "O−", "A+", "A−", "B+", "B−", "AB+", "AB−", "No lo sé"
+                    ]);
+                    break;
+
+                case "STEP_BLOOD_TYPE":
+                    const validBlood = ["o+", "o−", "a+", "a−", "b+", "b−", "ab+", "ab−", "no lo se", "o-", "a-", "b-", "ab-"];
+                    if (!validBlood.includes(normInput)) {
+                        triggerInputError(`El grupo sanguíneo "*${rawInput}*" no es válido. Selecciona una opción de la lista.`);
+                        return;
+                    }
+                    patientData.bloodType = rawInput;
+                    currentStep = "STEP_ORIGIN";
+                    addMessage("Escribe la procedencia del paciente (distrito, provincia o región).", "bot");
+                    break;
+
+                case "STEP_ORIGIN":
+                    if (isGibberish(rawInput) || rawInput.length < 3) {
+                        triggerInputError(`Respuesta "*${rawInput}*" no válida. Por favor digita el lugar de procedencia.`);
+                        return;
+                    }
+                    patientData.origin = rawInput;
+                    currentStep = "STEP_FIRST_ATTENTION";
+                    addMessage("Ingresa la fecha de la primera atención en el hospital (DD/MM/AAAA).", "bot", ["No recuerdo la fecha"]);
+                    break;
+
+                case "STEP_FIRST_ATTENTION":
+                    if (normInput.includes("no recuerdo") || normInput.includes("no se")) {
+                        patientData.firstAttentionDate = "No registrada";
+                    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawInput)) {
+                        patientData.firstAttentionDate = rawInput;
+                    } else {
+                        triggerInputError(`La fecha "*${rawInput}*" no es válida. Usa el formato *DD/MM/AAAA* o pulsa *No recuerdo la fecha*.`);
+                        return;
+                    }
+                    currentStep = "STEP_TUTOR_NAME";
+                    addMessage("Completaremos los datos del padre, madre o responsable.\n\nEscribe tu *nombre completo*.", "bot");
+                    break;
+
+                case "STEP_TUTOR_NAME":
+                    if (isGibberish(rawInput) || rawInput.length < 3) {
+                        triggerInputError(`El nombre "*${rawInput}*" no es válido. Digita tus nombres y apellidos reales.`);
+                        return;
+                    }
+                    patientData.tutorName = rawInput;
+                    currentStep = "STEP_TUTOR_REL";
+                    addMessage("¿Cuál es tu parentesco con el paciente?", "bot", ["Madre", "Padre", "Tutor legal", "Otro responsable"]);
+                    break;
+
+                case "STEP_TUTOR_REL":
+                    const validRels = ["madre", "padre", "tutor legal", "otro responsable"];
+                    if (!validRels.includes(normInput)) {
+                        triggerInputError(`Selecciona un parentesco válido de las opciones disponibles.`);
+                        return;
+                    }
+                    patientData.tutorRelationship = rawInput;
+                    currentStep = "STEP_TUTOR_DNI";
+                    addMessage("Escribe tu número de DNI como tutor (8 dígitos).", "bot");
+                    break;
+
+                case "STEP_TUTOR_DNI":
+                    if (!/^\d{8}$/.test(rawInput)) {
+                        triggerInputError(`El DNI "*${rawInput}*" no es válido. Debe contener exactamente *8 dígitos numéricos*.`);
+                        return;
+                    }
+                    patientData.tutorDni = rawInput;
+                    currentStep = "STEP_ADDRESS";
+                    addMessage("Escribe tu dirección de residencia actual.", "bot");
+                    break;
+
+                case "STEP_ADDRESS":
+                    if (isGibberish(rawInput) || rawInput.length < 3) {
+                        triggerInputError(`La dirección "*${rawInput}*" no es válida. Digita tu dirección de residencia.`);
+                        return;
+                    }
+                    patientData.address = rawInput;
+                    currentStep = "STEP_DISTRICT";
+                    addMessage("Escribe el distrito donde resides.", "bot");
+                    break;
+
+                case "STEP_DISTRICT":
+                    if (isGibberish(rawInput) || rawInput.length < 2) {
+                        triggerInputError(`El distrito "*${rawInput}*" no es válido. Escribe el distrito correspondiente.`);
+                        return;
+                    }
+                    patientData.district = rawInput;
+                    currentStep = "STEP_EMERGENCY_PHONE";
+                    addMessage("Escribe un número telefónico de emergencia (9 dígitos).", "bot");
+                    break;
+
+                case "STEP_EMERGENCY_PHONE":
+                    const cleanPhone = rawInput.replace(/\s+/g, '');
+                    if (!/^\d{9}$/.test(cleanPhone)) {
+                        triggerInputError(`El teléfono "*${rawInput}*" debe contener exactamente *9 dígitos numéricos*.`);
+                        return;
+                    }
+                    patientData.emergencyPhone = cleanPhone;
+                    currentStep = "STEP_SUMMARY_CONFIRM";
+                    
+                    const summaryMsg = `*Resumen de información a registrar:*\n\n` +
+                        `*PACIENTE*\n` +
+                        `• Nombre: ${patientData.name}\n` +
+                        `• Fecha Nac.: ${patientData.birthDate}\n` +
+                        `• Sexo: ${patientData.sex}\n` +
+                        `• H. Clínica: ${patientData.hc}\n` +
+                        `• Diagnóstico: ${patientData.diagnosis}\n` +
+                        `• Grupo Sang.: ${patientData.bloodType}\n\n` +
+                        `*RESPONSABLE*\n` +
+                        `• Nombre: ${patientData.tutorName}\n` +
+                        `• Parentesco: ${patientData.tutorRelationship}\n` +
+                        `• DNI Tutor: ******${patientData.tutorDni.slice(-4)}\n` +
+                        `• Dirección: ${patientData.address} (${patientData.district})\n` +
+                        `• Tel. Emergencia: ${patientData.emergencyPhone}\n\n` +
+                        `¿Confirmas el envío de esta información a la ficha médica?`;
+                    
+                    addMessage(summaryMsg, "bot", ["Confirmar y enviar datos", "Corregir datos"]);
+                    break;
+
+                case "STEP_SUMMARY_CONFIRM":
+                    if (normInput.includes("confirmar") || normInput.includes("enviar") || normInput === "si") {
+                        currentStep = "STEP_ASK_CITA";
+                        addMessage("Información registrada exitosamente en la ficha médica.\n\n¿El hospital ya te comunicó la fecha de la próxima cita de control?", "bot", ["Sí, ya la tengo", "Todavía no"]);
+                    } else {
+                        currentStep = "STEP_CONFIRM_NAME";
+                        addMessage("Iniciando corrección de datos. Digita nuevamente los nombres y apellidos del paciente:", "bot");
+                    }
+                    break;
+
+                case "STEP_ASK_CITA":
+                    if (normInput.includes("si") || normInput.includes("tengo")) {
+                        currentStep = "SUB_CITA_DATE";
+                        addMessage("Ingresa la fecha comunicada por el hospital en formato *DD/MM/AAAA*.", "bot");
+                    } else {
+                        showMainMenu();
+                    }
+                    break;
+
+                case "MAIN_MENU":
+                    if (normInput === "1" || normInput.includes("inicio") || normInput.includes("1. inicio")) {
+                        showInicioView();
+                    } else if (normInput === "2" || normInput.includes("medic") || normInput.includes("2. medic")) {
+                        showMedicationView();
+                    } else if (normInput === "3" || normInput.includes("sintom") || normInput.includes("3. sintom")) {
+                        showSymptomsView();
+                    } else if (normInput === "4" || normInput.includes("tratam") || normInput.includes("4. tratam")) {
+                        showTreatmentView();
+                    } else if (normInput === "5" || normInput.includes("docum") || normInput.includes("5. docum")) {
+                        showDocsView();
+                    } else {
+                        triggerInputError(`Opción "*${rawInput}*" no entendida. Selecciona una de las opciones del menú.`);
+                    }
+                    break;
+
+                case "SUB_CITA_DATE":
+                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawInput)) {
+                        tempFormData.citaDate = rawInput;
+                        currentStep = "SUB_CITA_TIME";
+                        addMessage("Ingresa la hora de la cita (ejemplo: *10:30 a. m.*).", "bot");
+                    } else {
+                        triggerInputError(`Esa fecha "*${rawInput}*" no es correcta. Usa el formato *DD/MM/AAAA*.`);
+                    }
+                    break;
+
+                case "SUB_CITA_TIME":
+                    patientData.nextApptDate = tempFormData.citaDate;
+                    patientData.nextApptTime = rawInput;
+                    addMessage(`Cita registrada para el *${patientData.nextApptDate}* a las *${patientData.nextApptTime}*.\n\nRecibirás un recordatorio oportuno.`, "bot", ["Menú principal"]);
+                    currentStep = "MAIN_MENU";
+                    break;
+
+                case "SUB_MED_SELECT":
+                    tempFormData.medName = rawInput;
+                    currentStep = "SUB_MED_STATUS";
+                    addMessage(`¿El paciente tomó la dosis correspondiente de *${rawInput}*?`, "bot", ["Sí, la tomó", "La tomó tarde", "No la tomó"]);
+                    break;
+
+                case "SUB_MED_STATUS":
+                    tempFormData.medStatus = rawInput;
+                    if (normInput.includes("no la tomo") || normInput.includes("no")) {
+                        currentStep = "SUB_MED_REASON";
+                        addMessage("Selecciona el motivo por el cual se omitió la dosis.", "bot", ["Olvido", "Falta de medicamento", "Malestar", "Otro"]);
+                    } else {
+                        addMessage(`Dosis de *${tempFormData.medName}* registrada como *${rawInput}* hoy a las ${getCurrentTimeFormatted()}.`, "bot", ["Menú principal"]);
+                        currentStep = "MAIN_MENU";
+                    }
+                    break;
+
+                case "SUB_MED_REASON":
+                    addMessage(`Registro guardado. Motivo reportado: *${rawInput}*.\n\nRecuerda no alterar dosis sin indicación médica.`, "bot", ["Menú principal"]);
+                    currentStep = "MAIN_MENU";
+                    break;
+
+                default:
+                    showMainMenu();
+                    break;
+            }
+        }
+
+        function showMainMenu() {
+            currentStep = "MAIN_MENU";
+            addMessage("*Menú Principal HemoRuta Pediátrica*\n\nSelecciona una opción para continuar:", "bot", [
+                "1. Inicio y datos",
+                "2. Medicación",
+                "3. Síntomas",
+                "4. Tratamiento",
+                "5. Documentos"
+            ]);
+        }
+
+        function showInicioView() {
+            currentStep = "MAIN_MENU";
+            const text = `*INICIO — ${patientData.name || 'Paciente'}*\n` +
+                `• Estado: Cuenta Activa\n` +
+                `• Tutor: ${patientData.tutorName || 'Registrado'}\n` +
+                `• Próxima cita: ${patientData.nextApptDate} ${patientData.nextApptTime}`;
+            addMessage(text, "bot", ["2. Medicación", "3. Síntomas", "Menú principal"]);
+        }
+
+        function showMedicationView() {
+            currentStep = "SUB_MED_SELECT";
+            addMessage("*MEDICACIÓN*\nSelecciona el medicamento para registrar la dosis de hoy:", "bot", [
+                "Prednisona", 
+                "Omeprazol", 
+                "Ácido fólico", 
+                "Sulfato ferroso"
+            ]);
+        }
+
+        function showSymptomsView() {
+            currentStep = "MAIN_MENU";
+            addMessage("*SÍNTOMAS*\n¿El paciente presenta algún síntoma nuevo o alza térmica hoy?", "bot", [
+                "Sin síntomas", 
+                "Fiebre (≥ 38°C)", 
+                "Dolor de cabeza", 
+                "Náuseas / Vómitos",
+                "Hematomas / Sangrado"
+            ]);
+        }
+
+        function showTreatmentView() {
+            currentStep = "MAIN_MENU";
+            const text = `*TRATAMIENTO Y RECOMENDACIONES*\n\n` +
+                `• Mantener la hidratación indicada.\n` +
+                `• Vigilar alzas térmicas (fiebre).\n` +
+                `• Asistir a controles en las fechas comunicadas.`;
+            addMessage(text, "bot", ["Menú principal"]);
+        }
+
+        function showDocsView() {
+            currentStep = "MAIN_MENU";
+            addMessage("📷 *ADJUNTAR O ESCANEAR DOCUMENTOS*\n\nToca el botón del *clip* 📎 o la *cámara* 📷 en la barra de mensajes para escanear un informe, receta o análisis médico.", "bot", ["Menú principal"]);
+            toggleAttachmentSheet(true);
+        }
+
+        function handleUserSubmit(e) {
+            if (e) e.preventDefault();
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            closeAttachmentSheet();
+            addMessage(text, "user");
+            userInput.value = "";
+            handleInputChange();
+
+            setTimeout(() => {
+                processStep(text);
+            }, 250);
+        }
+
+        function handleUserSelection(selectedText) {
+            closeAttachmentSheet();
+            addMessage(selectedText, "user");
+            setTimeout(() => {
+                processStep(selectedText);
+            }, 200);
+        }
+
+        function resetChat() {
+            chatBox.innerHTML = `
+                <div class="self-center bg-[#e1f3fb]/95 backdrop-blur-xs text-slate-700 text-[11px] font-medium px-3 py-0.5 rounded-md shadow-2xs border border-sky-200/50 my-1">
+                    Hoy
+                </div>
+                <div class="self-center bg-[#fff5c4] text-slate-700 text-xs px-4 py-2 rounded-lg shadow-2xs text-center max-w-[85%] lg:max-w-[70%] border border-amber-200/70 leading-snug">
+                    <i data-lucide="lock" class="w-3.5 h-3.5 inline mr-1 text-amber-700 -mt-0.5"></i>
+                    Los mensajes están cifrados de extremo a extremo. Canal oficial de HemoRuta Pediátrica.
+                </div>
+            `;
+            currentStep = "STEP_WELCOME";
+            patientData.isVerified = false;
+            closeAttachmentSheet();
+            closeCameraOverlay();
+            
+            const welcomeText = "Hola. Te damos la bienvenida al canal oficial de *HemoRuta Pediátrica* del Hospital del Niño San Borja.\n\nPor razones de seguridad y privacidad, iniciaremos el proceso de verificación antes de acceder o registrar información médica.";
+            addMessage(welcomeText, "bot", [
+                "Iniciar activación", 
+                "No soy el responsable"
+            ]);
+        }
+
+        window.onload = function() {
+            resetChat();
+        };
+
+    </script>
+</body>
+</html>

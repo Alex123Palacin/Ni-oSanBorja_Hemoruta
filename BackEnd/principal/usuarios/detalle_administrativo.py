@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from django.db.models.functions import TruncWeek
 from django.utils import timezone
 
 from clinica.models import ConsultaClinica
-from pacientes.models import Paciente
+from pacientes.models import AsignacionMedica, Paciente
 
 from .models import Usuario
 from .serializers import UsuarioLecturaSerializer
@@ -18,7 +18,10 @@ def _detalle_medico(usuario: Usuario) -> dict | None:
         return None
 
     perfil = getattr(usuario, "perfil_medico", None)
-    asignaciones = usuario.asignaciones_como_medico.filter(activa=True)
+    asignaciones = usuario.asignaciones_como_medico.filter(
+        activa=True,
+        es_principal=True,
+    )
     hoy = timezone.localdate()
     inicio_mes = hoy.replace(day=1)
     inicio_semana = hoy - timedelta(days=hoy.weekday())
@@ -60,8 +63,27 @@ def _pacientes_vinculados(usuario: Usuario) -> list[dict]:
             Q(tutores__usuario=usuario, tutores__autorizado=True)
             | Q(cuenta_movil__usuario=usuario)
         )
-        .select_related("cuenta_movil", "creado_por")
-        .prefetch_related("tutores")
+        .select_related("cuenta_movil")
+        .prefetch_related(
+            "tutores",
+            Prefetch(
+                "asignaciones_medicas",
+                queryset=AsignacionMedica.objects.filter(
+                    activa=True,
+                    es_principal=True,
+                ).select_related("medico", "medico__perfil_medico"),
+                to_attr="asignacion_actual_administrativa",
+            ),
+            Prefetch(
+                "consultas",
+                queryset=ConsultaClinica.objects.filter(
+                    estado=ConsultaClinica.Estado.COMPLETADA,
+                )
+                .select_related("medico")
+                .order_by("-completada_en", "-creado_en"),
+                to_attr="consultas_atendidas_administrativas",
+            ),
+        )
         .distinct()
         .order_by("apellidos", "nombres")
     )
@@ -77,6 +99,15 @@ def _pacientes_vinculados(usuario: Usuario) -> list[dict]:
             None,
         )
         cuenta = getattr(paciente, "cuenta_movil", None)
+        asignaciones = paciente.asignacion_actual_administrativa
+        asignacion = asignaciones[0] if asignaciones else None
+        consultas = paciente.consultas_atendidas_administrativas
+        ultima_consulta = consultas[0] if consultas else None
+        perfil_medico = (
+            getattr(asignacion.medico, "perfil_medico", None)
+            if asignacion
+            else None
+        )
         resultado.append(
             {
                 "id": paciente.id,
@@ -98,12 +129,18 @@ def _pacientes_vinculados(usuario: Usuario) -> list[dict]:
                 "idioma_preferido": paciente.idioma_preferido,
                 "estado": paciente.estado,
                 "perfil_completo": paciente.perfil_completo,
-                "registrado_por": {
-                    "id": str(paciente.creado_por_id),
-                    "nombre": paciente.creado_por.nombre_completo,
-                    "rol": paciente.creado_por.rol,
+                "medico_responsable": {
+                    "id": str(asignacion.medico_id),
+                    "nombre": asignacion.medico.nombre_completo,
+                    "especialidad": perfil_medico.especialidad if perfil_medico else "",
                 }
-                if paciente.creado_por
+                if asignacion
+                else None,
+                "atendido_por": {
+                    "id": str(ultima_consulta.medico_id),
+                    "nombre": ultima_consulta.medico.nombre_completo,
+                }
+                if ultima_consulta
                 else None,
                 "vinculo": {
                     "parentesco": vinculo.get_parentesco_display(),

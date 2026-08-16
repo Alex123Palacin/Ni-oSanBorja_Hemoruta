@@ -1,33 +1,34 @@
-docker compose up --build
-docker compose up -d
+INICIAR TODO
+$env:COMPOSE_BAKE="false"; $env:DOCKER_BUILDKIT="0"; docker compose up --build
 
-Luego abrir:
+Iniciar en segundo plano:
+$env:COMPOSE_BAKE="false"; $env:DOCKER_BUILDKIT="0"; docker compose up --build -d
 
+ABRIR
 Aplicación: http://localhost:8090
 Django Admin: http://localhost:8090/django-admin/
+Clínica de Día: menú Administrador > Clínica de Día
+Formato del Excel: formatoExcelClinicaDia.txt
 
-CredenciAlex:
-
+CREDENCIALES
 Administrador: alex / alex
-Médico: valeria.ruiz / alex
-Médico: luis.paredes / alex
-Paciente/tutor: maria.flores / alex
-Otros pacientes: carlos.rojas, veronica.medina, jorge.torres, katherine.perez / alex
-PostgreSQL: usuario postgres, contraseña admin
-Base: NiñoSanBorjaDataBase
+Médicos: valeria.ruiz / alex | luis.paredes / alex
+Pacientes/tutores: maria.flores / alex | carlos.rojas / alex
+                    veronica.medina / alex | jorge.torres / alex
+                    katherine.perez / alex
+PostgreSQL: postgres / admin
+Base de datos: NiñoSanBorjaDataBase
 
+El inicio de sesión también acepta DNI o correo.
+Docker ejecuta migraciones y carga los datos demostrativos automáticamente.
+baseDatos.txt sirve para una restauración manual opcional.
 
-guia :
-poner el archivo de base de datos en un query de posggresql
- y ejecutarlo pero antes crear la base de datos con este nombre
- NiñoSanBorjaDataBase  , para la contraseña de posgresq es "admin"
- para el django admin el usuario es alex y la contra alex
-
-
-
- detener
- docker compose down
-
-
-pausa
+DETENER SIN BORRAR DATOS
 docker compose stop
+
+DETENER Y RETIRAR CONTENEDORES SIN BORRAR DATOS
+docker compose down
+
+REINICIO TOTAL (BORRA LOS VOLÚMENES Y LA BASE DE DOCKER)
+docker compose down -v
+$env:COMPOSE_BAKE="false"; $env:DOCKER_BUILDKIT="0"; docker compose up --build

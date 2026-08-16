@@ -34,7 +34,8 @@ function FichaPacienteAdminComp({ pacientes }: FichaPacienteAdminCompProps) {
           ['Procedencia', paciente.procedencia || 'No registrada'],
           ['Dirección', [paciente.direccion, paciente.distrito].filter(Boolean).join(', ') || 'No registrada'],
           ['Idioma preferido', paciente.idiomaPreferido],
-          ['Registrado por', paciente.registradoPor?.nombre || 'Registro institucional'],
+          ['Médico responsable', paciente.medicoResponsable?.nombreCompleto || 'Pendiente de asignación'],
+          ['Atendido por', paciente.atendidoPor?.nombreCompleto || 'Sin atención registrada'],
         ]
         return (
           <article className='rounded-2xl border border-[#dbe5ed] bg-white p-5 shadow-[0_5px_18px_rgba(18,52,91,0.05)]' key={paciente.id}>

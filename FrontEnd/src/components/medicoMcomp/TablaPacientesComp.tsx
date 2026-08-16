@@ -50,7 +50,7 @@ function TablaPacientesComp({
     <section className='mt-2.5 overflow-hidden rounded-xl border border-[#dce5ee] bg-white shadow-[0_5px_16px_rgba(18,52,91,0.08)]'>
       <div aria-label='Tabla de pacientes' className='overflow-x-auto' tabIndex={0}>
         <table className='w-full min-w-[900px] table-fixed border-collapse'>
-          <caption className='sr-only'>Listado de pacientes hematológicos pediátricos registrados</caption>
+          <caption className='sr-only'>Listado de pacientes hematológicos pediátricos del hospital</caption>
           <colgroup>
             <col className='w-[20%]' />
             <col className='w-[9%]' />

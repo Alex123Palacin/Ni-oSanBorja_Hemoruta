@@ -4,7 +4,6 @@ import DetalleCuentaAdminComp from '../../components/adminMcomp/DetalleCuentaAdm
 import DetalleMedicoAdminComp from '../../components/adminMcomp/DetalleMedicoAdminComp'
 import FichaPacienteAdminComp from '../../components/adminMcomp/FichaPacienteAdminComp'
 import IconoMedico from '../../components/IconoMedico'
-import MenuAdmin from '../../components/MenuAdmin'
 import useAuth from '../../auth/useAuth'
 import useDetalleUsuarioAdmin from '../../hooks/useDetalleUsuarioAdmin'
 
@@ -14,9 +13,7 @@ function DetalleUsuarioHospitalarioPage() {
   const { usuario: administrador } = useAuth()
 
   return (
-    <div className='flex min-h-dvh bg-[#fbfdff] text-[#0b2b69]'>
-      <MenuAdmin />
-      <div className='min-w-0 flex-1'>
+    <div className='min-h-dvh bg-[#fbfdff] text-[#0b2b69]'>
         <header className='flex min-h-[54px] items-center justify-end border-b border-[#dce5ee] bg-white px-4 sm:px-6 lg:px-8'>
           <div className='flex items-center gap-2'>
             <span className='grid h-10 w-10 place-items-center overflow-hidden rounded-full border-2 border-[#d8e5ed] bg-gradient-to-b from-[#f5d7c8] to-[#efb494] text-[11px] font-black text-[#087f91]'>
@@ -117,7 +114,6 @@ function DetalleUsuarioHospitalarioPage() {
             </div>
           )}
         </main>
-      </div>
     </div>
   )
 }

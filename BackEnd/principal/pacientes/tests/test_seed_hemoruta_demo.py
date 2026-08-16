@@ -6,6 +6,7 @@ from django.test import TestCase
 
 from citas.models import Cita
 from clinica.models import ConsultaClinica, Diagnostico, PlanTratamiento
+from clinica_dia.models import ProgramacionQuimioterapia, SolicitudQuimioterapia
 from documentos.models import DocumentoPaciente
 from medicacion.models import DosisProgramada, Prescripcion, ReporteDosis
 from pacientes.models import AsignacionMedica, CuentaMovilPaciente, Paciente, TutorPaciente
@@ -39,9 +40,18 @@ class SeedHemorutaDemoTests(TestCase):
 
         self.assertEqual(TutorPaciente.objects.count(), 5)
         self.assertEqual(CuentaMovilPaciente.objects.count(), 5)
-        self.assertEqual(AsignacionMedica.objects.filter(activa=True).count(), 10)
+        asignaciones_vigentes = AsignacionMedica.objects.filter(activa=True)
+        self.assertEqual(asignaciones_vigentes.count(), 10)
+        self.assertEqual(asignaciones_vigentes.filter(es_principal=True).count(), 5)
+        self.assertFalse(
+            asignaciones_vigentes.exclude(
+                origen=AsignacionMedica.Origen.MANUAL,
+            ).exists()
+        )
         self.assertEqual(Diagnostico.objects.filter(es_principal=True).count(), 5)
         self.assertEqual(Cita.objects.count(), 10)
+        self.assertEqual(SolicitudQuimioterapia.objects.count(), 4)
+        self.assertEqual(ProgramacionQuimioterapia.objects.count(), 0)
         self.assertEqual(ConsultaClinica.objects.count(), 5)
         self.assertEqual(PlanTratamiento.objects.count(), 5)
         self.assertEqual(Prescripcion.objects.filter(estado=Prescripcion.Estado.ACTIVA).count(), 8)
@@ -54,6 +64,7 @@ class SeedHemorutaDemoTests(TestCase):
 
         mateo = Paciente.objects.get(historia_clinica="HC-2024-01568")
         self.assertEqual(mateo.asignaciones_medicas.filter(activa=True).count(), 2)
+        self.assertEqual(mateo.creado_por.username, "alex")
         self.assertEqual(mateo.prescripciones.filter(estado=Prescripcion.Estado.ACTIVA).count(), 4)
         self.assertTrue(
             DosisProgramada.objects.filter(
@@ -86,6 +97,8 @@ class SeedHemorutaDemoTests(TestCase):
             DocumentoPaciente,
             EventoSeguimiento,
             AlertaSeguimiento,
+            SolicitudQuimioterapia,
+            ProgramacionQuimioterapia,
         )
         conteos_primera_ejecucion = {modelo: modelo.objects.count() for modelo in modelos}
 

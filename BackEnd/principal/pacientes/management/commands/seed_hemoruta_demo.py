@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
@@ -406,8 +407,8 @@ class Command(BaseCommand):
         catalogo = self._crear_catalogo_sintomas()
 
         for indice, datos in enumerate(PACIENTES_DEMO):
-            paciente, cuenta = self._crear_paciente_y_familia(datos, medicos["valeria.ruiz"])
-            self._crear_asignaciones_compartidas(paciente, medicos, admin)
+            paciente, cuenta = self._crear_paciente_y_familia(datos, admin)
+            self._crear_asignaciones_base(paciente, medicos, admin)
             self._crear_diagnostico(paciente, datos, medicos["valeria.ruiz"])
             cita_pasada, _ = self._crear_citas(paciente, indice, medicos)
             consulta = self._crear_consulta(paciente, cita_pasada, datos, medicos["valeria.ruiz"])
@@ -420,6 +421,13 @@ class Command(BaseCommand):
             self._establecer_semaforo_actual(paciente, datos["semaforo"], medicos["valeria.ruiz"])
             self._crear_documentos(paciente, cuenta, consulta, datos["documentos"])
             self._crear_eventos_clinicos(paciente, consulta, plan, medicos["valeria.ruiz"])
+
+        call_command(
+            "seed_clinica_dia_demo",
+            admin_username=admin.username,
+            fecha_base=self.fecha_base.isoformat(),
+            stdout=self.stdout,
+        )
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -588,33 +596,28 @@ class Command(BaseCommand):
         )
         return paciente, usuario
 
-    def _crear_asignaciones_compartidas(self, paciente, medicos, admin):
-        principal = medicos["valeria.ruiz"]
-        secundario = medicos["luis.paredes"]
-        AsignacionMedica.objects.filter(
+    def _crear_asignaciones_base(self, paciente, medicos, admin):
+        if paciente.asignaciones_medicas.exists():
+            return
+        AsignacionMedica.objects.create(
             paciente=paciente,
+            medico=medicos["valeria.ruiz"],
             activa=True,
             es_principal=True,
-        ).exclude(medico=principal).update(es_principal=False)
-        AsignacionMedica.objects.update_or_create(
-            paciente=paciente,
-            medico=principal,
-            activa=True,
-            defaults={
-                "es_principal": True,
-                "fecha_inicio": self.fecha_base - timedelta(days=120),
-                "asignado_por": admin,
-            },
+            fecha_inicio=self.fecha_base - timedelta(days=120),
+            asignado_por=admin,
+            origen=AsignacionMedica.Origen.MANUAL,
+            motivo="Equipo asistencial inicial del escenario demostrativo.",
         )
-        AsignacionMedica.objects.update_or_create(
+        AsignacionMedica.objects.create(
             paciente=paciente,
-            medico=secundario,
+            medico=medicos["luis.paredes"],
             activa=True,
-            defaults={
-                "es_principal": False,
-                "fecha_inicio": self.fecha_base - timedelta(days=60),
-                "asignado_por": admin,
-            },
+            es_principal=False,
+            fecha_inicio=self.fecha_base - timedelta(days=60),
+            asignado_por=admin,
+            origen=AsignacionMedica.Origen.MANUAL,
+            motivo="Equipo asistencial inicial del escenario demostrativo.",
         )
 
     def _crear_diagnostico(self, paciente, datos, medico):

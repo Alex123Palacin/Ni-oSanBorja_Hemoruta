@@ -4,15 +4,12 @@ import useAuth from '../../auth/useAuth'
 import GestionCuentaComp from '../../components/GestionCuentaComp'
 import HeaderAdminComp from '../../components/HeaderAdminComp'
 import IconoMedico from '../../components/IconoMedico'
-import MenuAdmin from '../../components/MenuAdmin'
 
 function InicioAdminPage() {
   const { usuario } = useAuth()
 
   return (
-    <div className='flex min-h-dvh bg-[#f8fbfd] text-[#0b2b70]'>
-      <MenuAdmin />
-      <div className='min-w-0 flex-1'>
+    <div className='min-h-dvh bg-[#f8fbfd] text-[#0b2b70]'>
         <HeaderAdminComp />
         <main className='mx-auto w-full max-w-[1180px] px-4 pb-24 pt-6 sm:px-6 lg:px-8'>
           <section className='relative overflow-hidden rounded-[24px] border border-[#dbe7ee] bg-gradient-to-r from-[#edfafa] via-white to-[#f0f5ff] px-6 py-7 shadow-[0_12px_35px_rgba(21,68,97,0.07)] sm:px-8'>
@@ -28,7 +25,7 @@ function InicioAdminPage() {
             </div>
           </section>
 
-          <section className='mt-5 grid gap-3 sm:grid-cols-2'>
+          <section className='mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
             <Link className='group flex items-center gap-4 rounded-2xl border border-[#dce7ee] bg-white p-5 shadow-[0_8px_22px_rgba(23,57,92,0.05)] transition hover:border-[#8bd6da]' to='/admin/UsuariosHospitalarios'>
               <span className='grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#e9f9f9] text-[#079eaa] group-hover:bg-[#08aab3] group-hover:text-white'>
                 <IconoMedico className='h-6 w-6' nombre='users' />
@@ -41,13 +38,18 @@ function InicioAdminPage() {
               </span>
               <span><strong className='block text-[14px] font-black text-[#0a2b70]'>Crear nueva cuenta</strong><span className='mt-1 block text-[10px] text-[#687b98]'>Registra administradores, médicos o pacientes.</span></span>
             </Link>
+            <Link className='group flex items-center gap-4 rounded-2xl border border-[#dce7ee] bg-white p-5 shadow-[0_8px_22px_rgba(23,57,92,0.05)] transition hover:border-[#8bd6da]' to='/admin/clinica-dia'>
+              <span className='grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#e9f9f9] text-[#079da8] group-hover:bg-[#079da8] group-hover:text-white'>
+                <IconoMedico className='h-6 w-6' nombre='calendar' />
+              </span>
+              <span><strong className='block text-[14px] font-black text-[#0a2b70]'>Clínica de Día</strong><span className='mt-1 block text-[10px] text-[#687b98]'>Programa pacientes, turnos, camas y recordatorios.</span></span>
+            </Link>
           </section>
 
           <div className='mt-5'>
             <GestionCuentaComp />
           </div>
         </main>
-      </div>
     </div>
   )
 }

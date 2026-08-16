@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import useAuth from '../../auth/useAuth'
 import IconoMedico from '../IconoMedico'
+import MenuAdmin from '../MenuAdmin'
 
 function AdminSessionLayoutComp() {
   const { cerrarSesion, usuario } = useAuth()
@@ -21,7 +22,12 @@ function AdminSessionLayoutComp() {
 
   return (
     <>
-      <Outlet />
+      <div className='flex min-h-dvh bg-[#fbfdff] text-[#0b2b69]'>
+        <MenuAdmin />
+        <div className='min-w-0 flex-1'>
+          <Outlet />
+        </div>
+      </div>
       <aside className='fixed bottom-4 right-4 z-[100] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-2xl border border-[#d9e5ec] bg-white/95 p-2 pl-3 shadow-[0_12px_35px_rgba(14,48,89,0.16)] backdrop-blur'>
         <span className='hidden min-w-0 sm:block'>
           <strong className='block max-w-40 truncate text-[11px] text-[#0a2b70]'>{usuario?.nombre}</strong>

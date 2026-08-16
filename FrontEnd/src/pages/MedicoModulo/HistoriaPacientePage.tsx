@@ -60,7 +60,7 @@ const ETIQUETAS_ESTADO: Record<string, string> = {
 
 const ETIQUETAS_ORIGEN_DOCUMENTO: Record<string, string> = {
   APP: 'Subido desde la app',
-  MEDICO: 'Registrado por el equipo médico',
+  MEDICO: 'Subido por el equipo médico',
   SISTEMA: 'Sistema hospitalario',
 }
 

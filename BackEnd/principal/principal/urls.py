@@ -12,6 +12,7 @@ api_v1 = [
     # Alias orientado al modulo administrativo del frontend.
     path("admin/", include(router_usuarios.urls)),
     path("", include("pacientes.urls")),
+    path("", include("clinica_dia.urls")),
     path("", include("clinica.urls")),
     path("", include("citas.urls")),
     path("", include("medicacion.urls")),

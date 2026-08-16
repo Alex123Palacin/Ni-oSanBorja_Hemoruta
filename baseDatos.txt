@@ -1,39 +1,8 @@
--- HEMORUTA PEDIÁTRICA - NIÑO SAN BORJA
--- Volcado PostgreSQL de hackatón: esquema completo y datos demostrativos.
--- Generado: 2026-08-13
---
--- CREDENCIALES POSTGRESQL
--- Base de datos: NiñoSanBorjaDataBase
--- Usuario: postgres
--- Contraseña: admin
--- Host dentro de Docker: db | Puerto interno: 5432
--- PostgreSQL no se publica al host para evitar conflictos con instalaciones locales.
---
--- CREDENCIALES DE LA APLICACIÓN
--- Administrador: alex / alex
--- Médicos: valeria.ruiz / alex | luis.paredes / alex
--- Pacientes/tutores: maria.flores / alex | carlos.rojas / alex
---                    veronica.medina / alex | jorge.torres / alex
---                    katherine.perez / alex
--- También puede iniciarse sesión con el DNI o correo asociado.
---
--- RESTAURACIÓN MANUAL
--- 1. Crear una base vacía con codificación UTF-8:
---    CREATE DATABASE "NiñoSanBorjaDataBase" OWNER postgres ENCODING 'UTF8';
--- 2. Copiar e importar dentro del contenedor:
---    docker compose cp baseDatos.txt db:/tmp/baseDatos.sql
---    docker compose exec db psql -U postgres -d "NiñoSanBorjaDataBase" -f /tmp/baseDatos.sql
---
--- ARRANQUE RECOMENDADO (no requiere restauración manual)
---    docker compose up --build
--- Docker ejecuta migraciones y carga el mismo escenario de forma idempotente.
--- Este volcado excluye los datos de tokens y sesiones.
-
 --
 -- PostgreSQL database dump
 --
 
-\restrict I1dFI1Mbi9EGVhkqk41DK4wQj9tuN8ehdKwpfqB8k4w8HPStP2lYIMpCAk66onv
+\restrict GyhgVYkdtYcBwiZQ0nnNuBa602IfcBMnaAxwT3mpksDLxxAVYDGZzV1R2dXWdOa
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
@@ -78,6 +47,7 @@ ALTER TABLE IF EXISTS ONLY public.pacientes_cuentamovilpaciente DROP CONSTRAINT 
 ALTER TABLE IF EXISTS ONLY public.pacientes_cuentamovilpaciente DROP CONSTRAINT IF EXISTS pacientes_cuentamovi_paciente_id_fb589e00_fk_pacientes;
 ALTER TABLE IF EXISTS ONLY public.pacientes_asignacionmedica DROP CONSTRAINT IF EXISTS pacientes_asignacion_paciente_id_9fd56fae_fk_pacientes;
 ALTER TABLE IF EXISTS ONLY public.pacientes_asignacionmedica DROP CONSTRAINT IF EXISTS pacientes_asignacion_medico_id_fe3766a9_fk_usuarios_;
+ALTER TABLE IF EXISTS ONLY public.pacientes_asignacionmedica DROP CONSTRAINT IF EXISTS pacientes_asignacion_cerrada_por_id_af3ae038_fk_usuarios_;
 ALTER TABLE IF EXISTS ONLY public.pacientes_asignacionmedica DROP CONSTRAINT IF EXISTS pacientes_asignacion_asignado_por_id_955d61e3_fk_usuarios_;
 ALTER TABLE IF EXISTS ONLY public.medicacion_reportedosis DROP CONSTRAINT IF EXISTS medicacion_reportedo_reportada_por_id_d21d5cb2_fk_usuarios_;
 ALTER TABLE IF EXISTS ONLY public.medicacion_reportedosis DROP CONSTRAINT IF EXISTS medicacion_reportedo_dosis_programada_id_980c10da_fk_medicacio;
@@ -103,6 +73,16 @@ ALTER TABLE IF EXISTS ONLY public.clinica_itemseccionconsulta DROP CONSTRAINT IF
 ALTER TABLE IF EXISTS ONLY public.clinica_itemplantratamiento DROP CONSTRAINT IF EXISTS clinica_itemplantrat_plan_id_2745e816_fk_clinica_p;
 ALTER TABLE IF EXISTS ONLY public.clinica_diagnostico DROP CONSTRAINT IF EXISTS clinica_diagnostico_paciente_id_bc0c531d_fk_pacientes;
 ALTER TABLE IF EXISTS ONLY public.clinica_diagnostico DROP CONSTRAINT IF EXISTS clinica_diagnostico_medico_id_787766e3_fk_usuarios_usuario_id;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_solicitudquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_solicitu_paciente_id_f59ae011_fk_pacientes;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_solicitudquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_solicitu_creada_por_id_c51ff300_fk_usuarios_;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_programacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_programa_solicitud_id_ee3546e1_fk_clinica_d;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_programacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_programa_recordatorio_por_id_d946803d_fk_usuarios_;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_programacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_programa_programada_por_id_5fd93381_fk_usuarios_;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_programacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_programa_confirmada_por_id_e70147c4_fk_usuarios_;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_programacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_programa_cita_id_2ccafeac_fk_citas_cit;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_programacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_programa_cancelada_por_id_80ff2f62_fk_usuarios_;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_cambioprogramacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_cambiopr_realizada_por_id_60176446_fk_usuarios_;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_cambioprogramacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_cambiopr_programacion_id_0587221f_fk_clinica_d;
 ALTER TABLE IF EXISTS ONLY public.clinica_consultaclinica DROP CONSTRAINT IF EXISTS clinica_consultaclinica_cita_id_b8cc007d_fk_citas_cita_id;
 ALTER TABLE IF EXISTS ONLY public.clinica_consultaclinica DROP CONSTRAINT IF EXISTS clinica_consultaclin_paciente_id_9d3134ad_fk_pacientes;
 ALTER TABLE IF EXISTS ONLY public.clinica_consultaclinica DROP CONSTRAINT IF EXISTS clinica_consultaclin_medico_id_0cbeb6cf_fk_usuarios_;
@@ -145,6 +125,11 @@ DROP INDEX IF EXISTS public.seguimiento_alertaseguimiento_resuelta_por_id_d00416
 DROP INDEX IF EXISTS public.seguimiento_alertaseguimiento_paciente_id_c8a4a873;
 DROP INDEX IF EXISTS public.seguimiento_alertaseguimiento_evento_id_5d6def81;
 DROP INDEX IF EXISTS public.seguimiento_alertaseguimiento_asignada_a_id_044fbc46;
+DROP INDEX IF EXISTS public.quim_sol_pendiente_idx;
+DROP INDEX IF EXISTS public.quim_prog_solicitud_activa;
+DROP INDEX IF EXISTS public.quim_prog_slot_unico;
+DROP INDEX IF EXISTS public.quim_prog_record_idx;
+DROP INDEX IF EXISTS public.quim_prog_agenda_idx;
 DROP INDEX IF EXISTS public.prescripcion_pac_estado_idx;
 DROP INDEX IF EXISTS public.plan_pac_estado_idx;
 DROP INDEX IF EXISTS public.pacientes_tutorpaciente_usuario_id_a00adf70;
@@ -156,6 +141,7 @@ DROP INDEX IF EXISTS public.pacientes_cuentamovilpaciente_usuario_id_83eed6e6;
 DROP INDEX IF EXISTS public.pacientes_cuentamovilpaciente_alias_e0d0897c_like;
 DROP INDEX IF EXISTS public.pacientes_asignacionmedica_paciente_id_9fd56fae;
 DROP INDEX IF EXISTS public.pacientes_asignacionmedica_medico_id_fe3766a9;
+DROP INDEX IF EXISTS public.pacientes_asignacionmedica_cerrada_por_id_af3ae038;
 DROP INDEX IF EXISTS public.pacientes_asignacionmedica_asignado_por_id_955d61e3;
 DROP INDEX IF EXISTS public.paciente_nombre_idx;
 DROP INDEX IF EXISTS public.paciente_estado_idx;
@@ -194,6 +180,30 @@ DROP INDEX IF EXISTS public.clinica_itemseccionconsulta_seccion_id_0370c840;
 DROP INDEX IF EXISTS public.clinica_itemplantratamiento_plan_id_2745e816;
 DROP INDEX IF EXISTS public.clinica_diagnostico_paciente_id_bc0c531d;
 DROP INDEX IF EXISTS public.clinica_diagnostico_medico_id_787766e3;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_prioridad_79ae7bb6_like;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_prioridad_79ae7bb6;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_paciente_id_f59ae011;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_lote_importacion_e730ee2b;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_fecha_preferida_f2fa8cfb;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_estado_d7cf3fb9_like;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_estado_d7cf3fb9;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_dni_e77cb3e5_like;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_dni_e77cb3e5;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_creada_por_id_c51ff300;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudquimioterapia_codigo_externo_c31e4242_like;
+DROP INDEX IF EXISTS public.clinica_dia_solicitudqui_huella_importacion_dbc6460e_like;
+DROP INDEX IF EXISTS public.clinica_dia_programacionquimioterapia_solicitud_id_ee3546e1;
+DROP INDEX IF EXISTS public.clinica_dia_programacionquimioterapia_fecha_49143b33;
+DROP INDEX IF EXISTS public.clinica_dia_programacionquimioterapia_estado_c70dbd80_like;
+DROP INDEX IF EXISTS public.clinica_dia_programacionquimioterapia_estado_c70dbd80;
+DROP INDEX IF EXISTS public.clinica_dia_programacionquimioterapia_cancelada_por_id_80ff2f62;
+DROP INDEX IF EXISTS public.clinica_dia_programacionqu_recordatorio_por_id_d946803d;
+DROP INDEX IF EXISTS public.clinica_dia_programacionqu_recordatorio_estado_6f7b7bd7;
+DROP INDEX IF EXISTS public.clinica_dia_programacionqu_programada_por_id_5fd93381;
+DROP INDEX IF EXISTS public.clinica_dia_programacionqu_confirmada_por_id_e70147c4;
+DROP INDEX IF EXISTS public.clinica_dia_programacion_recordatorio_estado_6f7b7bd7_like;
+DROP INDEX IF EXISTS public.clinica_dia_cambioprograma_realizada_por_id_60176446;
+DROP INDEX IF EXISTS public.clinica_dia_cambioprograma_programacion_id_0587221f;
 DROP INDEX IF EXISTS public.clinica_consultaclinica_paciente_id_9d3134ad;
 DROP INDEX IF EXISTS public.clinica_consultaclinica_medico_id_0cbeb6cf;
 DROP INDEX IF EXISTS public.citas_cita_paciente_id_6494b869;
@@ -209,6 +219,8 @@ DROP INDEX IF EXISTS public.auth_group_permissions_permission_id_84c5c92e;
 DROP INDEX IF EXISTS public.auth_group_permissions_group_id_b120cbf9;
 DROP INDEX IF EXISTS public.auth_group_name_a6ea08ec_like;
 DROP INDEX IF EXISTS public.asignacion_medica_activa_unica;
+DROP INDEX IF EXISTS public.asig_pac_hist_idx;
+DROP INDEX IF EXISTS public.asig_med_carga_idx;
 DROP INDEX IF EXISTS public.alerta_pac_estado_idx;
 DROP INDEX IF EXISTS public.alerta_estado_prior_idx;
 ALTER TABLE IF EXISTS ONLY public.usuarios_usuario DROP CONSTRAINT IF EXISTS usuarios_usuario_username_key;
@@ -266,6 +278,12 @@ ALTER TABLE IF EXISTS ONLY public.clinica_plantratamiento DROP CONSTRAINT IF EXI
 ALTER TABLE IF EXISTS ONLY public.clinica_itemseccionconsulta DROP CONSTRAINT IF EXISTS clinica_itemseccionconsulta_pkey;
 ALTER TABLE IF EXISTS ONLY public.clinica_itemplantratamiento DROP CONSTRAINT IF EXISTS clinica_itemplantratamiento_pkey;
 ALTER TABLE IF EXISTS ONLY public.clinica_diagnostico DROP CONSTRAINT IF EXISTS clinica_diagnostico_pkey;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_solicitudquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_solicitudquimioterapia_pkey;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_solicitudquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_solicitudquimioterapia_huella_importacion_key;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_solicitudquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_solicitudquimioterapia_codigo_externo_key;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_programacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_programacionquimioterapia_pkey;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_programacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_programacionquimioterapia_cita_id_key;
+ALTER TABLE IF EXISTS ONLY public.clinica_dia_cambioprogramacionquimioterapia DROP CONSTRAINT IF EXISTS clinica_dia_cambioprogramacionquimioterapia_pkey;
 ALTER TABLE IF EXISTS ONLY public.clinica_consultaclinica DROP CONSTRAINT IF EXISTS clinica_consultaclinica_pkey;
 ALTER TABLE IF EXISTS ONLY public.clinica_consultaclinica DROP CONSTRAINT IF EXISTS clinica_consultaclinica_cita_id_key;
 ALTER TABLE IF EXISTS ONLY public.citas_cita DROP CONSTRAINT IF EXISTS citas_cita_pkey;
@@ -309,6 +327,9 @@ DROP TABLE IF EXISTS public.clinica_plantratamiento;
 DROP TABLE IF EXISTS public.clinica_itemseccionconsulta;
 DROP TABLE IF EXISTS public.clinica_itemplantratamiento;
 DROP TABLE IF EXISTS public.clinica_diagnostico;
+DROP TABLE IF EXISTS public.clinica_dia_solicitudquimioterapia;
+DROP TABLE IF EXISTS public.clinica_dia_programacionquimioterapia;
+DROP TABLE IF EXISTS public.clinica_dia_cambioprogramacionquimioterapia;
 DROP TABLE IF EXISTS public.clinica_consultaclinica;
 DROP TABLE IF EXISTS public.citas_cita;
 DROP TABLE IF EXISTS public.authtoken_token;
@@ -473,6 +494,92 @@ CREATE TABLE public.clinica_consultaclinica (
     cita_id uuid,
     medico_id uuid NOT NULL,
     paciente_id uuid NOT NULL
+);
+
+
+--
+-- Name: clinica_dia_cambioprogramacionquimioterapia; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.clinica_dia_cambioprogramacionquimioterapia (
+    id uuid NOT NULL,
+    creado_en timestamp with time zone NOT NULL,
+    actualizado_en timestamp with time zone CONSTRAINT clinica_dia_cambioprogramacionquimioter_actualizado_en_not_null NOT NULL,
+    accion character varying(16) NOT NULL,
+    datos_anteriores jsonb CONSTRAINT clinica_dia_cambioprogramacionquimiot_datos_anteriores_not_null NOT NULL,
+    datos_nuevos jsonb CONSTRAINT clinica_dia_cambioprogramacionquimioterap_datos_nuevos_not_null NOT NULL,
+    motivo character varying(255) NOT NULL,
+    realizada_por_id uuid,
+    programacion_id uuid CONSTRAINT clinica_dia_cambioprogramacionquimiote_programacion_id_not_null NOT NULL
+);
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.clinica_dia_programacionquimioterapia (
+    id uuid NOT NULL,
+    creado_en timestamp with time zone NOT NULL,
+    actualizado_en timestamp with time zone NOT NULL,
+    fecha date NOT NULL,
+    turno character varying(2) NOT NULL,
+    hora_inicio time without time zone NOT NULL,
+    hora_fin time without time zone NOT NULL,
+    cama smallint NOT NULL,
+    estado character varying(16) NOT NULL,
+    origen character varying(12) NOT NULL,
+    observaciones text NOT NULL,
+    confirmada_en timestamp with time zone,
+    cancelada_en timestamp with time zone,
+    motivo_cancelacion character varying(255) CONSTRAINT clinica_dia_programacionquimioterap_motivo_cancelacion_not_null NOT NULL,
+    recordatorio_estado character varying(16) CONSTRAINT clinica_dia_programacionquimiotera_recordatorio_estado_not_null NOT NULL,
+    recordatorio_en timestamp with time zone,
+    recordatorio_observacion character varying(255) CONSTRAINT clinica_dia_programacionquimi_recordatorio_observacion_not_null NOT NULL,
+    cancelada_por_id uuid,
+    cita_id uuid,
+    confirmada_por_id uuid,
+    programada_por_id uuid,
+    recordatorio_por_id uuid,
+    solicitud_id uuid NOT NULL,
+    CONSTRAINT clinica_dia_programacionquimioterapia_cama_check CHECK ((cama >= 0)),
+    CONSTRAINT quim_prog_cama_rango CHECK (((cama >= 1) AND (cama <= 8))),
+    CONSTRAINT quim_prog_horas_validas CHECK ((hora_fin > hora_inicio))
+);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.clinica_dia_solicitudquimioterapia (
+    id uuid NOT NULL,
+    creado_en timestamp with time zone NOT NULL,
+    actualizado_en timestamp with time zone NOT NULL,
+    dni character varying(8) NOT NULL,
+    nombre_completo_importado character varying(241) CONSTRAINT clinica_dia_solicitudquimiot_nombre_completo_importado_not_null NOT NULL,
+    historia_clinica_importada character varying(32) CONSTRAINT clinica_dia_solicitudquimio_historia_clinica_importada_not_null NOT NULL,
+    fecha_nacimiento_importada date,
+    telefono character varying(20) NOT NULL,
+    procedencia character varying(160) NOT NULL,
+    diagnostico character varying(240) NOT NULL,
+    protocolo character varying(240) NOT NULL,
+    prioridad character varying(8) NOT NULL,
+    fecha_preferida date,
+    hora_preferida time without time zone,
+    duracion_minutos smallint NOT NULL,
+    estado character varying(16) NOT NULL,
+    origen character varying(16) NOT NULL,
+    codigo_externo character varying(80),
+    lote_importacion uuid,
+    fila_importacion integer,
+    huella_importacion character varying(64),
+    observaciones text NOT NULL,
+    creada_por_id uuid,
+    paciente_id uuid,
+    CONSTRAINT clinica_dia_solicitudquimioterapia_duracion_minutos_check CHECK ((duracion_minutos >= 0)),
+    CONSTRAINT clinica_dia_solicitudquimioterapia_fila_importacion_check CHECK ((fila_importacion >= 0)),
+    CONSTRAINT quim_sol_duracion_rango CHECK (((duracion_minutos >= 15) AND (duracion_minutos <= 210)))
 );
 
 
@@ -794,7 +901,11 @@ CREATE TABLE public.pacientes_asignacionmedica (
     creado_en timestamp with time zone NOT NULL,
     asignado_por_id uuid,
     medico_id uuid NOT NULL,
-    paciente_id uuid NOT NULL
+    paciente_id uuid NOT NULL,
+    cerrada_por_id uuid,
+    cerrado_en timestamp with time zone,
+    motivo character varying(255) NOT NULL,
+    origen character varying(16) NOT NULL
 );
 
 
@@ -1231,6 +1342,18 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 134	Can change sesion consulta voz	34	change_sesionconsultavoz
 135	Can delete sesion consulta voz	34	delete_sesionconsultavoz
 136	Can view sesion consulta voz	34	view_sesionconsultavoz
+137	Can add programacion quimioterapia	36	add_programacionquimioterapia
+138	Can change programacion quimioterapia	36	change_programacionquimioterapia
+139	Can delete programacion quimioterapia	36	delete_programacionquimioterapia
+140	Can view programacion quimioterapia	36	view_programacionquimioterapia
+141	Can add cambio programacion quimioterapia	35	add_cambioprogramacionquimioterapia
+142	Can change cambio programacion quimioterapia	35	change_cambioprogramacionquimioterapia
+143	Can delete cambio programacion quimioterapia	35	delete_cambioprogramacionquimioterapia
+144	Can view cambio programacion quimioterapia	35	view_cambioprogramacionquimioterapia
+145	Can add solicitud quimioterapia	37	add_solicitudquimioterapia
+146	Can change solicitud quimioterapia	37	change_solicitudquimioterapia
+147	Can delete solicitud quimioterapia	37	delete_solicitudquimioterapia
+148	Can view solicitud quimioterapia	37	view_solicitudquimioterapia
 \.
 
 
@@ -1239,16 +1362,16 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 --
 
 COPY public.citas_cita (id, tipo, inicio, fin, estado, origen, especialidad, sede, consultorio, motivo, observaciones, confirmada_en, creado_en, actualizado_en, confirmada_por_id, creada_por_id, medico_id, paciente_id) FROM stdin;
-c4f0fc10-7a9d-45e4-876e-984d7d2fb91c	CONSULTA	2026-07-16 09:15:00-05	2026-07-16 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-01	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-14 09:15:00-05	2026-08-13 18:44:04.58402-05	2026-08-13 18:44:04.584023-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
-733ce674-2bd0-4460-b411-a969a8ebd845	CONTROL	2026-08-20 10:30:00-05	2026-08-20 11:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-01	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-13 18:52:14.840348-05	2026-08-13 18:44:04.585608-05	2026-08-13 18:44:04.585611-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
-f944557f-797d-4de4-a6d3-b72ff476668d	CONSULTA	2026-07-15 09:15:00-05	2026-07-15 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-02	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-13 09:15:00-05	2026-08-13 18:44:04.974634-05	2026-08-13 18:44:04.974639-05	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	8024a122-b860-4a88-91ab-feeb393130d8
-f1d3e49e-a667-4642-859e-ddaa31cba1a5	CONTROL	2026-08-21 11:30:00-05	2026-08-21 12:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-02	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-13 18:52:15.13194-05	2026-08-13 18:44:04.976113-05	2026-08-13 18:44:04.976115-05	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	8024a122-b860-4a88-91ab-feeb393130d8
-1d428794-ea29-4d17-910e-4d3bb5aa018b	CONSULTA	2026-07-14 09:15:00-05	2026-07-14 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-03	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-12 09:15:00-05	2026-08-13 18:44:05.236536-05	2026-08-13 18:44:05.236539-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
-2878402b-3e77-478d-952a-eb6310d546be	CONTROL	2026-08-22 12:30:00-05	2026-08-22 13:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-03	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-13 18:52:15.368161-05	2026-08-13 18:44:05.237629-05	2026-08-13 18:44:05.237632-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
-4c4f0995-8522-40a2-8bcf-237d9e8ae436	CONSULTA	2026-07-13 09:15:00-05	2026-07-13 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-04	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-11 09:15:00-05	2026-08-13 18:44:05.491754-05	2026-08-13 18:44:05.491757-05	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
-c1ff8b06-c68f-4b97-a0b7-8a6382539545	CONTROL	2026-08-23 13:30:00-05	2026-08-23 14:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-04	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-13 18:52:15.611649-05	2026-08-13 18:44:05.492907-05	2026-08-13 18:44:05.49291-05	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
-546d4ced-14bc-4cfd-8912-70826db32ca8	CONSULTA	2026-07-12 09:15:00-05	2026-07-12 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-05	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-10 09:15:00-05	2026-08-13 18:44:05.750113-05	2026-08-13 18:44:05.750115-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
-37501e3b-3d8a-4390-8e3b-a639c367d634	CONTROL	2026-08-24 14:30:00-05	2026-08-24 15:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-05	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-13 18:52:15.850011-05	2026-08-13 18:44:05.751252-05	2026-08-13 18:44:05.751255-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
+c4f0fc10-7a9d-45e4-876e-984d7d2fb91c	CONSULTA	2026-07-19 09:15:00-05	2026-07-19 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-01	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-17 09:15:00-05	2026-08-13 18:44:04.58402-05	2026-08-13 18:44:04.584023-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
+733ce674-2bd0-4460-b411-a969a8ebd845	CONTROL	2026-08-23 10:30:00-05	2026-08-23 11:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-01	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-16 14:25:45.015704-05	2026-08-13 18:44:04.585608-05	2026-08-13 18:44:04.585611-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
+f944557f-797d-4de4-a6d3-b72ff476668d	CONSULTA	2026-07-18 09:15:00-05	2026-07-18 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-02	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-16 09:15:00-05	2026-08-13 18:44:04.974634-05	2026-08-13 18:44:04.974639-05	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	8024a122-b860-4a88-91ab-feeb393130d8
+f1d3e49e-a667-4642-859e-ddaa31cba1a5	CONTROL	2026-08-24 11:30:00-05	2026-08-24 12:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-02	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-16 14:25:45.309651-05	2026-08-13 18:44:04.976113-05	2026-08-13 18:44:04.976115-05	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	8024a122-b860-4a88-91ab-feeb393130d8
+1d428794-ea29-4d17-910e-4d3bb5aa018b	CONSULTA	2026-07-17 09:15:00-05	2026-07-17 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-03	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-15 09:15:00-05	2026-08-13 18:44:05.236536-05	2026-08-13 18:44:05.236539-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
+2878402b-3e77-478d-952a-eb6310d546be	CONTROL	2026-08-25 12:30:00-05	2026-08-25 13:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-03	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-16 14:25:45.544738-05	2026-08-13 18:44:05.237629-05	2026-08-13 18:44:05.237632-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
+4c4f0995-8522-40a2-8bcf-237d9e8ae436	CONSULTA	2026-07-16 09:15:00-05	2026-07-16 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-04	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-14 09:15:00-05	2026-08-13 18:44:05.491754-05	2026-08-13 18:44:05.491757-05	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
+c1ff8b06-c68f-4b97-a0b7-8a6382539545	CONTROL	2026-08-26 13:30:00-05	2026-08-26 14:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-04	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-16 14:25:45.784679-05	2026-08-13 18:44:05.492907-05	2026-08-13 18:44:05.49291-05	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	85016450-c868-4995-a765-a1af2dd64f2b	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
+546d4ced-14bc-4cfd-8912-70826db32ca8	CONSULTA	2026-07-15 09:15:00-05	2026-07-15 09:55:00-05	COMPLETADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-05	Consulta de control completada (demo)	Atención completada y registrada en el sistema.	2026-07-13 09:15:00-05	2026-08-13 18:44:05.750113-05	2026-08-13 18:44:05.750115-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
+37501e3b-3d8a-4390-8e3b-a639c367d634	CONTROL	2026-08-27 14:30:00-05	2026-08-27 15:00:00-05	CONFIRMADA	HOSPITAL	Hematología Pediátrica	Hospital del Nino San Borja	H-05	Próximo control hematológico (demo)	Cita confirmada para seguimiento.	2026-08-16 14:25:46.02845-05	2026-08-13 18:44:05.751252-05	2026-08-13 18:44:05.751255-05	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
 \.
 
 
@@ -1257,11 +1380,39 @@ c1ff8b06-c68f-4b97-a0b7-8a6382539545	CONTROL	2026-08-23 13:30:00-05	2026-08-23 1
 --
 
 COPY public.clinica_consultaclinica (id, titulo, resumen, origen, estado, iniciada_en, completada_en, anulada_en, motivo_anulacion, creado_en, actualizado_en, cita_id, medico_id, paciente_id) FROM stdin;
-de04fc37-4acd-41e0-b899-a9a0ad69b9b8	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-16 09:15:00-05	2026-07-16 09:55:00-05	\N		2026-08-13 18:44:04.587833-05	2026-08-13 18:52:14.843736-05	c4f0fc10-7a9d-45e4-876e-984d7d2fb91c	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
-048c1b38-2b92-4655-88c6-029cc4255a5c	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-15 09:15:00-05	2026-07-15 09:55:00-05	\N		2026-08-13 18:44:04.977776-05	2026-08-13 18:52:15.134619-05	f944557f-797d-4de4-a6d3-b72ff476668d	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8
-4e1376cc-3db4-48c6-8200-aada210a6b6b	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-14 09:15:00-05	2026-07-14 09:55:00-05	\N		2026-08-13 18:44:05.239199-05	2026-08-13 18:52:15.370271-05	1d428794-ea29-4d17-910e-4d3bb5aa018b	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
-50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-13 09:15:00-05	2026-07-13 09:55:00-05	\N		2026-08-13 18:44:05.494068-05	2026-08-13 18:52:15.614286-05	4c4f0995-8522-40a2-8bcf-237d9e8ae436	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
-bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-12 09:15:00-05	2026-07-12 09:55:00-05	\N		2026-08-13 18:44:05.752679-05	2026-08-13 18:52:15.85186-05	546d4ced-14bc-4cfd-8912-70826db32ca8	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
+de04fc37-4acd-41e0-b899-a9a0ad69b9b8	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-19 09:15:00-05	2026-07-19 09:55:00-05	\N		2026-08-13 18:44:04.587833-05	2026-08-16 14:25:45.0186-05	c4f0fc10-7a9d-45e4-876e-984d7d2fb91c	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
+048c1b38-2b92-4655-88c6-029cc4255a5c	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-18 09:15:00-05	2026-07-18 09:55:00-05	\N		2026-08-13 18:44:04.977776-05	2026-08-16 14:25:45.312046-05	f944557f-797d-4de4-a6d3-b72ff476668d	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8
+4e1376cc-3db4-48c6-8200-aada210a6b6b	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-17 09:15:00-05	2026-07-17 09:55:00-05	\N		2026-08-13 18:44:05.239199-05	2026-08-16 14:25:45.547107-05	1d428794-ea29-4d17-910e-4d3bb5aa018b	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
+50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-16 09:15:00-05	2026-07-16 09:55:00-05	\N		2026-08-13 18:44:05.494068-05	2026-08-16 14:25:45.786807-05	4c4f0995-8522-40a2-8bcf-237d9e8ae436	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
+bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	MANUAL	COMPLETADA	2026-07-15 09:15:00-05	2026-07-15 09:55:00-05	\N		2026-08-13 18:44:05.752679-05	2026-08-16 14:25:46.030635-05	546d4ced-14bc-4cfd-8912-70826db32ca8	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
+\.
+
+
+--
+-- Data for Name: clinica_dia_cambioprogramacionquimioterapia; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.clinica_dia_cambioprogramacionquimioterapia (id, creado_en, actualizado_en, accion, datos_anteriores, datos_nuevos, motivo, realizada_por_id, programacion_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: clinica_dia_programacionquimioterapia; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.clinica_dia_programacionquimioterapia (id, creado_en, actualizado_en, fecha, turno, hora_inicio, hora_fin, cama, estado, origen, observaciones, confirmada_en, cancelada_en, motivo_cancelacion, recordatorio_estado, recordatorio_en, recordatorio_observacion, cancelada_por_id, cita_id, confirmada_por_id, programada_por_id, recordatorio_por_id, solicitud_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: clinica_dia_solicitudquimioterapia; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.clinica_dia_solicitudquimioterapia (id, creado_en, actualizado_en, dni, nombre_completo_importado, historia_clinica_importada, fecha_nacimiento_importada, telefono, procedencia, diagnostico, protocolo, prioridad, fecha_preferida, hora_preferida, duracion_minutos, estado, origen, codigo_externo, lote_importacion, fila_importacion, huella_importacion, observaciones, creada_por_id, paciente_id) FROM stdin;
+c59a7517-f98f-4bcd-b813-42833800e24b	2026-08-16 14:25:46.097793-05	2026-08-16 14:25:46.189809-05	69254731	Camila Alejandra Torres	HC-2024-01571	\N	+51 987 650 012	Lima	Diagnóstico hematológico demo	Control ambulatorio	BAJA	2026-08-17	\N	60	PENDIENTE	IMPORTACION	DEMO-CD-004	\N	\N	\N	Dato demostrativo de Clínica de Día.	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
+d0977196-e593-4151-9eea-e1140aa39973	2026-08-16 14:25:46.08699-05	2026-08-16 14:25:46.204495-05	71562384	Mateo Gabriel Flores	HC-2024-01568	\N	+51 987 654 321	Lima	Diagnóstico hematológico demo	Protocolo LLA mantenimiento	ALTA	2026-08-17	08:30:00	120	PENDIENTE	IMPORTACION	DEMO-CD-001	\N	\N	\N	Dato demostrativo de Clínica de Día.	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	dd995870-2c2d-4c55-a565-dacc376b3462
+0fa95a16-1a37-4d72-b45e-1dbc84ef1810	2026-08-16 14:25:46.092203-05	2026-08-16 14:25:46.221319-05	62438751	Luciana Valentina Rojas	HC-2024-01569	\N	+51 987 650 010	Lima	Diagnóstico hematológico demo	Metotrexato	MEDIA	2026-08-17	11:30:00	90	PENDIENTE	IMPORTACION	DEMO-CD-002	\N	\N	\N	Dato demostrativo de Clínica de Día.	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	8024a122-b860-4a88-91ab-feeb393130d8
+e4b699fd-0c6c-42bc-8248-85e840a74aa7	2026-08-16 14:25:46.094982-05	2026-08-16 14:25:46.227983-05	80319276	Santiago André Medina	HC-2024-01570	\N	+51 987 650 011	Lima	Diagnóstico hematológico demo	Infusión prolongada	ALTA	2026-08-17	14:30:00	210	PENDIENTE	IMPORTACION	DEMO-CD-003	\N	\N	\N	Dato demostrativo de Clínica de Día.	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
 \.
 
 
@@ -1270,11 +1421,11 @@ bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	Consulta inicial	Valoración y seguimiento 
 --
 
 COPY public.clinica_diagnostico (id, codigo_cie10, nombre, descripcion, fecha_diagnostico, es_principal, estado, creado_en, actualizado_en, medico_id, paciente_id) FROM stdin;
-89faab0c-47bd-4087-a8c6-b385ce41631c	C91.0	Leucemia linfoblástica aguda (LLA)	Diagnóstico principal del escenario demostrativo.	2026-05-15	t	ACTIVO	2026-08-13 18:44:04.581282-05	2026-08-13 18:44:04.581287-05	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
-225ec6ad-da58-4226-b0a8-367138f14cb8	D61.9	Anemia aplásica	Diagnóstico principal del escenario demostrativo.	2026-05-15	t	ACTIVO	2026-08-13 18:44:04.973277-05	2026-08-13 18:44:04.973282-05	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8
-2886b130-adb5-4cf3-8071-d35a97b3f1d2	D66	Hemofilia A severa	Diagnóstico principal del escenario demostrativo.	2026-05-15	t	ACTIVO	2026-08-13 18:44:05.2354-05	2026-08-13 18:44:05.235404-05	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
-7c0748fb-57a8-45a1-be12-4c7f8203583e	C81.9	Linfoma de Hodgkin	Diagnóstico principal del escenario demostrativo.	2026-05-15	t	ACTIVO	2026-08-13 18:44:05.490659-05	2026-08-13 18:44:05.490664-05	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
-ca2bfb99-362c-4827-91bd-cbd9e2296c63	D56.1	Talasemia beta mayor	Diagnóstico principal del escenario demostrativo.	2026-05-15	t	ACTIVO	2026-08-13 18:44:05.749017-05	2026-08-13 18:44:05.749021-05	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
+89faab0c-47bd-4087-a8c6-b385ce41631c	C91.0	Leucemia linfoblástica aguda (LLA)	Diagnóstico principal del escenario demostrativo.	2026-05-18	t	ACTIVO	2026-08-13 18:44:04.581282-05	2026-08-13 18:44:04.581287-05	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
+225ec6ad-da58-4226-b0a8-367138f14cb8	D61.9	Anemia aplásica	Diagnóstico principal del escenario demostrativo.	2026-05-18	t	ACTIVO	2026-08-13 18:44:04.973277-05	2026-08-13 18:44:04.973282-05	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8
+2886b130-adb5-4cf3-8071-d35a97b3f1d2	D66	Hemofilia A severa	Diagnóstico principal del escenario demostrativo.	2026-05-18	t	ACTIVO	2026-08-13 18:44:05.2354-05	2026-08-13 18:44:05.235404-05	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
+7c0748fb-57a8-45a1-be12-4c7f8203583e	C81.9	Linfoma de Hodgkin	Diagnóstico principal del escenario demostrativo.	2026-05-18	t	ACTIVO	2026-08-13 18:44:05.490659-05	2026-08-13 18:44:05.490664-05	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
+ca2bfb99-362c-4827-91bd-cbd9e2296c63	D56.1	Talasemia beta mayor	Diagnóstico principal del escenario demostrativo.	2026-05-18	t	ACTIVO	2026-08-13 18:44:05.749017-05	2026-08-13 18:44:05.749021-05	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
 \.
 
 
@@ -1283,7 +1434,6 @@ ca2bfb99-362c-4827-91bd-cbd9e2296c63	D56.1	Talasemia beta mayor	Diagnóstico pri
 --
 
 COPY public.clinica_itemplantratamiento (id, tipo, titulo, descripcion, orden, plan_id) FROM stdin;
-fe70512a-306e-4dae-ba58-c8f7b021b860	TRATAMIENTO	Tratamiento indicado	Continuar tratamiento actual según evaluación médica.	0	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
 b72ab891-ec68-44a0-97d9-5b29519f9d77	MEDICACION	Medicación indicada	Respetar dosis, días y horas mostrados en la app.	1	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
 06fad662-2f02-49dd-a147-99d24fd292e4	CUIDADO_CASA	Indicaciones para casa	Mantener hidratación y reportar cambios importantes.	2	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
 e09f39f0-1d79-449f-bfe0-2c387f2410ce	EXAMEN	Exámenes solicitados	Hemograma antes del próximo control.	3	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
@@ -1308,6 +1458,7 @@ e65f2cec-1588-4412-8150-ad5896e95b3b	MEDICACION	Medicación indicada	Respetar do
 a7ee9c77-1851-435e-b56a-f2a7b39ed00c	CUIDADO_CASA	Indicaciones para casa	Mantener hidratación y reportar cambios importantes.	2	f631cf18-72a8-4e4d-9e59-86e3fd973ebd
 c9bfc7ae-b838-49e5-b449-c09be14aa5f0	EXAMEN	Exámenes solicitados	Hemograma antes del próximo control.	3	f631cf18-72a8-4e4d-9e59-86e3fd973ebd
 585e7710-c194-41f0-aaf5-cf5b15386bce	CONTROL	Próximo control	Asistir a la cita confirmada en la agenda.	4	f631cf18-72a8-4e4d-9e59-86e3fd973ebd
+fe70512a-306e-4dae-ba58-c8f7b021b860	TRATAMIENTO	Tratamiento indicado	Continuar tratamiento actual según evaluación médica.	0	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
 \.
 
 
@@ -1354,11 +1505,11 @@ e709f3ee-3fe8-4043-82ed-b0698eae56ea	Indicaciones para casa	Mantener hidratació
 --
 
 COPY public.clinica_plantratamiento (id, nombre, indicacion_general, estado, vigente_desde, vigente_hasta, creado_en, actualizado_en, consulta_origen_id, medico_id, paciente_id) FROM stdin;
-c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-16	\N	2026-08-13 18:44:04.606738-05	2026-08-13 18:44:04.606743-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
-a4047a75-a4c8-4d88-bedb-e893111041ac	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-16	\N	2026-08-13 18:44:04.993478-05	2026-08-13 18:44:04.993483-05	048c1b38-2b92-4655-88c6-029cc4255a5c	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8
-a3a013be-83ed-4197-971e-355fe0f71d4b	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-16	\N	2026-08-13 18:44:05.255614-05	2026-08-13 18:44:05.255619-05	4e1376cc-3db4-48c6-8200-aada210a6b6b	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
-b1315bbb-bbe3-4778-b8be-ea82ee72213b	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-16	\N	2026-08-13 18:44:05.51209-05	2026-08-13 18:44:05.512096-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
-f631cf18-72a8-4e4d-9e59-86e3fd973ebd	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-16	\N	2026-08-13 18:44:05.76796-05	2026-08-13 18:44:05.767965-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
+a4047a75-a4c8-4d88-bedb-e893111041ac	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-19	\N	2026-08-13 18:44:04.993478-05	2026-08-13 18:44:04.993483-05	048c1b38-2b92-4655-88c6-029cc4255a5c	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8
+a3a013be-83ed-4197-971e-355fe0f71d4b	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-19	\N	2026-08-13 18:44:05.255614-05	2026-08-13 18:44:05.255619-05	4e1376cc-3db4-48c6-8200-aada210a6b6b	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
+b1315bbb-bbe3-4778-b8be-ea82ee72213b	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-19	\N	2026-08-13 18:44:05.51209-05	2026-08-13 18:44:05.512096-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
+f631cf18-72a8-4e4d-9e59-86e3fd973ebd	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-19	\N	2026-08-13 18:44:05.76796-05	2026-08-13 18:44:05.767965-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
+c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a	Tratamiento actual	Continuar tratamiento actual según evaluación médica.	VIGENTE	2026-07-19	\N	2026-08-13 18:44:04.606738-05	2026-08-13 18:44:04.606743-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
 \.
 
 
@@ -1367,36 +1518,36 @@ f631cf18-72a8-4e4d-9e59-86e3fd973ebd	Tratamiento actual	Continuar tratamiento ac
 --
 
 COPY public.clinica_seccionconsulta (id, tipo, titulo, contenido, orden, creado_en, actualizado_en, consulta_id) FROM stdin;
-221fbbb8-8945-4a17-8130-0d16f7bbcaf6	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:04.589998-05	2026-08-13 18:52:14.845973-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
-447c8d56-1d1c-4746-9f04-15898aac5646	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:04.594108-05	2026-08-13 18:52:14.849931-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
-71c86590-8f12-4170-a3ec-95f89e969741	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:04.596795-05	2026-08-13 18:52:14.852035-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
-094b3e3e-14c7-4b07-8c9d-e9e75eb8fe53	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:04.599304-05	2026-08-13 18:52:14.85429-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
-cef49303-0601-42e4-a25f-82920be18b54	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:04.601753-05	2026-08-13 18:52:14.856771-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
-47d4e9ba-9ff9-44f3-b943-6ba54c76c09a	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:04.603942-05	2026-08-13 18:52:14.858931-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
-5837223a-6c93-46e1-afd2-8342d47c4a34	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:04.9794-05	2026-08-13 18:52:15.136121-05	048c1b38-2b92-4655-88c6-029cc4255a5c
-a37d6795-0104-4e18-98a1-56a3c0341ab2	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:04.981857-05	2026-08-13 18:52:15.138504-05	048c1b38-2b92-4655-88c6-029cc4255a5c
-50880216-5613-428c-9f5f-a9d52a250cac	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:04.984194-05	2026-08-13 18:52:15.140728-05	048c1b38-2b92-4655-88c6-029cc4255a5c
-30d4f717-fafe-49e0-a5d5-2689391c1fa0	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:04.986592-05	2026-08-13 18:52:15.143721-05	048c1b38-2b92-4655-88c6-029cc4255a5c
-dd1464b2-229e-4bca-8d2c-9b61d4130137	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:04.989003-05	2026-08-13 18:52:15.146118-05	048c1b38-2b92-4655-88c6-029cc4255a5c
-e64145be-c3bf-4ce6-a119-6d1e28ae4c1a	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:04.991626-05	2026-08-13 18:52:15.148818-05	048c1b38-2b92-4655-88c6-029cc4255a5c
-181794cd-9b54-4d15-94b8-6f9985fe07d3	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:05.240532-05	2026-08-13 18:52:15.371505-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
-a4b48f87-5899-473b-a311-57807d03fa24	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:05.242634-05	2026-08-13 18:52:15.373738-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
-dd2d1924-839b-4a37-95de-03f2e744e54f	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:05.245236-05	2026-08-13 18:52:15.375713-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
-cd358e1b-ba02-43cf-94f9-8bce27b72a10	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:05.248186-05	2026-08-13 18:52:15.385343-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
-4ef5da69-326a-48a1-bcd0-0d0388a75966	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:05.250458-05	2026-08-13 18:52:15.387575-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
-b962cb5a-b8b7-4794-9b24-31d51e83312b	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:05.252668-05	2026-08-13 18:52:15.389656-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
-bf0aadc0-c388-41d7-8578-866bd72b03be	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:05.495565-05	2026-08-13 18:52:15.615718-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
-552c9c62-df48-4d09-9368-d18eec392cda	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:05.498971-05	2026-08-13 18:52:15.618286-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
-3af93507-4f22-466c-a103-9d24ef19badd	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:05.501354-05	2026-08-13 18:52:15.620908-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
-b44ebac9-ed86-468d-bf5c-7459791ce4a9	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:05.503991-05	2026-08-13 18:52:15.623946-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
-2a59f21a-b651-4db9-8c97-b3a8a5fe7df4	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:05.506685-05	2026-08-13 18:52:15.626477-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
-290e5b87-0499-46b2-a4d1-dfe1f2cb99b8	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:05.509652-05	2026-08-13 18:52:15.628795-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
-ce11a018-4692-49b8-93f6-c9a27e78acd4	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:05.754072-05	2026-08-13 18:52:15.853147-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
-55f51b87-a19e-4434-ad87-e45e4871a33a	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:05.75614-05	2026-08-13 18:52:15.855309-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
-50ede421-77e9-4826-a790-1ae1da3bbfeb	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:05.75837-05	2026-08-13 18:52:15.857672-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
-6d7ebd86-33f5-45fd-b204-9fb22a1ae192	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:05.76066-05	2026-08-13 18:52:15.859762-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
-75e1d601-7dc1-499b-b5ed-a323011a4554	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:05.763101-05	2026-08-13 18:52:15.861873-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
-7eb276ce-4cb7-4da2-b67a-572d8eec2d94	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:05.765611-05	2026-08-13 18:52:15.866382-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
+5837223a-6c93-46e1-afd2-8342d47c4a34	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:04.9794-05	2026-08-16 14:25:45.313352-05	048c1b38-2b92-4655-88c6-029cc4255a5c
+a37d6795-0104-4e18-98a1-56a3c0341ab2	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:04.981857-05	2026-08-16 14:25:45.315476-05	048c1b38-2b92-4655-88c6-029cc4255a5c
+50880216-5613-428c-9f5f-a9d52a250cac	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:04.984194-05	2026-08-16 14:25:45.31739-05	048c1b38-2b92-4655-88c6-029cc4255a5c
+30d4f717-fafe-49e0-a5d5-2689391c1fa0	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:04.986592-05	2026-08-16 14:25:45.319727-05	048c1b38-2b92-4655-88c6-029cc4255a5c
+dd1464b2-229e-4bca-8d2c-9b61d4130137	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:04.989003-05	2026-08-16 14:25:45.321848-05	048c1b38-2b92-4655-88c6-029cc4255a5c
+e64145be-c3bf-4ce6-a119-6d1e28ae4c1a	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:04.991626-05	2026-08-16 14:25:45.323753-05	048c1b38-2b92-4655-88c6-029cc4255a5c
+181794cd-9b54-4d15-94b8-6f9985fe07d3	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:05.240532-05	2026-08-16 14:25:45.548923-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
+a4b48f87-5899-473b-a311-57807d03fa24	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:05.242634-05	2026-08-16 14:25:45.552451-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
+dd2d1924-839b-4a37-95de-03f2e744e54f	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:05.245236-05	2026-08-16 14:25:45.555172-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
+cd358e1b-ba02-43cf-94f9-8bce27b72a10	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:05.248186-05	2026-08-16 14:25:45.55771-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
+4ef5da69-326a-48a1-bcd0-0d0388a75966	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:05.250458-05	2026-08-16 14:25:45.560485-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
+b962cb5a-b8b7-4794-9b24-31d51e83312b	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:05.252668-05	2026-08-16 14:25:45.563128-05	4e1376cc-3db4-48c6-8200-aada210a6b6b
+bf0aadc0-c388-41d7-8578-866bd72b03be	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:05.495565-05	2026-08-16 14:25:45.788124-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
+552c9c62-df48-4d09-9368-d18eec392cda	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:05.498971-05	2026-08-16 14:25:45.790435-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
+221fbbb8-8945-4a17-8130-0d16f7bbcaf6	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:04.589998-05	2026-08-16 14:25:45.020615-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
+447c8d56-1d1c-4746-9f04-15898aac5646	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:04.594108-05	2026-08-16 14:25:45.024264-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
+71c86590-8f12-4170-a3ec-95f89e969741	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:04.596795-05	2026-08-16 14:25:45.026357-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
+094b3e3e-14c7-4b07-8c9d-e9e75eb8fe53	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:04.599304-05	2026-08-16 14:25:45.028359-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
+cef49303-0601-42e4-a25f-82920be18b54	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:04.601753-05	2026-08-16 14:25:45.030454-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
+47d4e9ba-9ff9-44f3-b943-6ba54c76c09a	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:04.603942-05	2026-08-16 14:25:45.032307-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8
+3af93507-4f22-466c-a103-9d24ef19badd	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:05.501354-05	2026-08-16 14:25:45.792736-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
+b44ebac9-ed86-468d-bf5c-7459791ce4a9	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:05.503991-05	2026-08-16 14:25:45.794797-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
+2a59f21a-b651-4db9-8c97-b3a8a5fe7df4	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:05.506685-05	2026-08-16 14:25:45.796903-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
+290e5b87-0499-46b2-a4d1-dfe1f2cb99b8	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:05.509652-05	2026-08-16 14:25:45.799251-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2
+ce11a018-4692-49b8-93f6-c9a27e78acd4	MOTIVO	Motivo de consulta	Control de rutina y seguimiento clínico.	0	2026-08-13 18:44:05.754072-05	2026-08-16 14:25:46.031883-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
+55f51b87-a19e-4434-ad87-e45e4871a33a	EVOLUCION	Evolución clínica	Paciente estable durante el control.	1	2026-08-13 18:44:05.75614-05	2026-08-16 14:25:46.034609-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
+50ede421-77e9-4826-a790-1ae1da3bbfeb	TRATAMIENTO	Tratamiento indicado	Continuar el protocolo indicado y vigilar signos de alarma.	2	2026-08-13 18:44:05.75837-05	2026-08-16 14:25:46.036948-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
+6d7ebd86-33f5-45fd-b204-9fb22a1ae192	MEDICACION	Medicación indicada	Cumplir la medicación en los horarios registrados.	3	2026-08-13 18:44:05.76066-05	2026-08-16 14:25:46.039198-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
+75e1d601-7dc1-499b-b5ed-a323011a4554	INDICACIONES	Indicaciones para casa	Mantener hidratación, alimentación y medidas de prevención.	4	2026-08-13 18:44:05.763101-05	2026-08-16 14:25:46.041687-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
+7eb276ce-4cb7-4da2-b67a-572d8eec2d94	PROXIMO_CONTROL	Próximo control	Asistir al control registrado en la agenda.	5	2026-08-13 18:44:05.765611-05	2026-08-16 14:25:46.043916-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c
 \.
 
 
@@ -1447,6 +1598,9 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 32	seguimiento	sintomareportado
 33	documentos	documentopaciente
 34	ML_core	sesionconsultavoz
+35	clinica_dia	cambioprogramacionquimioterapia
+36	clinica_dia	programacionquimioterapia
+37	clinica_dia	solicitudquimioterapia
 \.
 
 
@@ -1489,6 +1643,11 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 32	seguimiento	0002_catalogo_sintomas_base	2026-08-13 18:44:01.99589-05
 33	sessions	0001_initial	2026-08-13 18:44:02.003884-05
 34	usuarios	0002_usuario_foto_perfil	2026-08-13 18:44:02.023664-05
+35	pacientes	0003_asignacionmedica_cerrada_por_and_more	2026-08-15 05:08:21.954087-05
+36	clinica_dia	0001_initial	2026-08-16 14:23:14.881561-05
+37	clinica_dia	0002_dejar_demo_sin_programar	2026-08-16 16:33:53.128138-05
+38	clinica_dia	0003_nombre_demo_breve	2026-08-16 16:35:27.245579-05
+39	clinica_dia	0004_reducir_demo_pendiente	2026-08-16 16:38:28.981348-05
 \.
 
 
@@ -1497,13 +1656,13 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 --
 
 COPY public.documentos_documentopaciente (id, tipo, titulo, descripcion, archivo, nombre_original, tipo_mime, tamano_bytes, sha256, fecha_documento, origen, estado, creado_en, actualizado_en, consulta_id, paciente_id, subido_por_id) FROM stdin;
-9eb3717a-c260-46dd-9d7b-741fe9800b26	LABORATORIO	Hemograma completo	Documento demostrativo; contiene metadatos y no un archivo físico.		hemograma_completo.pdf	application/pdf	248000	ed2c171ea8783c1fae765d2b3308f165cbfb1f9fa423b77a245e2916b7e14620	2026-08-12	APP	DISPONIBLE	2026-08-13 18:44:04.769424-05	2026-08-13 18:52:14.930698-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
-fabbb396-e46d-4aa3-a8d5-1ad116ecd778	LABORATORIO	Resultados laboratorio JPG	Documento demostrativo; contiene metadatos y no un archivo físico.		resultados_laboratorio.jpg	image/jpeg	386000	b306fd066996ce67c1ba241412c47a04203fd2807c928cff5817b8462b5b8837	2026-08-10	APP	DISPONIBLE	2026-08-13 18:44:04.772549-05	2026-08-13 18:52:14.934171-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
-7e12fd5c-f0c4-4f28-8194-3422bace6d5d	INFORME_MEDICO	Informe médico escaneado	Documento demostrativo; contiene metadatos y no un archivo físico.		informe_medico.pdf	application/pdf	192000	ee361d3b06eb683e1db2f4c4e30642ed5b345c2c74cf94bd919711b95b0ee1c3	2026-08-08	APP	DISPONIBLE	2026-08-13 18:44:04.776523-05	2026-08-13 18:52:14.936964-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
-8a7733e7-2e62-4ab1-a4f9-1c41182eef01	LABORATORIO	Hemograma de control	Documento demostrativo; contiene metadatos y no un archivo físico.		hemograma_luciana.pdf	application/pdf	174000	61d054a58530caf4bfc4062b058c38f06ef09021fa3d599afe70a359a9beeb84	2026-08-11	APP	DISPONIBLE	2026-08-13 18:44:05.039806-05	2026-08-13 18:52:15.172503-05	048c1b38-2b92-4655-88c6-029cc4255a5c	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
-c044139a-afca-4913-b1af-d927e49a47ca	INFORME_MEDICO	Informe de hematología	Documento demostrativo; contiene metadatos y no un archivo físico.		informe_santiago.pdf	application/pdf	221000	b6f48a79de2d1d3e7c5f01cd9752e7c18c42ad51ff9bb0e2aaab9df9219b3b6d	2026-08-09	APP	DISPONIBLE	2026-08-13 18:44:05.295272-05	2026-08-13 18:52:15.415103-05	4e1376cc-3db4-48c6-8200-aada210a6b6b	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6
-0cf1dd33-8278-421b-ac8f-ab3799bfad39	LABORATORIO	Perfil hepático	Documento demostrativo; contiene metadatos y no un archivo físico.		perfil_hepatico_camila.pdf	application/pdf	198000	f726bb15df13e774dcf824466c248ff7df4d11de2efa52d0d352f9ef4ef723a9	2026-08-12	APP	DISPONIBLE	2026-08-13 18:44:05.559896-05	2026-08-13 18:52:15.65665-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51
-39a91f7f-7c9a-4179-93c0-a91e515004a1	PLAN_TRATAMIENTO	Plan de transfusión vigente	Documento demostrativo; contiene metadatos y no un archivo físico.		plan_diego.pdf	application/pdf	165000	2c92cafe2d42a062a5becb0916e916e86f76449d0df7205d8e9f202a90d24ae5	2026-08-07	APP	DISPONIBLE	2026-08-13 18:44:05.807507-05	2026-08-13 18:52:15.890407-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238
+9eb3717a-c260-46dd-9d7b-741fe9800b26	LABORATORIO	Hemograma completo	Documento demostrativo; contiene metadatos y no un archivo físico.		hemograma_completo.pdf	application/pdf	248000	ed2c171ea8783c1fae765d2b3308f165cbfb1f9fa423b77a245e2916b7e14620	2026-08-15	APP	DISPONIBLE	2026-08-13 18:44:04.769424-05	2026-08-16 14:25:45.114267-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
+fabbb396-e46d-4aa3-a8d5-1ad116ecd778	LABORATORIO	Resultados laboratorio JPG	Documento demostrativo; contiene metadatos y no un archivo físico.		resultados_laboratorio.jpg	image/jpeg	386000	b306fd066996ce67c1ba241412c47a04203fd2807c928cff5817b8462b5b8837	2026-08-13	APP	DISPONIBLE	2026-08-13 18:44:04.772549-05	2026-08-16 14:25:45.117488-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
+7e12fd5c-f0c4-4f28-8194-3422bace6d5d	INFORME_MEDICO	Informe médico escaneado	Documento demostrativo; contiene metadatos y no un archivo físico.		informe_medico.pdf	application/pdf	192000	ee361d3b06eb683e1db2f4c4e30642ed5b345c2c74cf94bd919711b95b0ee1c3	2026-08-11	APP	DISPONIBLE	2026-08-13 18:44:04.776523-05	2026-08-16 14:25:45.120116-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
+8a7733e7-2e62-4ab1-a4f9-1c41182eef01	LABORATORIO	Hemograma de control	Documento demostrativo; contiene metadatos y no un archivo físico.		hemograma_luciana.pdf	application/pdf	174000	61d054a58530caf4bfc4062b058c38f06ef09021fa3d599afe70a359a9beeb84	2026-08-14	APP	DISPONIBLE	2026-08-13 18:44:05.039806-05	2026-08-16 14:25:45.353691-05	048c1b38-2b92-4655-88c6-029cc4255a5c	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
+c044139a-afca-4913-b1af-d927e49a47ca	INFORME_MEDICO	Informe de hematología	Documento demostrativo; contiene metadatos y no un archivo físico.		informe_santiago.pdf	application/pdf	221000	b6f48a79de2d1d3e7c5f01cd9752e7c18c42ad51ff9bb0e2aaab9df9219b3b6d	2026-08-12	APP	DISPONIBLE	2026-08-13 18:44:05.295272-05	2026-08-16 14:25:45.595709-05	4e1376cc-3db4-48c6-8200-aada210a6b6b	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6
+0cf1dd33-8278-421b-ac8f-ab3799bfad39	LABORATORIO	Perfil hepático	Documento demostrativo; contiene metadatos y no un archivo físico.		perfil_hepatico_camila.pdf	application/pdf	198000	f726bb15df13e774dcf824466c248ff7df4d11de2efa52d0d352f9ef4ef723a9	2026-08-15	APP	DISPONIBLE	2026-08-13 18:44:05.559896-05	2026-08-16 14:25:45.833195-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51
+39a91f7f-7c9a-4179-93c0-a91e515004a1	PLAN_TRATAMIENTO	Plan de transfusión vigente	Documento demostrativo; contiene metadatos y no un archivo físico.		plan_diego.pdf	application/pdf	165000	2c92cafe2d42a062a5becb0916e916e86f76449d0df7205d8e9f202a90d24ae5	2026-08-10	APP	DISPONIBLE	2026-08-13 18:44:05.807507-05	2026-08-16 14:25:46.075703-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238
 \.
 
 
@@ -1572,58 +1731,81 @@ d28ca324-4c84-4475-867e-49ace4f1a24d	4	128c00d9-ad01-4232-9344-2645fc774bf9
 --
 
 COPY public.medicacion_dosisprogramada (id, programada_para, estado, actualizado_en, horario_id, prescripcion_id) FROM stdin;
+1a77854b-8fe1-4ea6-b66a-45f048fe052a	2026-08-15 08:00:00-05	TOMADA	2026-08-16 14:25:45.056926-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
 021063a4-6c68-4122-ad86-116b45f4f3c9	2026-08-10 08:00:00-05	TOMADA	2026-08-13 18:44:04.639714-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
+aadad1c3-1d9d-4d55-80de-bd0e2d49ee5e	2026-08-19 08:00:00-05	PENDIENTE	2026-08-16 14:25:45.063434-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
 864b51d8-e227-4d2e-b5cb-0e2594a6fa84	2026-08-11 08:00:00-05	TARDE	2026-08-13 18:44:04.647461-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
+c59f1ba8-bdb9-47e9-b632-d00932298d67	2026-08-15 13:00:00-05	OMITIDA	2026-08-16 14:25:45.074327-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
 ec1eafb9-ed20-4415-b83d-b54b325e7993	2026-08-12 08:00:00-05	TOMADA	2026-08-13 18:44:04.654073-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
-1aba0d12-25b2-4e36-9e90-fc6e3ef5ce73	2026-08-13 08:00:00-05	PENDIENTE	2026-08-13 18:44:04.659292-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
-2ee736aa-6994-4bc7-b9bc-d0b0b07dc0a4	2026-08-14 08:00:00-05	PENDIENTE	2026-08-13 18:44:04.660584-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
-1a77854b-8fe1-4ea6-b66a-45f048fe052a	2026-08-15 08:00:00-05	PENDIENTE	2026-08-13 18:44:04.661971-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
+0ef70eb2-3480-4973-8a23-3e20f6a238ea	2026-08-19 13:00:00-05	PENDIENTE	2026-08-16 14:25:45.079825-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+336810ec-5c0b-4d39-a3c5-8d1ca0da0468	2026-08-15 20:00:00-05	TOMADA	2026-08-16 14:25:45.090605-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
 11f1bb09-d30d-4908-8b17-42ac2ae4b177	2026-08-16 08:00:00-05	PENDIENTE	2026-08-13 18:44:04.663206-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
+ca7e6fca-5c2e-40a7-89e8-bf0626b06d79	2026-08-19 20:00:00-05	PENDIENTE	2026-08-16 14:25:45.096394-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
 caf0da49-9271-4f35-ac4a-d416a9f8875a	2026-08-10 13:00:00-05	TOMADA	2026-08-13 18:44:04.679142-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+f8bea8ab-4f84-4f69-9295-95753322c4fb	2026-08-19 09:00:00-05	PENDIENTE	2026-08-16 14:25:45.103669-05	b50ae004-5696-41c9-8467-8e0dfda6c361	4db4794b-b74d-408e-98dd-fcec85dc83e1
 17df379e-3ffe-4233-9fad-98f341dbaf00	2026-08-11 13:00:00-05	TOMADA	2026-08-13 18:44:04.686875-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+d5b8dc4c-7f0a-43ef-90ca-6ee6dfb21a44	2026-08-15 08:00:00-05	TOMADA	2026-08-16 14:25:45.34302-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
 dbe2ba20-e0bc-4b42-98d1-603a38964adb	2026-08-12 13:00:00-05	OMITIDA	2026-08-13 18:44:04.693544-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
-0d39ce49-e4da-4938-a8b1-492da17d0f74	2026-08-13 13:00:00-05	PENDIENTE	2026-08-13 18:44:04.697802-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
-21f10af3-6e1c-4b30-8bba-38e9176f665d	2026-08-14 13:00:00-05	PENDIENTE	2026-08-13 18:44:04.698824-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
-c59f1ba8-bdb9-47e9-b632-d00932298d67	2026-08-15 13:00:00-05	PENDIENTE	2026-08-13 18:44:04.6998-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+0da6e749-db5a-4e87-a460-3bd13569c1da	2026-08-19 08:00:00-05	PENDIENTE	2026-08-16 14:25:45.348723-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
+7d58cf78-ab7e-4ce8-80f7-5f42c56929d4	2026-08-15 08:30:00-05	TOMADA	2026-08-16 14:25:45.584325-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
 6d35585f-4a49-4790-a88c-b04a513159c3	2026-08-16 13:00:00-05	PENDIENTE	2026-08-13 18:44:04.700771-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+9e1bdf04-4a0b-414c-94bc-296fed542a17	2026-08-19 08:30:00-05	PENDIENTE	2026-08-16 14:25:45.590496-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
 5719e790-6e14-4bca-b8d5-9f9764929904	2026-08-10 20:00:00-05	TOMADA	2026-08-13 18:44:04.715186-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
+58c024be-c50a-4845-aa21-17fbafa4f14d	2026-08-15 08:00:00-05	TOMADA	2026-08-16 14:25:45.819026-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
 a57536af-725b-4804-a105-e6f9fc926dec	2026-08-11 20:00:00-05	TOMADA	2026-08-13 18:44:04.722069-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
+7d2a1a33-2853-4eaf-bc60-bc0accb8062b	2026-08-19 08:00:00-05	PENDIENTE	2026-08-16 14:25:45.826219-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
 4e2d2a5c-35e0-4296-9186-0c163b4dc005	2026-08-12 20:00:00-05	TOMADA	2026-08-13 18:44:04.728643-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
-fcb979ee-255c-4549-97c3-4fb890097497	2026-08-13 20:00:00-05	PENDIENTE	2026-08-13 18:44:04.732764-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
-20630629-e48a-4966-b2ca-f4f8219f455b	2026-08-14 20:00:00-05	PENDIENTE	2026-08-13 18:44:04.733922-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
-336810ec-5c0b-4d39-a3c5-8d1ca0da0468	2026-08-15 20:00:00-05	PENDIENTE	2026-08-13 18:44:04.735008-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
+ebd98abd-d0c5-4284-862b-183e1714d214	2026-08-15 09:00:00-05	TOMADA	2026-08-16 14:25:46.0644-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
+795d4caf-ba13-4e88-9c8d-7a178aa7c94b	2026-08-19 09:00:00-05	PENDIENTE	2026-08-16 14:25:46.070336-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
 5632b4bc-3c7b-46f4-84a8-ff46f14f3edd	2026-08-16 20:00:00-05	PENDIENTE	2026-08-13 18:44:04.736056-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
 e5a1f043-3fbc-4446-8246-0966ae07c71d	2026-08-10 09:00:00-05	TOMADA	2026-08-13 18:44:04.7466-05	b50ae004-5696-41c9-8467-8e0dfda6c361	4db4794b-b74d-408e-98dd-fcec85dc83e1
 e74071ae-de3d-4a9e-b648-c691d444f8a8	2026-08-12 09:00:00-05	TARDE	2026-08-13 18:44:04.752894-05	b50ae004-5696-41c9-8467-8e0dfda6c361	4db4794b-b74d-408e-98dd-fcec85dc83e1
-c96626ea-bb70-46ab-a9a4-8aee4a2ea776	2026-08-14 09:00:00-05	PENDIENTE	2026-08-13 18:44:04.757281-05	b50ae004-5696-41c9-8467-8e0dfda6c361	4db4794b-b74d-408e-98dd-fcec85dc83e1
 b15a2087-8198-41b3-8dcb-946c82059236	2026-08-10 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.011973-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
 302379a3-d8f5-43f2-9de4-aacc7efb854c	2026-08-11 08:00:00-05	TOMADA	2026-08-13 18:44:05.015627-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
 1f79eb10-83d9-44c5-8695-4153de6f78a6	2026-08-12 08:00:00-05	TOMADA	2026-08-13 18:44:05.022598-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
-f20e382a-9970-441d-a347-84be927dbb5c	2026-08-13 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.027456-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
-8ac58bcf-60af-4923-a581-5030090295d3	2026-08-14 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.028616-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
-d5b8dc4c-7f0a-43ef-90ca-6ee6dfb21a44	2026-08-15 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.02957-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
 8f0537c8-019a-4aa8-adfc-e13f803d470a	2026-08-16 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.031314-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
 c19f7eae-5389-4b45-9a66-e7c042105925	2026-08-10 08:30:00-05	PENDIENTE	2026-08-13 18:44:05.272964-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
 5e697638-3d60-4d32-ab97-a4634685db29	2026-08-11 08:30:00-05	TOMADA	2026-08-13 18:44:05.276467-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
 6a75648e-25c4-43a7-a8f3-46b432669cc9	2026-08-12 08:30:00-05	TOMADA	2026-08-13 18:44:05.282844-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
-9bc1a495-04aa-421a-8a1b-7c0f76c0ebfa	2026-08-13 08:30:00-05	PENDIENTE	2026-08-13 18:44:05.286303-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
-5150dd32-c3a1-45b9-9f2c-e6aa2654dfef	2026-08-14 08:30:00-05	PENDIENTE	2026-08-13 18:44:05.287611-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
-7d58cf78-ab7e-4ce8-80f7-5f42c56929d4	2026-08-15 08:30:00-05	PENDIENTE	2026-08-13 18:44:05.288875-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
 07ab92b8-33c0-4a4c-a5d7-62d48f153695	2026-08-16 08:30:00-05	PENDIENTE	2026-08-13 18:44:05.289853-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
 2f51bc90-9c53-4bb7-b23a-bbea2e4cba54	2026-08-10 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.533028-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
 8f86689c-ea3d-4bc5-8f01-4df91716f6a6	2026-08-11 08:00:00-05	TOMADA	2026-08-13 18:44:05.536447-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
 ba64f595-7eb6-42fc-a7d1-3e3a0c853aa2	2026-08-12 08:00:00-05	TOMADA	2026-08-13 18:44:05.543814-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
-e1b89867-b115-47a9-8384-b52d94864937	2026-08-13 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.54772-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
-e9901b5a-d368-4944-9190-db19f7285a39	2026-08-14 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.54876-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
-58c024be-c50a-4845-aa21-17fbafa4f14d	2026-08-15 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.549785-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
 f66fe153-5bc3-4f3f-8262-5d5403029725	2026-08-16 08:00:00-05	PENDIENTE	2026-08-13 18:44:05.551201-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
 b0fd2270-f238-4168-9fee-3608a6bb6267	2026-08-10 09:00:00-05	PENDIENTE	2026-08-13 18:44:05.784887-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
 d94f6bfe-f450-47aa-9962-75c95037bad9	2026-08-11 09:00:00-05	TOMADA	2026-08-13 18:44:05.788493-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
 c604a9ae-f99e-42f0-98e7-9d129081009d	2026-08-12 09:00:00-05	TOMADA	2026-08-13 18:44:05.794848-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
-61191c4f-a459-4751-baaa-8905b1759230	2026-08-13 09:00:00-05	PENDIENTE	2026-08-13 18:44:05.798749-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
-a9e02bdb-3a60-4051-9bfb-5e88720c3714	2026-08-14 09:00:00-05	PENDIENTE	2026-08-13 18:44:05.799821-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
-ebd98abd-d0c5-4284-862b-183e1714d214	2026-08-15 09:00:00-05	PENDIENTE	2026-08-13 18:44:05.800874-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
 2b7068de-30cb-465d-9281-99c528ad300f	2026-08-16 09:00:00-05	PENDIENTE	2026-08-13 18:44:05.801946-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
+1aba0d12-25b2-4e36-9e90-fc6e3ef5ce73	2026-08-13 08:00:00-05	TARDE	2026-08-15 05:08:25.281738-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
+2ee736aa-6994-4bc7-b9bc-d0b0b07dc0a4	2026-08-14 08:00:00-05	TOMADA	2026-08-15 05:08:25.299828-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
+f41b2bbd-26e0-4021-a191-235faca32f78	2026-08-17 08:00:00-05	PENDIENTE	2026-08-15 05:08:25.307-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
+0c5a4b41-dc40-4e6e-8737-db914fd5b0d0	2026-08-18 08:00:00-05	PENDIENTE	2026-08-15 05:08:25.308379-05	948f8078-3703-40c2-8b01-2e5af6e811c9	e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a
+0d39ce49-e4da-4938-a8b1-492da17d0f74	2026-08-13 13:00:00-05	TOMADA	2026-08-15 05:08:25.322457-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+21f10af3-6e1c-4b30-8bba-38e9176f665d	2026-08-14 13:00:00-05	OMITIDA	2026-08-15 05:08:25.330451-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+70758ee8-a89a-4369-9ea2-3c2702e057a1	2026-08-17 13:00:00-05	PENDIENTE	2026-08-15 05:08:25.337333-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+d2fd3e9c-7a3a-4332-a1e2-078aa9d74dcf	2026-08-18 13:00:00-05	PENDIENTE	2026-08-15 05:08:25.338848-05	12b8f4df-51c4-4e6e-b062-0c5a1b4c0bf0	7658313f-1a8f-475f-a09b-905beb9e0f14
+fcb979ee-255c-4549-97c3-4fb890097497	2026-08-13 20:00:00-05	TOMADA	2026-08-15 05:08:25.353386-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
+20630629-e48a-4966-b2ca-f4f8219f455b	2026-08-14 20:00:00-05	TOMADA	2026-08-15 05:08:25.360946-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
+45513688-40e7-4f6d-9869-77359052a1d7	2026-08-17 20:00:00-05	PENDIENTE	2026-08-15 05:08:25.367295-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
+937bf688-1bdd-4a19-ba9e-9af7b83e0a26	2026-08-18 20:00:00-05	PENDIENTE	2026-08-15 05:08:25.368775-05	9aaf1dd3-deb2-4149-9489-1c3a492a3ad0	250bb49e-6caa-4b20-9143-cd1c7fe06f9d
+c96626ea-bb70-46ab-a9a4-8aee4a2ea776	2026-08-14 09:00:00-05	TARDE	2026-08-15 05:08:25.379774-05	b50ae004-5696-41c9-8467-8e0dfda6c361	4db4794b-b74d-408e-98dd-fcec85dc83e1
+0899b67e-84be-4f24-83a4-bec844d6eb52	2026-08-17 09:00:00-05	PENDIENTE	2026-08-15 05:08:25.385002-05	b50ae004-5696-41c9-8467-8e0dfda6c361	4db4794b-b74d-408e-98dd-fcec85dc83e1
+f20e382a-9970-441d-a347-84be927dbb5c	2026-08-13 08:00:00-05	TOMADA	2026-08-15 05:08:25.699276-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
+8ac58bcf-60af-4923-a581-5030090295d3	2026-08-14 08:00:00-05	TOMADA	2026-08-15 05:08:25.707504-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
+45251bc6-2ce7-4396-90db-6695b2200927	2026-08-17 08:00:00-05	PENDIENTE	2026-08-15 05:08:25.714347-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
+b5e30823-9abd-41da-9937-5a23bf228276	2026-08-18 08:00:00-05	PENDIENTE	2026-08-15 05:08:25.715977-05	82d9f84e-a677-45b6-a3f5-226382e8eca4	d7a047d6-797a-4e8a-91b3-e3f9104723ac
+9bc1a495-04aa-421a-8a1b-7c0f76c0ebfa	2026-08-13 08:30:00-05	TOMADA	2026-08-15 05:08:26.027112-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
+5150dd32-c3a1-45b9-9f2c-e6aa2654dfef	2026-08-14 08:30:00-05	TOMADA	2026-08-15 05:08:26.035014-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
+c4a2170e-e580-4100-ba9f-96c76268c035	2026-08-17 08:30:00-05	PENDIENTE	2026-08-15 05:08:26.042005-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
+25ba507f-55cc-4ab1-87ef-dbc83c04a0bc	2026-08-18 08:30:00-05	PENDIENTE	2026-08-15 05:08:26.043694-05	5ff713d8-5c7a-40d9-a99e-b2668cc6059d	351c3bd5-512a-4e69-867a-e0d4d0c31995
+e1b89867-b115-47a9-8384-b52d94864937	2026-08-13 08:00:00-05	TOMADA	2026-08-15 05:08:26.337271-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
+e9901b5a-d368-4944-9190-db19f7285a39	2026-08-14 08:00:00-05	TOMADA	2026-08-15 05:08:26.344699-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
+5577f63f-237f-496c-981a-f82d92d25175	2026-08-17 08:00:00-05	PENDIENTE	2026-08-15 05:08:26.351384-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
+05ac61cf-26f5-4a90-a294-1189df26897e	2026-08-18 08:00:00-05	PENDIENTE	2026-08-15 05:08:26.352842-05	774011f5-4140-4752-80cc-3c6329a29908	4fc818eb-a191-41c9-8d41-f3646c34890e
+61191c4f-a459-4751-baaa-8905b1759230	2026-08-13 09:00:00-05	TOMADA	2026-08-15 05:08:26.656831-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
+a9e02bdb-3a60-4051-9bfb-5e88720c3714	2026-08-14 09:00:00-05	TOMADA	2026-08-15 05:08:26.664077-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
+27930560-c80f-4e81-8ef4-cb21bc763d20	2026-08-17 09:00:00-05	PENDIENTE	2026-08-15 05:08:26.670662-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
+13ae7964-cd58-4d09-881a-5fb2dc7beac8	2026-08-18 09:00:00-05	PENDIENTE	2026-08-15 05:08:26.672139-05	128c00d9-ad01-4232-9344-2645fc774bf9	f702f930-9c26-49ee-95ea-dd1cd79b3b0f
 \.
 
 
@@ -1662,14 +1844,14 @@ ac8787d9-a4bd-4f19-990b-46a0d24bf783	Deferasirox		tableta	250 mg	DEMO-DEFE-250	t
 --
 
 COPY public.medicacion_prescripcion (id, cantidad_dosis, unidad_dosis, via, frecuencia_texto, indicaciones, fecha_inicio, fecha_fin, estado, creado_en, actualizado_en, consulta_id, medicamento_id, medico_id, paciente_id, plan_tratamiento_id) FROM stdin;
-e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a	10.00	mg	ORAL	Cada 24 horas	Tomar a las 08:00 a. m. después del desayuno.	2026-07-14	\N	ACTIVA	2026-08-13 18:44:04.618384-05	2026-08-13 18:44:04.618388-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	6cefcffc-04cd-48e1-895f-ec441e9c2b00	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
-7658313f-1a8f-475f-a09b-905beb9e0f14	20.00	mg	ORAL	Cada 24 horas	Tomar a la 01:00 p. m.	2026-07-14	\N	ACTIVA	2026-08-13 18:44:04.666705-05	2026-08-13 18:44:04.66671-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	be4ad05a-2ec2-4986-bfd3-fe278ac0c5ce	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
-250bb49e-6caa-4b20-9143-cd1c7fe06f9d	5.00	mg	ORAL	Cada 24 horas	Tomar a las 08:00 p. m.	2026-07-14	\N	ACTIVA	2026-08-13 18:44:04.70363-05	2026-08-13 18:44:04.703634-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	791eee0f-9583-4dea-aa37-8c773313bce6	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
-4db4794b-b74d-408e-98dd-fcec85dc83e1	1.00	tableta	ORAL	Lunes, miércoles y viernes	Tomar a las 09:00 a. m. los días indicados.	2026-07-14	\N	ACTIVA	2026-08-13 18:44:04.739071-05	2026-08-13 18:44:04.739076-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	601071e2-4c15-4364-b3b9-7a111b871cc9	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
-d7a047d6-797a-4e8a-91b3-e3f9104723ac	5.00	mg	ORAL	Cada 24 horas	Tomar diariamente a las 08:00.	2026-07-14	\N	ACTIVA	2026-08-13 18:44:05.002382-05	2026-08-13 18:44:05.002388-05	048c1b38-2b92-4655-88c6-029cc4255a5c	791eee0f-9583-4dea-aa37-8c773313bce6	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8	a4047a75-a4c8-4d88-bedb-e893111041ac
-351c3bd5-512a-4e69-867a-e0d4d0c31995	500.00	mg	ORAL	Cada 24 horas	Tomar diariamente a las 08:30.	2026-07-14	\N	ACTIVA	2026-08-13 18:44:05.264423-05	2026-08-13 18:44:05.264428-05	4e1376cc-3db4-48c6-8200-aada210a6b6b	962a7092-c90e-4c54-acfe-d12a374455a5	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	a3a013be-83ed-4197-971e-355fe0f71d4b
-4fc818eb-a191-41c9-8d41-f3646c34890e	10.00	mg	ORAL	Cada 24 horas	Tomar diariamente a las 08:00.	2026-07-14	\N	ACTIVA	2026-08-13 18:44:05.522273-05	2026-08-13 18:44:05.52228-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	6cefcffc-04cd-48e1-895f-ec441e9c2b00	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	b1315bbb-bbe3-4778-b8be-ea82ee72213b
-f702f930-9c26-49ee-95ea-dd1cd79b3b0f	250.00	mg	ORAL	Cada 24 horas	Tomar diariamente a las 09:00.	2026-07-14	\N	ACTIVA	2026-08-13 18:44:05.776053-05	2026-08-13 18:44:05.776058-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	ac8787d9-a4bd-4f19-990b-46a0d24bf783	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a	f631cf18-72a8-4e4d-9e59-86e3fd973ebd
+7658313f-1a8f-475f-a09b-905beb9e0f14	20.00	mg	ORAL	Cada 24 horas	Tomar a la 01:00 p. m.	2026-07-17	\N	ACTIVA	2026-08-13 18:44:04.666705-05	2026-08-13 18:44:04.66671-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	be4ad05a-2ec2-4986-bfd3-fe278ac0c5ce	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
+250bb49e-6caa-4b20-9143-cd1c7fe06f9d	5.00	mg	ORAL	Cada 24 horas	Tomar a las 08:00 p. m.	2026-07-17	\N	ACTIVA	2026-08-13 18:44:04.70363-05	2026-08-13 18:44:04.703634-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	791eee0f-9583-4dea-aa37-8c773313bce6	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
+4db4794b-b74d-408e-98dd-fcec85dc83e1	1.00	tableta	ORAL	Lunes, miércoles y viernes	Tomar a las 09:00 a. m. los días indicados.	2026-07-17	\N	ACTIVA	2026-08-13 18:44:04.739071-05	2026-08-13 18:44:04.739076-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	601071e2-4c15-4364-b3b9-7a111b871cc9	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
+d7a047d6-797a-4e8a-91b3-e3f9104723ac	5.00	mg	ORAL	Cada 24 horas	Tomar diariamente a las 08:00.	2026-07-17	\N	ACTIVA	2026-08-13 18:44:05.002382-05	2026-08-13 18:44:05.002388-05	048c1b38-2b92-4655-88c6-029cc4255a5c	791eee0f-9583-4dea-aa37-8c773313bce6	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8	a4047a75-a4c8-4d88-bedb-e893111041ac
+351c3bd5-512a-4e69-867a-e0d4d0c31995	500.00	mg	ORAL	Cada 24 horas	Tomar diariamente a las 08:30.	2026-07-17	\N	ACTIVA	2026-08-13 18:44:05.264423-05	2026-08-13 18:44:05.264428-05	4e1376cc-3db4-48c6-8200-aada210a6b6b	962a7092-c90e-4c54-acfe-d12a374455a5	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	a3a013be-83ed-4197-971e-355fe0f71d4b
+4fc818eb-a191-41c9-8d41-f3646c34890e	10.00	mg	ORAL	Cada 24 horas	Tomar diariamente a las 08:00.	2026-07-17	\N	ACTIVA	2026-08-13 18:44:05.522273-05	2026-08-13 18:44:05.52228-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	6cefcffc-04cd-48e1-895f-ec441e9c2b00	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	b1315bbb-bbe3-4778-b8be-ea82ee72213b
+f702f930-9c26-49ee-95ea-dd1cd79b3b0f	250.00	mg	ORAL	Cada 24 horas	Tomar diariamente a las 09:00.	2026-07-17	\N	ACTIVA	2026-08-13 18:44:05.776053-05	2026-08-13 18:44:05.776058-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	ac8787d9-a4bd-4f19-990b-46a0d24bf783	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a	f631cf18-72a8-4e4d-9e59-86e3fd973ebd
+e9898ff9-9ac1-4a56-bcfe-4a5ee5c0ae8a	10.00	mg	ORAL	Cada 24 horas	Tomar a las 08:00 a. m. después del desayuno.	2026-07-17	\N	ACTIVA	2026-08-13 18:44:04.618384-05	2026-08-13 18:44:04.618388-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	6cefcffc-04cd-48e1-895f-ec441e9c2b00	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	c2e5e73c-7f5c-4f67-9991-1e1ebfa8877a
 \.
 
 
@@ -1697,6 +1879,28 @@ d96b1922-420d-4075-a51a-ffc0d5ca06f9	TOMADA		Registro demostrativo de adherencia
 33470da6-4b11-46da-8ebc-dfef3c921007	TOMADA		Registro demostrativo de adherencia.	2026-08-12 08:05:00-05	APP	2026-08-13 18:44:05.543522-05	ba64f595-7eb6-42fc-a7d1-3e3a0c853aa2	f8799c2b-cdfd-4d01-8a84-25bb408acf51
 7773e4f0-db81-4ea1-8c53-1905e95fd586	TOMADA		Registro demostrativo de adherencia.	2026-08-11 09:05:00-05	APP	2026-08-13 18:44:05.78819-05	d94f6bfe-f450-47aa-9962-75c95037bad9	370e4207-b934-4372-87c9-3ccb649e5238
 1ef2c3c5-6e08-48ca-934c-13be5a16e3ee	TOMADA		Registro demostrativo de adherencia.	2026-08-12 09:05:00-05	APP	2026-08-13 18:44:05.794598-05	c604a9ae-f99e-42f0-98e7-9d129081009d	370e4207-b934-4372-87c9-3ccb649e5238
+71e35f07-c181-4432-ae52-a4d571bb1097	TARDE		Registro demostrativo de adherencia.	2026-08-13 08:35:00-05	APP	2026-08-15 05:08:25.28123-05	1aba0d12-25b2-4e36-9e90-fc6e3ef5ce73	ac82977d-de16-40e9-ab46-039f04f6790c
+1de34e65-1503-48b0-9e6c-c4687e59171b	TOMADA		Registro demostrativo de adherencia.	2026-08-14 08:05:00-05	APP	2026-08-15 05:08:25.299443-05	2ee736aa-6994-4bc7-b9bc-d0b0b07dc0a4	ac82977d-de16-40e9-ab46-039f04f6790c
+f55b1b87-495d-492b-8337-e80a761fa997	TOMADA		Registro demostrativo de adherencia.	2026-08-13 13:05:00-05	APP	2026-08-15 05:08:25.322031-05	0d39ce49-e4da-4938-a8b1-492da17d0f74	ac82977d-de16-40e9-ab46-039f04f6790c
+b0ff91b6-b37f-4417-af70-4485ccc207a8	NO_TOMADA	OLVIDO	Registro demostrativo de adherencia.	2026-08-14 13:05:00-05	APP	2026-08-15 05:08:25.330042-05	21f10af3-6e1c-4b30-8bba-38e9176f665d	ac82977d-de16-40e9-ab46-039f04f6790c
+583f2316-b5ef-4234-980f-053a9656e375	TOMADA		Registro demostrativo de adherencia.	2026-08-13 20:05:00-05	APP	2026-08-15 05:08:25.353033-05	fcb979ee-255c-4549-97c3-4fb890097497	ac82977d-de16-40e9-ab46-039f04f6790c
+dd94272b-a5b7-4b71-afe4-0c2455d4aacb	TOMADA		Registro demostrativo de adherencia.	2026-08-14 20:05:00-05	APP	2026-08-15 05:08:25.360554-05	20630629-e48a-4966-b2ca-f4f8219f455b	ac82977d-de16-40e9-ab46-039f04f6790c
+5e71704a-9721-4b90-b711-10c9c49154cf	TARDE		Registro demostrativo de adherencia.	2026-08-14 09:35:00-05	APP	2026-08-15 05:08:25.379417-05	c96626ea-bb70-46ab-a9a4-8aee4a2ea776	ac82977d-de16-40e9-ab46-039f04f6790c
+97700306-6489-47f8-a3c9-aa8b5212a340	TOMADA		Registro demostrativo de adherencia.	2026-08-13 08:05:00-05	APP	2026-08-15 05:08:25.698915-05	f20e382a-9970-441d-a347-84be927dbb5c	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
+93558f10-a6b6-4d49-93fa-c5a983574bd5	TOMADA		Registro demostrativo de adherencia.	2026-08-14 08:05:00-05	APP	2026-08-15 05:08:25.707151-05	8ac58bcf-60af-4923-a581-5030090295d3	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
+518bc1c4-af41-4299-9bb4-94b6ec43b0c4	TOMADA		Registro demostrativo de adherencia.	2026-08-13 08:35:00-05	APP	2026-08-15 05:08:26.026735-05	9bc1a495-04aa-421a-8a1b-7c0f76c0ebfa	fa317260-ac0e-4245-b4da-10183c00c2a6
+b3c69bd3-5363-48c1-a1b8-32f8ab7e253f	TOMADA		Registro demostrativo de adherencia.	2026-08-14 08:35:00-05	APP	2026-08-15 05:08:26.034623-05	5150dd32-c3a1-45b9-9f2c-e6aa2654dfef	fa317260-ac0e-4245-b4da-10183c00c2a6
+89073b9d-32b4-42fe-ad7a-4567a8586e27	TOMADA		Registro demostrativo de adherencia.	2026-08-13 08:05:00-05	APP	2026-08-15 05:08:26.33691-05	e1b89867-b115-47a9-8384-b52d94864937	f8799c2b-cdfd-4d01-8a84-25bb408acf51
+9a12f9b7-37dc-40fb-a4e1-8992eb62bf41	TOMADA		Registro demostrativo de adherencia.	2026-08-14 08:05:00-05	APP	2026-08-15 05:08:26.344293-05	e9901b5a-d368-4944-9190-db19f7285a39	f8799c2b-cdfd-4d01-8a84-25bb408acf51
+978589d9-d93b-4e87-9939-90e5bafc3cff	TOMADA		Registro demostrativo de adherencia.	2026-08-13 09:05:00-05	APP	2026-08-15 05:08:26.656445-05	61191c4f-a459-4751-baaa-8905b1759230	370e4207-b934-4372-87c9-3ccb649e5238
+accad750-7f50-43b0-928b-54a8b45eab81	TOMADA		Registro demostrativo de adherencia.	2026-08-14 09:05:00-05	APP	2026-08-15 05:08:26.663717-05	a9e02bdb-3a60-4051-9bfb-5e88720c3714	370e4207-b934-4372-87c9-3ccb649e5238
+24555af3-2746-4dbe-b845-ca64c60f71e5	TOMADA		Registro demostrativo de adherencia.	2026-08-15 08:05:00-05	APP	2026-08-16 14:25:45.056559-05	1a77854b-8fe1-4ea6-b66a-45f048fe052a	ac82977d-de16-40e9-ab46-039f04f6790c
+8e89fffd-8628-4c2e-a68a-e3af45ed2401	NO_TOMADA	OLVIDO	Registro demostrativo de adherencia.	2026-08-15 13:05:00-05	APP	2026-08-16 14:25:45.074027-05	c59f1ba8-bdb9-47e9-b632-d00932298d67	ac82977d-de16-40e9-ab46-039f04f6790c
+07cae92a-5595-4499-9cf3-225b0281e7bd	TOMADA		Registro demostrativo de adherencia.	2026-08-15 20:05:00-05	APP	2026-08-16 14:25:45.090324-05	336810ec-5c0b-4d39-a3c5-8d1ca0da0468	ac82977d-de16-40e9-ab46-039f04f6790c
+3b0e1d98-a3bf-4753-8474-3d44730ffd5d	TOMADA		Registro demostrativo de adherencia.	2026-08-15 08:05:00-05	APP	2026-08-16 14:25:45.342713-05	d5b8dc4c-7f0a-43ef-90ca-6ee6dfb21a44	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
+d5f7d93a-e986-4bd2-8668-8c9b736d633c	TOMADA		Registro demostrativo de adherencia.	2026-08-15 08:35:00-05	APP	2026-08-16 14:25:45.583992-05	7d58cf78-ab7e-4ce8-80f7-5f42c56929d4	fa317260-ac0e-4245-b4da-10183c00c2a6
+9f35b00b-f429-4747-aabf-bf65f168547a	TOMADA		Registro demostrativo de adherencia.	2026-08-15 08:05:00-05	APP	2026-08-16 14:25:45.818629-05	58c024be-c50a-4845-aa21-17fbafa4f14d	f8799c2b-cdfd-4d01-8a84-25bb408acf51
+33e7083e-3aa7-4fba-a4b7-82c92fa1a35c	TOMADA		Registro demostrativo de adherencia.	2026-08-15 09:05:00-05	APP	2026-08-16 14:25:46.064057-05	ebd98abd-d0c5-4284-862b-183e1714d214	370e4207-b934-4372-87c9-3ccb649e5238
 \.
 
 
@@ -1704,17 +1908,17 @@ d96b1922-420d-4075-a51a-ffc0d5ca06f9	TOMADA		Registro demostrativo de adherencia
 -- Data for Name: pacientes_asignacionmedica; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.pacientes_asignacionmedica (id, es_principal, activa, fecha_inicio, fecha_fin, creado_en, asignado_por_id, medico_id, paciente_id) FROM stdin;
-6e945c74-e96e-40ec-b257-3f596d6106f3	t	t	2026-04-15	\N	2026-08-13 18:44:04.577344-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462
-f179e81e-a3d9-4d13-8c6e-218e774aba87	f	t	2026-06-14	\N	2026-08-13 18:44:04.578945-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	dd995870-2c2d-4c55-a565-dacc376b3462
-eb9f25fb-a78f-4b6d-b2a3-13b55742f748	t	t	2026-04-15	\N	2026-08-13 18:44:04.970533-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8
-408b2fc5-802f-4fe5-9e50-02daa727a7c6	f	t	2026-06-14	\N	2026-08-13 18:44:04.971748-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	8024a122-b860-4a88-91ab-feeb393130d8
-77a88c32-088f-40aa-b39a-bfe4ab249268	t	t	2026-04-15	\N	2026-08-13 18:44:05.232839-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
-57dc3291-e731-4e55-9ada-95a40c3dc72d	f	t	2026-06-14	\N	2026-08-13 18:44:05.234111-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
-815f7fa6-fd80-440d-b5a2-1b299beb684f	t	t	2026-04-15	\N	2026-08-13 18:44:05.487415-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
-4abfd970-ae2b-4cb2-b472-88df726ef371	f	t	2026-06-14	\N	2026-08-13 18:44:05.489291-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
-1d1a720d-201a-48ec-8080-6caabba184d9	t	t	2026-04-15	\N	2026-08-13 18:44:05.746574-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a
-6bb17bb0-e70c-4779-b875-0b9cb4ad914d	f	t	2026-06-14	\N	2026-08-13 18:44:05.747811-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	6cad92b4-ef17-4314-972c-89386feaca0a
+COPY public.pacientes_asignacionmedica (id, es_principal, activa, fecha_inicio, fecha_fin, creado_en, asignado_por_id, medico_id, paciente_id, cerrada_por_id, cerrado_en, motivo, origen) FROM stdin;
+6e945c74-e96e-40ec-b257-3f596d6106f3	f	f	2026-04-15	2026-08-15	2026-08-13 18:44:04.577344-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	dd995870-2c2d-4c55-a565-dacc376b3462	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	2026-08-15 05:08:25.170089-05		AUTOMATICA
+408b2fc5-802f-4fe5-9e50-02daa727a7c6	f	f	2026-06-14	2026-08-15	2026-08-13 18:44:04.971748-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	8024a122-b860-4a88-91ab-feeb393130d8	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	2026-08-15 05:08:25.650492-05		AUTOMATICA
+77a88c32-088f-40aa-b39a-bfe4ab249268	f	f	2026-04-15	2026-08-15	2026-08-13 18:44:05.232839-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	2026-08-15 05:08:25.977859-05		AUTOMATICA
+4abfd970-ae2b-4cb2-b472-88df726ef371	f	f	2026-06-14	2026-08-15	2026-08-13 18:44:05.489291-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	2026-08-15 05:08:26.289091-05		AUTOMATICA
+1d1a720d-201a-48ec-8080-6caabba184d9	f	f	2026-04-15	2026-08-15	2026-08-13 18:44:05.746574-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	6cad92b4-ef17-4314-972c-89386feaca0a	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	2026-08-15 05:08:26.607933-05		AUTOMATICA
+f179e81e-a3d9-4d13-8c6e-218e774aba87	t	t	2026-04-17	\N	2026-08-13 18:44:04.578945-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	dd995870-2c2d-4c55-a565-dacc376b3462	\N	\N	Distribución automática equitativa del escenario demostrativo.	AUTOMATICA
+eb9f25fb-a78f-4b6d-b2a3-13b55742f748	t	t	2026-04-17	\N	2026-08-13 18:44:04.970533-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	8024a122-b860-4a88-91ab-feeb393130d8	\N	\N	Distribución automática equitativa del escenario demostrativo.	AUTOMATICA
+57dc3291-e731-4e55-9ada-95a40c3dc72d	t	t	2026-04-17	\N	2026-08-13 18:44:05.234111-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	\N	\N	Distribución automática equitativa del escenario demostrativo.	AUTOMATICA
+815f7fa6-fd80-440d-b5a2-1b299beb684f	t	t	2026-04-17	\N	2026-08-13 18:44:05.487415-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	6719b9b9-b86d-4070-a9c6-16adda634819	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	\N	\N	Distribución automática equitativa del escenario demostrativo.	AUTOMATICA
+6bb17bb0-e70c-4779-b875-0b9cb4ad914d	t	t	2026-04-17	\N	2026-08-13 18:44:05.747811-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	85016450-c868-4995-a765-a1af2dd64f2b	6cad92b4-ef17-4314-972c-89386feaca0a	\N	\N	Distribución automática equitativa del escenario demostrativo.	AUTOMATICA
 \.
 
 
@@ -1723,11 +1927,11 @@ eb9f25fb-a78f-4b6d-b2a3-13b55742f748	t	t	2026-04-15	\N	2026-08-13 18:44:04.97053
 --
 
 COPY public.pacientes_cuentamovilpaciente (id, alias, estado, dispositivo, ultimo_acceso_en, habilitada_en, creada_en, usuario_id, paciente_id) FROM stdin;
-603c0214-1ab9-4b1d-9d62-514da3a57cd0	mateo.flores	ACTIVA	App móvil HemoRuta (demo)	2026-08-13 16:52:14.829205-05	2026-07-14 18:52:14.829212-05	2026-08-13 18:44:04.574305-05	ac82977d-de16-40e9-ab46-039f04f6790c	dd995870-2c2d-4c55-a565-dacc376b3462
-1eb36f09-db37-48e4-92ed-81f07cda029d	luciana.rojas	ACTIVA	App móvil HemoRuta (demo)	2026-08-13 16:52:15.125044-05	2026-07-14 18:52:15.125051-05	2026-08-13 18:44:04.96861-05	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	8024a122-b860-4a88-91ab-feeb393130d8
-9e30e238-0c1f-47b7-9b4a-7b572dfbd2b1	santiago.medina	ACTIVA	App móvil HemoRuta (demo)	2026-08-13 16:52:15.360575-05	2026-07-14 18:52:15.360581-05	2026-08-13 18:44:05.230238-05	fa317260-ac0e-4245-b4da-10183c00c2a6	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
-6dd8afa2-6524-494d-a82d-c55fc7eb1276	camila.torres	ACTIVA	App móvil HemoRuta (demo)	2026-08-13 16:52:15.603666-05	2026-07-14 18:52:15.603672-05	2026-08-13 18:44:05.485268-05	f8799c2b-cdfd-4d01-8a84-25bb408acf51	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
-18c80286-903a-43d2-b3e1-0a1949d971ea	diego.perez	ACTIVA	App móvil HemoRuta (demo)	2026-08-13 16:52:15.842381-05	2026-07-14 18:52:15.842388-05	2026-08-13 18:44:05.744442-05	370e4207-b934-4372-87c9-3ccb649e5238	6cad92b4-ef17-4314-972c-89386feaca0a
+1eb36f09-db37-48e4-92ed-81f07cda029d	luciana.rojas	ACTIVA	App móvil HemoRuta (demo)	2026-08-16 12:25:45.305267-05	2026-07-17 14:25:45.305274-05	2026-08-13 18:44:04.96861-05	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	8024a122-b860-4a88-91ab-feeb393130d8
+9e30e238-0c1f-47b7-9b4a-7b572dfbd2b1	santiago.medina	ACTIVA	App móvil HemoRuta (demo)	2026-08-16 12:25:45.539402-05	2026-07-17 14:25:45.539419-05	2026-08-13 18:44:05.230238-05	fa317260-ac0e-4245-b4da-10183c00c2a6	4ac67dc2-5b1d-4aec-b63b-ead16b154f72
+6dd8afa2-6524-494d-a82d-c55fc7eb1276	camila.torres	ACTIVA	App móvil HemoRuta (demo)	2026-08-16 12:25:45.780343-05	2026-07-17 14:25:45.78035-05	2026-08-13 18:44:05.485268-05	f8799c2b-cdfd-4d01-8a84-25bb408acf51	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f
+18c80286-903a-43d2-b3e1-0a1949d971ea	diego.perez	ACTIVA	App móvil HemoRuta (demo)	2026-08-16 12:25:46.023709-05	2026-07-17 14:25:46.023715-05	2026-08-13 18:44:05.744442-05	370e4207-b934-4372-87c9-3ccb649e5238	6cad92b4-ef17-4314-972c-89386feaca0a
+603c0214-1ab9-4b1d-9d62-514da3a57cd0	mateo.flores	ACTIVA	App móvil HemoRuta (demo)	2026-08-16 14:26:58.293987-05	2026-07-17 14:25:45.006912-05	2026-08-13 18:44:04.574305-05	ac82977d-de16-40e9-ab46-039f04f6790c	dd995870-2c2d-4c55-a565-dacc376b3462
 \.
 
 
@@ -1736,11 +1940,11 @@ COPY public.pacientes_cuentamovilpaciente (id, alias, estado, dispositivo, ultim
 --
 
 COPY public.pacientes_paciente (id, historia_clinica, dni, nombres, apellidos, fecha_nacimiento, sexo, grupo_sanguineo, lugar_nacimiento, nacionalidad, procedencia, direccion, distrito, idioma_preferido, estado, perfil_completo, creado_en, actualizado_en, creado_por_id) FROM stdin;
-dd995870-2c2d-4c55-a565-dacc376b3462	HC-2024-01568	71562384	Mateo Gabriel	Flores	2017-03-16	M	O+	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:04.565927-05	2026-08-13 18:52:14.825209-05	6719b9b9-b86d-4070-a9c6-16adda634819
-8024a122-b860-4a88-91ab-feeb393130d8	HC-2024-01569	62438751	Luciana Valentina	Rojas	2019-07-08	F	A+	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:04.964098-05	2026-08-13 18:52:15.12288-05	6719b9b9-b86d-4070-a9c6-16adda634819
-4ac67dc2-5b1d-4aec-b63b-ead16b154f72	HC-2024-01570	80319276	Santiago André	Medina	2016-09-21	M	O+	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:05.226618-05	2026-08-13 18:52:15.358126-05	6719b9b9-b86d-4070-a9c6-16adda634819
-ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	HC-2024-01571	69254731	Camila Alejandra	Torres	2018-11-03	F	B+	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:05.48102-05	2026-08-13 18:52:15.601414-05	6719b9b9-b86d-4070-a9c6-16adda634819
-6cad92b4-ef17-4314-972c-89386feaca0a	HC-2024-01572	73846219	Diego Alonso	Pérez	2017-05-14	M	A-	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:05.741074-05	2026-08-13 18:52:15.839795-05	6719b9b9-b86d-4070-a9c6-16adda634819
+dd995870-2c2d-4c55-a565-dacc376b3462	HC-2024-01568	71562384	Mateo Gabriel	Flores	2017-03-16	M	O+	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:04.565927-05	2026-08-16 14:25:45.002266-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5
+8024a122-b860-4a88-91ab-feeb393130d8	HC-2024-01569	62438751	Luciana Valentina	Rojas	2019-07-08	F	A+	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:04.964098-05	2026-08-16 14:25:45.302813-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5
+4ac67dc2-5b1d-4aec-b63b-ead16b154f72	HC-2024-01570	80319276	Santiago André	Medina	2016-09-21	M	O+	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:05.226618-05	2026-08-16 14:25:45.536681-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5
+ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	HC-2024-01571	69254731	Camila Alejandra	Torres	2018-11-03	F	B+	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:05.48102-05	2026-08-16 14:25:45.777855-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5
+6cad92b4-ef17-4314-972c-89386feaca0a	HC-2024-01572	73846219	Diego Alonso	Pérez	2017-05-14	M	A-	Lima, Perú	Peruana	Lima	Av. Javier Prado Este 1234, Lima	San Borja	Español	ACTIVO	t	2026-08-13 18:44:05.741074-05	2026-08-16 14:25:46.021524-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5
 \.
 
 
@@ -1749,11 +1953,11 @@ ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	HC-2024-01571	69254731	Camila Alejandra	Tor
 --
 
 COPY public.pacientes_tutorpaciente (id, nombres, apellidos, dni, parentesco, telefono_principal, telefono_alternativo, telefono_emergencia, correo, direccion, distrito, persona_autorizada_adicional, preferencia_contacto, es_principal, autorizado, creado_en, actualizado_en, paciente_id, usuario_id) FROM stdin;
-deb9a7de-e655-4f93-b462-23fb599fbfc4	María	Flores López	45678912	MADRE	+51 987 654 321	+51 912 345 678	+51 999 888 777	maria.flores@example.com	Av. Javier Prado Este 1234, Dpto. 502	San Borja	Familiar autorizado	APP	t	t	2026-08-13 18:44:04.572149-05	2026-08-13 18:44:04.572156-05	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
-543ce575-4076-4f72-938a-61493884f58a	Carlos	Rojas Paredes	45789013	PADRE	+51 987 650 010	+51 912 345 678	+51 999 888 777	carlos.rojas@example.com	Av. Javier Prado Este 1234, Dpto. 502	San Borja	Familiar autorizado	APP	t	t	2026-08-13 18:44:04.966741-05	2026-08-13 18:44:04.966746-05	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
 55c7de4e-3743-4c89-b98a-87367fd79621	Verónica	Medina Ruiz	46789024	MADRE	+51 987 650 011	+51 912 345 678	+51 999 888 777	veronica.medina@example.com	Av. Javier Prado Este 1234, Dpto. 502	San Borja	Familiar autorizado	APP	t	t	2026-08-13 18:44:05.229057-05	2026-08-13 18:44:05.229063-05	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6
 6cf7b0d1-5cd0-45d1-b997-17c50cfdbcbb	Jorge	Torres Vega	47890135	PADRE	+51 987 650 012	+51 912 345 678	+51 999 888 777	jorge.torres@example.com	Av. Javier Prado Este 1234, Dpto. 502	San Borja	Familiar autorizado	APP	t	t	2026-08-13 18:44:05.483948-05	2026-08-13 18:44:05.483955-05	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51
 6ebbfbf0-bde2-4042-93a4-3e63ee7643a0	Katherine	Pérez Solís	48901246	MADRE	+51 987 650 013	+51 912 345 678	+51 999 888 777	katherine.perez@example.com	Av. Javier Prado Este 1234, Dpto. 502	San Borja	Familiar autorizado	APP	t	t	2026-08-13 18:44:05.743261-05	2026-08-13 18:44:05.743267-05	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238
+deb9a7de-e655-4f93-b462-23fb599fbfc4	María	Flores López	45678912	MADRE	+51 987 654 321	+51 912 345 678	+51 999 888 777	maria.flores@example.com	Av. Javier Prado Este 1234, Dpto. 502	San Borja	Familiar autorizado	APP	t	t	2026-08-13 18:44:04.572149-05	2026-08-13 18:44:04.572156-05	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
+543ce575-4076-4f72-938a-61493884f58a	Carlos	Rojas Paredes	45789013	PADRE	+51 987 650 010	+51 912 345 678	+51 999 888 777	carlos.rojas@example.com	Av. Javier Prado Este 1234, Dpto. 502	San Borja	Familiar autorizado	APP	t	t	2026-08-13 18:44:04.966741-05	2026-08-13 18:44:04.966746-05	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
 \.
 
 
@@ -1798,37 +2002,59 @@ f7b69a2b-33f4-4a00-9c30-f80482e454fc	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00
 79adeadc-7cf5-404c-8033-80d32e977e9b	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-12 20:05:00-05	2026-08-13 18:44:04.731409-05	2026-08-13 18:44:04.731412-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	7c63df31-f4ad-4261-adc9-87821c757a10	\N
 135ca9e9-6ef6-466b-8192-7ca3c4595813	MEDICACION	APP	CUMPLIDO	Sulfato ferroso 1.00 tableta confirmado	Registro demostrativo de adherencia.	2026-08-10 09:05:00-05	2026-08-13 18:44:04.74939-05	2026-08-13 18:44:04.749393-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	d519c355-bb72-4761-93ac-e49c17315d92	\N
 80f7b057-4ca4-4b10-8f19-e0c5702b9dee	MEDICACION	APP	EN_SEGUIMIENTO	Sulfato ferroso 1.00 tableta tomado con retraso	Registro demostrativo de adherencia.	2026-08-12 09:35:00-05	2026-08-13 18:44:04.755905-05	2026-08-13 18:44:04.755908-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	aec2d334-87bb-40f3-a200-42cafe806ae9	\N
+625d594a-2e55-4abc-bdd8-09bd35b4a6bd	MEDICACION	APP	CUMPLIDO	Prednisona 10.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-15 08:05:00-05	2026-08-16 14:25:45.060538-05	2026-08-16 14:25:45.060541-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	24555af3-2746-4dbe-b845-ca64c60f71e5	\N
+2788bce9-a64c-4995-9495-45688d75ab84	MEDICACION	APP	ALERTA	Omeprazol 20.00 mg no tomado	Motivo: Olvido. Registro demostrativo de adherencia.	2026-08-15 13:05:00-05	2026-08-16 14:25:45.077164-05	2026-08-16 14:25:45.077167-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	8e89fffd-8628-4c2e-a68a-e3af45ed2401	\N
+68e48bf8-1868-4c8e-9876-dd4d5d6f34b0	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-15 20:05:00-05	2026-08-16 14:25:45.093438-05	2026-08-16 14:25:45.093441-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	07cae92a-5595-4499-9cf3-225b0281e7bd	\N
+c22500cc-a26b-4259-a5e2-ac0907abf035	SINTOMAS	APP	RECIBIDO	Náuseas	Náuseas leves, sin fiebre.	2026-08-15 10:30:00-05	2026-08-13 18:44:04.764849-05	2026-08-13 18:44:04.764852-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	c1aaa335-4b27-4638-b625-5a7a76cc772b
+ae356f20-aac2-44e9-9662-bd066683e9ab	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-15 08:05:00-05	2026-08-16 14:25:45.345914-05	2026-08-16 14:25:45.345917-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	3b0e1d98-a3bf-4753-8474-3d44730ffd5d	\N
+7391f877-0ed9-4cde-a410-c0db46b311ae	MEDICACION	APP	CUMPLIDO	Ácido tranexámico 500.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-15 08:35:00-05	2026-08-16 14:25:45.58727-05	2026-08-16 14:25:45.587273-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	d5f7d93a-e986-4bd2-8668-8c9b736d633c	\N
+f2bf5fec-364d-4c30-a863-d265fb83e7dd	MEDICACION	APP	CUMPLIDO	Prednisona 10.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-15 08:05:00-05	2026-08-16 14:25:45.822713-05	2026-08-16 14:25:45.822716-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	9f35b00b-f429-4747-aabf-bf65f168547a	\N
 5f17e2cf-f632-4b14-9b27-fad44b3518d9	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-11 08:05:00-05	2026-08-13 18:44:05.018692-05	2026-08-13 18:44:05.018696-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	2d83e41a-325d-472e-bc78-7a218d52bb76	\N
 dfd9d74d-7aa5-47aa-8805-7d9b25517ba7	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-12 08:05:00-05	2026-08-13 18:44:05.025819-05	2026-08-13 18:44:05.025822-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	0f5d93fa-1131-485c-a3e0-befebb1e8c56	\N
+b6936f62-0dd8-4ac6-8d36-d237da421a96	MEDICACION	APP	CUMPLIDO	Deferasirox 250.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-15 09:05:00-05	2026-08-16 14:25:46.067185-05	2026-08-16 14:25:46.067188-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	33e7083e-3aa7-4fba-a4b7-82c92fa1a35c	\N
 75f687e6-23b2-4def-917c-c6617c2d1821	MEDICACION	APP	CUMPLIDO	Ácido tranexámico 500.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-11 08:35:00-05	2026-08-13 18:44:05.279105-05	2026-08-13 18:44:05.279109-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	0359e566-4dd3-4086-82cc-ca7df74e23b8	\N
 f5183b42-dde1-4554-a9f0-3b66b311d9b6	MEDICACION	APP	CUMPLIDO	Ácido tranexámico 500.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-12 08:35:00-05	2026-08-13 18:44:05.285204-05	2026-08-13 18:44:05.285207-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	4de8eff6-9a3c-4cc7-94bb-2abd9077a16d	\N
 75319050-e7e1-4218-87be-5df9ebaa1ce3	MEDICACION	APP	CUMPLIDO	Prednisona 10.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-11 08:05:00-05	2026-08-13 18:44:05.539721-05	2026-08-13 18:44:05.539724-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	d96b1922-420d-4075-a51a-ffc0d5ca06f9	\N
 8fbe7da9-b40b-49fc-9b71-7873697c3378	MEDICACION	APP	CUMPLIDO	Prednisona 10.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-12 08:05:00-05	2026-08-13 18:44:05.546531-05	2026-08-13 18:44:05.546536-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	33470da6-4b11-46da-8ebc-dfef3c921007	\N
-c22500cc-a26b-4259-a5e2-ac0907abf035	SINTOMAS	APP	RECIBIDO	Náuseas	Náuseas leves, sin fiebre.	2026-08-12 10:30:00-05	2026-08-13 18:44:04.764849-05	2026-08-13 18:44:04.764852-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	c1aaa335-4b27-4638-b625-5a7a76cc772b
 57c72c7c-4201-45f5-a79a-9c1403d02aa9	MEDICACION	APP	CUMPLIDO	Deferasirox 250.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-11 09:05:00-05	2026-08-13 18:44:05.791144-05	2026-08-13 18:44:05.791147-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	7773e4f0-db81-4ea1-8c53-1905e95fd586	\N
 8dbce201-6e53-435d-8345-1c7ebde1cd1c	MEDICACION	APP	CUMPLIDO	Deferasirox 250.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-12 09:05:00-05	2026-08-13 18:44:05.797445-05	2026-08-13 18:44:05.797448-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	1ef2c3c5-6e08-48ca-934c-13be5a16e3ee	\N
-fc5077be-f4cb-458d-b69c-610d10226e62	SINTOMAS	APP	RECIBIDO	Cansancio	Cansancio leve durante la tarde.	2026-08-09 10:30:00-05	2026-08-13 18:44:04.761029-05	2026-08-13 18:44:04.761032-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	b8b9938a-29ee-411c-9b2b-878e23d6a4c2
-eb1a8da5-d0d8-4462-9ea9-c14890f0295a	DOCUMENTO	APP	REVISADO	Hemograma completo	Documento disponible para revisión médica.	2026-08-12 11:15:00-05	2026-08-13 18:44:04.771051-05	2026-08-13 18:52:14.932222-05	\N	9eb3717a-c260-46dd-9d7b-741fe9800b26	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	\N
-2ea56f9d-ae37-47b4-ae0a-01b925bc7e80	DOCUMENTO	APP	REVISADO	Resultados laboratorio JPG	Documento disponible para revisión médica.	2026-08-10 11:15:00-05	2026-08-13 18:44:04.774681-05	2026-08-13 18:52:14.935642-05	\N	fabbb396-e46d-4aa3-a8d5-1ad116ecd778	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	\N
-de4ef694-3ece-4b44-8a31-7a4332f1c549	DOCUMENTO	APP	REVISADO	Informe médico escaneado	Documento disponible para revisión médica.	2026-08-08 11:15:00-05	2026-08-13 18:44:04.778097-05	2026-08-13 18:52:14.938106-05	\N	7e12fd5c-f0c4-4f28-8194-3422bace6d5d	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	\N
-2a3e087f-3b28-440c-878d-27e543bab787	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-16 09:55:00-05	2026-08-13 18:44:04.779827-05	2026-08-13 18:52:14.93983-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	\N	dd995870-2c2d-4c55-a565-dacc376b3462	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-f6d034d6-0660-4e94-8516-5c02d721cce9	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-16 09:55:00-05	2026-08-13 18:44:04.781793-05	2026-08-13 18:44:04.781797-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-229d9e91-0521-4cb1-9d2a-327962febaa8	SINTOMAS	APP	RECIBIDO	Cansancio	Cansancio moderado reportado por la familia.	2026-08-11 10:30:00-05	2026-08-13 18:44:05.033737-05	2026-08-13 18:44:05.03374-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	\N	6255cda9-a23c-4fb7-a628-5c133b64568f
-277d7d39-e0ea-4076-8c86-3b611876c0be	DOCUMENTO	APP	REVISADO	Hemograma de control	Documento disponible para revisión médica.	2026-08-11 11:15:00-05	2026-08-13 18:44:05.041303-05	2026-08-13 18:52:15.173665-05	\N	8a7733e7-2e62-4ab1-a4f9-1c41182eef01	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	\N	\N
-5ddbe24f-d2d0-4501-ba58-deca9c23a7d5	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-15 09:55:00-05	2026-08-13 18:44:05.042522-05	2026-08-13 18:52:15.175235-05	048c1b38-2b92-4655-88c6-029cc4255a5c	\N	8024a122-b860-4a88-91ab-feeb393130d8	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-0032c5e5-83f8-4f97-a8d9-1c22f4ec006d	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-15 09:55:00-05	2026-08-13 18:44:05.043814-05	2026-08-13 18:44:05.043818-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-6941adba-8b86-4006-915e-1a9ba7d84b2e	SINTOMAS	APP	RECIBIDO	Dolor	Dolor leve y transitorio, ya controlado.	2026-08-10 10:30:00-05	2026-08-13 18:44:05.291684-05	2026-08-13 18:44:05.291687-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	\N	25beeb7d-320d-41f3-bdc8-4cf620351ad3
-d3d355a3-ae7b-4ee2-8a1e-a754574bee80	DOCUMENTO	APP	REVISADO	Informe de hematología	Documento disponible para revisión médica.	2026-08-09 11:15:00-05	2026-08-13 18:44:05.296554-05	2026-08-13 18:52:15.416309-05	\N	c044139a-afca-4913-b1af-d927e49a47ca	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	\N	\N
-09796bcf-5a70-4c9f-a53f-0bc6adda5263	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-14 09:55:00-05	2026-08-13 18:44:05.29767-05	2026-08-13 18:52:15.417477-05	4e1376cc-3db4-48c6-8200-aada210a6b6b	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-7a4f63fa-7a49-49f0-abd0-327fc2cb09fb	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-14 09:55:00-05	2026-08-13 18:44:05.298927-05	2026-08-13 18:44:05.29893-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-02e8934e-6791-4056-a063-8e2ca7199e1c	SINTOMAS	APP	ALERTA	Fiebre, Náuseas	Fiebre de 38.2 °C y náuseas; requiere revisión médica.	2026-08-12 10:30:00-05	2026-08-13 18:44:05.554267-05	2026-08-13 18:44:05.554271-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	\N	0faaaad6-d443-4dcf-a1a7-eed8293a27b8
-fb96a785-a021-4e05-913d-4d6227cf8f7e	DOCUMENTO	APP	REVISADO	Perfil hepático	Documento disponible para revisión médica.	2026-08-12 11:15:00-05	2026-08-13 18:44:05.561388-05	2026-08-13 18:52:15.657881-05	\N	0cf1dd33-8278-421b-ac8f-ab3799bfad39	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	\N	\N
-7e3cad65-70b8-40eb-a94b-96f7492af1d4	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-13 09:55:00-05	2026-08-13 18:44:05.562879-05	2026-08-13 18:52:15.659159-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-54818a0a-95d7-43a4-9dca-5e7828adf220	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-13 09:55:00-05	2026-08-13 18:44:05.564111-05	2026-08-13 18:44:05.564114-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-ee8dca1b-e75e-4297-aaad-ef1564565921	SINTOMAS	APP	RECIBIDO	Otro	Sin novedades clínicas relevantes.	2026-08-11 10:30:00-05	2026-08-13 18:44:05.803973-05	2026-08-13 18:44:05.803976-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	\N	608e5eeb-653f-444f-a137-817c5fd325e0
-81438c7c-43f1-4ae0-9dc0-41e1624837f3	DOCUMENTO	APP	REVISADO	Plan de transfusión vigente	Documento disponible para revisión médica.	2026-08-07 11:15:00-05	2026-08-13 18:44:05.809102-05	2026-08-13 18:52:15.891718-05	\N	39a91f7f-7c9a-4179-93c0-a91e515004a1	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	\N	\N
-e25bb604-544e-4980-9c26-42c619f40e0d	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-12 09:55:00-05	2026-08-13 18:44:05.810223-05	2026-08-13 18:52:15.893091-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	\N	6cad92b4-ef17-4314-972c-89386feaca0a	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
-0835b1d3-1252-48ef-8774-52be6f595b84	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-12 09:55:00-05	2026-08-13 18:44:05.811423-05	2026-08-13 18:44:05.811426-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+fc5077be-f4cb-458d-b69c-610d10226e62	SINTOMAS	APP	RECIBIDO	Cansancio	Cansancio leve durante la tarde.	2026-08-12 10:30:00-05	2026-08-13 18:44:04.761029-05	2026-08-13 18:44:04.761032-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	b8b9938a-29ee-411c-9b2b-878e23d6a4c2
+eb1a8da5-d0d8-4462-9ea9-c14890f0295a	DOCUMENTO	APP	REVISADO	Hemograma completo	Documento disponible para revisión médica.	2026-08-15 11:15:00-05	2026-08-13 18:44:04.771051-05	2026-08-16 14:25:45.115823-05	\N	9eb3717a-c260-46dd-9d7b-741fe9800b26	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	\N
+2ea56f9d-ae37-47b4-ae0a-01b925bc7e80	DOCUMENTO	APP	REVISADO	Resultados laboratorio JPG	Documento disponible para revisión médica.	2026-08-13 11:15:00-05	2026-08-13 18:44:04.774681-05	2026-08-16 14:25:45.118855-05	\N	fabbb396-e46d-4aa3-a8d5-1ad116ecd778	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	\N
+de4ef694-3ece-4b44-8a31-7a4332f1c549	DOCUMENTO	APP	REVISADO	Informe médico escaneado	Documento disponible para revisión médica.	2026-08-11 11:15:00-05	2026-08-13 18:44:04.778097-05	2026-08-16 14:25:45.121409-05	\N	7e12fd5c-f0c4-4f28-8194-3422bace6d5d	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	\N	\N
+2a3e087f-3b28-440c-878d-27e543bab787	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-19 09:55:00-05	2026-08-13 18:44:04.779827-05	2026-08-16 14:25:45.12277-05	de04fc37-4acd-41e0-b899-a9a0ad69b9b8	\N	dd995870-2c2d-4c55-a565-dacc376b3462	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+f6d034d6-0660-4e94-8516-5c02d721cce9	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-19 09:55:00-05	2026-08-13 18:44:04.781793-05	2026-08-13 18:44:04.781797-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+229d9e91-0521-4cb1-9d2a-327962febaa8	SINTOMAS	APP	RECIBIDO	Cansancio	Cansancio moderado reportado por la familia.	2026-08-14 10:30:00-05	2026-08-13 18:44:05.033737-05	2026-08-13 18:44:05.03374-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	\N	6255cda9-a23c-4fb7-a628-5c133b64568f
+277d7d39-e0ea-4076-8c86-3b611876c0be	DOCUMENTO	APP	REVISADO	Hemograma de control	Documento disponible para revisión médica.	2026-08-14 11:15:00-05	2026-08-13 18:44:05.041303-05	2026-08-16 14:25:45.354885-05	\N	8a7733e7-2e62-4ab1-a4f9-1c41182eef01	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	\N	\N
+5ddbe24f-d2d0-4501-ba58-deca9c23a7d5	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-18 09:55:00-05	2026-08-13 18:44:05.042522-05	2026-08-16 14:25:45.356212-05	048c1b38-2b92-4655-88c6-029cc4255a5c	\N	8024a122-b860-4a88-91ab-feeb393130d8	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+0032c5e5-83f8-4f97-a8d9-1c22f4ec006d	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-18 09:55:00-05	2026-08-13 18:44:05.043814-05	2026-08-13 18:44:05.043818-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+6941adba-8b86-4006-915e-1a9ba7d84b2e	SINTOMAS	APP	RECIBIDO	Dolor	Dolor leve y transitorio, ya controlado.	2026-08-13 10:30:00-05	2026-08-13 18:44:05.291684-05	2026-08-13 18:44:05.291687-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	\N	25beeb7d-320d-41f3-bdc8-4cf620351ad3
+d3d355a3-ae7b-4ee2-8a1e-a754574bee80	DOCUMENTO	APP	REVISADO	Informe de hematología	Documento disponible para revisión médica.	2026-08-12 11:15:00-05	2026-08-13 18:44:05.296554-05	2026-08-16 14:25:45.597047-05	\N	c044139a-afca-4913-b1af-d927e49a47ca	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	\N	\N
+09796bcf-5a70-4c9f-a53f-0bc6adda5263	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-17 09:55:00-05	2026-08-13 18:44:05.29767-05	2026-08-16 14:25:45.598387-05	4e1376cc-3db4-48c6-8200-aada210a6b6b	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+7a4f63fa-7a49-49f0-abd0-327fc2cb09fb	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-17 09:55:00-05	2026-08-13 18:44:05.298927-05	2026-08-13 18:44:05.29893-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+02e8934e-6791-4056-a063-8e2ca7199e1c	SINTOMAS	APP	ALERTA	Fiebre, Náuseas	Fiebre de 38.2 °C y náuseas; requiere revisión médica.	2026-08-15 10:30:00-05	2026-08-13 18:44:05.554267-05	2026-08-13 18:44:05.554271-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	\N	0faaaad6-d443-4dcf-a1a7-eed8293a27b8
+fb96a785-a021-4e05-913d-4d6227cf8f7e	DOCUMENTO	APP	REVISADO	Perfil hepático	Documento disponible para revisión médica.	2026-08-15 11:15:00-05	2026-08-13 18:44:05.561388-05	2026-08-16 14:25:45.834913-05	\N	0cf1dd33-8278-421b-ac8f-ab3799bfad39	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	\N	\N
+7e3cad65-70b8-40eb-a94b-96f7492af1d4	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-16 09:55:00-05	2026-08-13 18:44:05.562879-05	2026-08-16 14:25:45.836531-05	50f572a9-1d0d-43cc-a7af-ecabc8ec2fa2	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+54818a0a-95d7-43a4-9dca-5e7828adf220	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-16 09:55:00-05	2026-08-13 18:44:05.564111-05	2026-08-13 18:44:05.564114-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+ee8dca1b-e75e-4297-aaad-ef1564565921	SINTOMAS	APP	RECIBIDO	Otro	Sin novedades clínicas relevantes.	2026-08-14 10:30:00-05	2026-08-13 18:44:05.803973-05	2026-08-13 18:44:05.803976-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	\N	608e5eeb-653f-444f-a137-817c5fd325e0
+81438c7c-43f1-4ae0-9dc0-41e1624837f3	DOCUMENTO	APP	REVISADO	Plan de transfusión vigente	Documento disponible para revisión médica.	2026-08-10 11:15:00-05	2026-08-13 18:44:05.809102-05	2026-08-16 14:25:46.077149-05	\N	39a91f7f-7c9a-4179-93c0-a91e515004a1	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	\N	\N
+e25bb604-544e-4980-9c26-42c619f40e0d	CONSULTA	MEDICO	CERRADO	Consulta inicial	Valoración y seguimiento por hematología pediátrica.	2026-07-15 09:55:00-05	2026-08-13 18:44:05.810223-05	2026-08-16 14:25:46.078451-05	bfa6696a-6bb1-4da5-b283-c1ba1d93f83c	\N	6cad92b4-ef17-4314-972c-89386feaca0a	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+0835b1d3-1252-48ef-8774-52be6f595b84	TRATAMIENTO	MEDICO	CUMPLIDO	Tratamiento actual registrado (demo)	Continuar tratamiento actual según evaluación médica.	2026-07-15 09:55:00-05	2026-08-13 18:44:05.811423-05	2026-08-13 18:44:05.811426-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	6719b9b9-b86d-4070-a9c6-16adda634819	\N	\N
+e85d9421-ce8f-4284-8042-850e4d09fd8e	MEDICACION	APP	EN_SEGUIMIENTO	Prednisona 10.00 mg tomado con retraso	Registro demostrativo de adherencia.	2026-08-13 08:35:00-05	2026-08-15 05:08:25.29459-05	2026-08-15 05:08:25.294595-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	71e35f07-c181-4432-ae52-a4d571bb1097	\N
+85a70ac0-7505-49ad-bfa3-1ddfbbe2b692	MEDICACION	APP	CUMPLIDO	Prednisona 10.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-14 08:05:00-05	2026-08-15 05:08:25.303722-05	2026-08-15 05:08:25.303726-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	1de34e65-1503-48b0-9e6c-c4687e59171b	\N
+de703a4e-a93b-43a3-953f-64417008b6c7	MEDICACION	APP	CUMPLIDO	Omeprazol 20.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-13 13:05:00-05	2026-08-15 05:08:25.32617-05	2026-08-15 05:08:25.326174-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	f55b1b87-495d-492b-8337-e80a761fa997	\N
+130361bb-eb80-4da8-8c0a-f7b46c7589a5	MEDICACION	APP	ALERTA	Omeprazol 20.00 mg no tomado	Motivo: Olvido. Registro demostrativo de adherencia.	2026-08-14 13:05:00-05	2026-08-15 05:08:25.334011-05	2026-08-15 05:08:25.334015-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	b0ff91b6-b37f-4417-af70-4485ccc207a8	\N
+a81d6759-252a-4547-be32-71e1a8343d2b	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-13 20:05:00-05	2026-08-15 05:08:25.35722-05	2026-08-15 05:08:25.357224-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	583f2316-b5ef-4234-980f-053a9656e375	\N
+508fa2ec-7c31-4c84-a1c4-39f55b3e247a	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-14 20:05:00-05	2026-08-15 05:08:25.364337-05	2026-08-15 05:08:25.364341-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	dd94272b-a5b7-4b71-afe4-0c2455d4aacb	\N
+2ffc8f10-ba77-4b6b-aac1-2a74001773d2	MEDICACION	APP	EN_SEGUIMIENTO	Sulfato ferroso 1.00 tableta tomado con retraso	Registro demostrativo de adherencia.	2026-08-14 09:35:00-05	2026-08-15 05:08:25.383248-05	2026-08-15 05:08:25.383252-05	\N	\N	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c	5e71704a-9721-4b90-b711-10c9c49154cf	\N
+c314d410-40a0-4064-8fd9-5afa75568f99	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-13 08:05:00-05	2026-08-15 05:08:25.703527-05	2026-08-15 05:08:25.703531-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	97700306-6489-47f8-a3c9-aa8b5212a340	\N
+a417c792-c245-4ea4-9ec2-ed6e81ac4d49	MEDICACION	APP	CUMPLIDO	Ácido fólico 5.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-14 08:05:00-05	2026-08-15 05:08:25.711333-05	2026-08-15 05:08:25.711337-05	\N	\N	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	93558f10-a6b6-4d49-93fa-c5a983574bd5	\N
+009913a9-b84e-44db-9408-33d4b83c737a	MEDICACION	APP	CUMPLIDO	Ácido tranexámico 500.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-13 08:35:00-05	2026-08-15 05:08:26.030744-05	2026-08-15 05:08:26.030748-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	518bc1c4-af41-4299-9bb4-94b6ec43b0c4	\N
+c2f7edd9-a4a0-49b4-9131-4becc9722c3a	MEDICACION	APP	CUMPLIDO	Ácido tranexámico 500.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-14 08:35:00-05	2026-08-15 05:08:26.038696-05	2026-08-15 05:08:26.0387-05	\N	\N	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6	b3c69bd3-5363-48c1-a1b8-32f8ab7e253f	\N
+a0df4aa9-5582-440c-a0ce-1e479a4ad81e	MEDICACION	APP	CUMPLIDO	Prednisona 10.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-13 08:05:00-05	2026-08-15 05:08:26.340826-05	2026-08-15 05:08:26.34083-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	89073b9d-32b4-42fe-ad7a-4567a8586e27	\N
+e1fe6501-4ca5-4d17-b1e3-8755d95cad7c	MEDICACION	APP	CUMPLIDO	Prednisona 10.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-14 08:05:00-05	2026-08-15 05:08:26.348136-05	2026-08-15 05:08:26.348139-05	\N	\N	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51	9a12f9b7-37dc-40fb-a4e1-8992eb62bf41	\N
+1d00e81a-a65a-4b99-8533-aa43fe1583d9	MEDICACION	APP	CUMPLIDO	Deferasirox 250.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-13 09:05:00-05	2026-08-15 05:08:26.66023-05	2026-08-15 05:08:26.660235-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	978589d9-d93b-4e87-9939-90e5bafc3cff	\N
+4330c7be-f78e-4af6-80ea-7a67e7f94021	MEDICACION	APP	CUMPLIDO	Deferasirox 250.00 mg confirmado	Registro demostrativo de adherencia.	2026-08-14 09:05:00-05	2026-08-15 05:08:26.667625-05	2026-08-15 05:08:26.667628-05	\N	\N	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238	accad750-7f50-43b0-928b-54a8b45eab81	\N
 \.
 
 
@@ -1837,12 +2063,12 @@ e25bb604-544e-4980-9c26-42c619f40e0d	CONSULTA	MEDICO	CERRADO	Consulta inicial	Va
 --
 
 COPY public.seguimiento_reportesintomas (id, intensidad, duracion, evolucion, observado_en, descripcion, origen, reportado_en, paciente_id, reportado_por_id) FROM stdin;
-b8b9938a-29ee-411c-9b2b-878e23d6a4c2	MODERADA	ENTRE_1_6_HORAS	MEJORO	2026-08-09 10:30:00-05	Cansancio leve durante la tarde.	APP	2026-08-13 18:44:04.759576-05	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
-c1aaa335-4b27-4638-b625-5a7a76cc772b	LEVE	MENOS_1_HORA	MEJORO	2026-08-12 10:30:00-05	Náuseas leves, sin fiebre.	APP	2026-08-13 18:44:04.764249-05	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
-6255cda9-a23c-4fb7-a628-5c133b64568f	MODERADA	ENTRE_1_6_HORAS	IGUAL	2026-08-11 10:30:00-05	Cansancio moderado reportado por la familia.	APP	2026-08-13 18:44:05.032912-05	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
-25beeb7d-320d-41f3-bdc8-4cf620351ad3	LEVE	MENOS_1_HORA	MEJORO	2026-08-10 10:30:00-05	Dolor leve y transitorio, ya controlado.	APP	2026-08-13 18:44:05.291074-05	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6
-0faaaad6-d443-4dcf-a1a7-eed8293a27b8	FUERTE	ENTRE_6_24_HORAS	EMPEORO	2026-08-12 10:30:00-05	Fiebre de 38.2 °C y náuseas; requiere revisión médica.	APP	2026-08-13 18:44:05.552912-05	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51
-608e5eeb-653f-444f-a137-817c5fd325e0	LEVE	MENOS_1_HORA	MEJORO	2026-08-11 10:30:00-05	Sin novedades clínicas relevantes.	APP	2026-08-13 18:44:05.803204-05	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238
+b8b9938a-29ee-411c-9b2b-878e23d6a4c2	MODERADA	ENTRE_1_6_HORAS	MEJORO	2026-08-12 10:30:00-05	Cansancio leve durante la tarde.	APP	2026-08-13 18:44:04.759576-05	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
+c1aaa335-4b27-4638-b625-5a7a76cc772b	LEVE	MENOS_1_HORA	MEJORO	2026-08-15 10:30:00-05	Náuseas leves, sin fiebre.	APP	2026-08-13 18:44:04.764249-05	dd995870-2c2d-4c55-a565-dacc376b3462	ac82977d-de16-40e9-ab46-039f04f6790c
+6255cda9-a23c-4fb7-a628-5c133b64568f	MODERADA	ENTRE_1_6_HORAS	IGUAL	2026-08-14 10:30:00-05	Cansancio moderado reportado por la familia.	APP	2026-08-13 18:44:05.032912-05	8024a122-b860-4a88-91ab-feeb393130d8	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58
+25beeb7d-320d-41f3-bdc8-4cf620351ad3	LEVE	MENOS_1_HORA	MEJORO	2026-08-13 10:30:00-05	Dolor leve y transitorio, ya controlado.	APP	2026-08-13 18:44:05.291074-05	4ac67dc2-5b1d-4aec-b63b-ead16b154f72	fa317260-ac0e-4245-b4da-10183c00c2a6
+0faaaad6-d443-4dcf-a1a7-eed8293a27b8	FUERTE	ENTRE_6_24_HORAS	EMPEORO	2026-08-15 10:30:00-05	Fiebre de 38.2 °C y náuseas; requiere revisión médica.	APP	2026-08-13 18:44:05.552912-05	ea9ad6b8-e006-4a8b-922e-7d6e1d1f113f	f8799c2b-cdfd-4d01-8a84-25bb408acf51
+608e5eeb-653f-444f-a137-817c5fd325e0	LEVE	MENOS_1_HORA	MEJORO	2026-08-14 10:30:00-05	Sin novedades clínicas relevantes.	APP	2026-08-13 18:44:05.803204-05	6cad92b4-ef17-4314-972c-89386feaca0a	370e4207-b934-4372-87c9-3ccb649e5238
 \.
 
 
@@ -1880,8 +2106,8 @@ e627b7a9-b9e4-46e1-8d18-7cce4eca6e62		608e5eeb-653f-444f-a137-817c5fd325e0	6206b
 --
 
 COPY public.usuarios_perfilmedico (id, creado_en, actualizado_en, numero_colegiatura, especialidad, cargo, estado_laboral, usuario_id) FROM stdin;
-179bd236-43a0-4fcd-b4ed-e3f6fff82173	2026-08-13 18:44:04.181154-05	2026-08-13 18:52:14.449916-05	CMP-DEMO-001	Hematología Pediátrica	Médica tratante	ACTIVO	6719b9b9-b86d-4070-a9c6-16adda634819
-ba938db2-a645-42d3-bdce-3ec05e3b49c7	2026-08-13 18:44:04.369364-05	2026-08-13 18:52:14.629389-05	CMP-DEMO-002	Hematología Pediátrica	Médico asistente	ACTIVO	85016450-c868-4995-a765-a1af2dd64f2b
+179bd236-43a0-4fcd-b4ed-e3f6fff82173	2026-08-13 18:44:04.181154-05	2026-08-16 14:25:44.640961-05	CMP-DEMO-001	Hematología Pediátrica	Médica tratante	ACTIVO	6719b9b9-b86d-4070-a9c6-16adda634819
+ba938db2-a645-42d3-bdce-3ec05e3b49c7	2026-08-13 18:44:04.369364-05	2026-08-16 14:25:44.815782-05	CMP-DEMO-002	Hematología Pediátrica	Médico asistente	ACTIVO	85016450-c868-4995-a765-a1af2dd64f2b
 \.
 
 
@@ -1890,14 +2116,14 @@ ba938db2-a645-42d3-bdce-3ec05e3b49c7	2026-08-13 18:44:04.369364-05	2026-08-13 18
 --
 
 COPY public.usuarios_usuario (password, last_login, is_superuser, username, first_name, last_name, is_staff, date_joined, id, creado_en, actualizado_en, email, dni, telefono, rol, estado, requiere_cambio_password, is_active, foto_perfil) FROM stdin;
-pbkdf2_sha256$1500000$OYBZU3tBfFufUx5XJ5Fdnk$SO8bxgJQL4V/VRca4+UeHrOgTl36AyBj7GGPyWTU/ic=	2026-08-13 18:51:22.751547-05	t	alex	Alex	Administrador	t	2026-08-13 18:44:03.809002-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	2026-08-13 18:44:03.809252-05	2026-08-13 18:52:14.262272-05	alex@hemoruta.local	\N		ADMINISTRADOR	ACTIVO	f	t	
-pbkdf2_sha256$1500000$9XvQyA1flcHaW7IwbqcawB$P0tQRVSRyTHncitwSF7RzRuWgiYCKCKLXHoPFIvc4is=	2026-08-13 18:51:36.269049-05	f	valeria.ruiz	Valeria	Ruiz	f	2026-08-13 18:44:03.992992-05	6719b9b9-b86d-4070-a9c6-16adda634819	2026-08-13 18:44:03.993135-05	2026-08-13 18:52:14.447329-05	valeria.ruiz@hnsb.gob.pe	40123456	+51 987 654 321	MEDICO	ACTIVO	f	t	
-pbkdf2_sha256$1500000$NZViUPNdxsXtah49bhdwh5$qT7vfXD75kVUCQohcP4y6WDFYlVJDcGgqvkY64S/GDw=	\N	f	luis.paredes	Luis	Paredes	f	2026-08-13 18:44:04.183019-05	85016450-c868-4995-a765-a1af2dd64f2b	2026-08-13 18:44:04.183171-05	2026-08-13 18:52:14.627211-05	luis.paredes@hnsb.gob.pe	43321108	+51 987 654 322	MEDICO	ACTIVO	f	t	
-pbkdf2_sha256$1500000$C5A7CdJU37IUAJ7Dscy2qB$VhyDiPYG71S3ROWoKAFlm6IJGxYRMiOworoBlvqE9i4=	2026-08-13 18:51:36.477148-05	f	maria.flores	María	Flores López	f	2026-08-13 18:44:04.382031-05	ac82977d-de16-40e9-ab46-039f04f6790c	2026-08-13 18:44:04.382159-05	2026-08-13 18:52:14.821365-05	maria.flores@example.com	45678912	+51 987 654 321	PACIENTE	ACTIVO	f	t	
-pbkdf2_sha256$1500000$7UwUPK4lJdnoB59kYW6plh$iNdfMgyA24ogBY+0r9CJVqzN36OzLvSw4YY3PcjAaek=	\N	f	carlos.rojas	Carlos	Rojas Paredes	f	2026-08-13 18:44:04.782879-05	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	2026-08-13 18:44:04.782991-05	2026-08-13 18:52:15.120776-05	carlos.rojas@example.com	45789013	+51 987 650 010	PACIENTE	ACTIVO	f	t	
-pbkdf2_sha256$1500000$X6p65jotisTA9JWyH1NFfK$gNC4AV+SNVAOidvagsGd0aILfArt+f25WAzr81NRxdo=	\N	f	veronica.medina	Verónica	Medina Ruiz	f	2026-08-13 18:44:05.044734-05	fa317260-ac0e-4245-b4da-10183c00c2a6	2026-08-13 18:44:05.044835-05	2026-08-13 18:52:15.355678-05	veronica.medina@example.com	46789024	+51 987 650 011	PACIENTE	ACTIVO	f	t	
-pbkdf2_sha256$1500000$vc5wGgXSHCidErLMIqe9Ls$W+Zhp0V3cb7+NcV85+WDKZkeJPSFsH0gkRBc35owYUg=	\N	f	jorge.torres	Jorge	Torres Vega	f	2026-08-13 18:44:05.299814-05	f8799c2b-cdfd-4d01-8a84-25bb408acf51	2026-08-13 18:44:05.299917-05	2026-08-13 18:52:15.599167-05	jorge.torres@example.com	47890135	+51 987 650 012	PACIENTE	ACTIVO	f	t	
-pbkdf2_sha256$1500000$CjquaorzIDuqvkAC8VJh9B$cqc2ZG7dsoXPphBHrr36bzzHwxLq42cTaoYXEaveJyA=	\N	f	katherine.perez	Katherine	Pérez Solís	f	2026-08-13 18:44:05.565245-05	370e4207-b934-4372-87c9-3ccb649e5238	2026-08-13 18:44:05.565367-05	2026-08-13 18:52:15.837497-05	katherine.perez@example.com	48901246	+51 987 650 013	PACIENTE	ACTIVO	f	t	
+pbkdf2_sha256$1500000$w0L7ggsxtpBLJppzi2aMiE$T6mwP3T/k75+jjGVwh08r1HaSnLH73LYJtfJAEe7OSI=	2026-08-16 16:36:49.71802-05	t	alex	Alex	Administrador	t	2026-08-13 18:44:03.809002-05	29ba4ae0-cef5-44ba-91f7-04a69e90bcc5	2026-08-13 18:44:03.809252-05	2026-08-16 14:25:44.454045-05	alex@hemoruta.local	\N		ADMINISTRADOR	ACTIVO	f	t	
+pbkdf2_sha256$1500000$6MfWv2qX3CK5Xo9BBebQX1$pC4ZRcnWgtuECEstzmzxvSMm2FI2QUaI6KUNZHbDI/k=	\N	f	luis.paredes	Luis	Paredes	f	2026-08-13 18:44:04.183019-05	85016450-c868-4995-a765-a1af2dd64f2b	2026-08-13 18:44:04.183171-05	2026-08-16 14:25:44.813467-05	luis.paredes@hnsb.gob.pe	43321108	+51 987 654 322	MEDICO	ACTIVO	f	t	
+pbkdf2_sha256$1500000$R0MJVDFotj2gDRnHxFu81U$uB5dVYVu/i5H+g499AyCYL+S8BQ058X36rzYCsCXJ5E=	\N	f	carlos.rojas	Carlos	Rojas Paredes	f	2026-08-13 18:44:04.782879-05	d2b53ec2-9c72-4d8e-a090-dcc5b84f0b58	2026-08-13 18:44:04.782991-05	2026-08-16 14:25:45.300452-05	carlos.rojas@example.com	45789013	+51 987 650 010	PACIENTE	ACTIVO	f	t	
+pbkdf2_sha256$1500000$HNWSO4hyLGZ2kR8rq150Nu$hHQga+IavbolwZLY5QAk44kPFIWOt1c8oeGz9Z6qBjE=	\N	f	veronica.medina	Verónica	Medina Ruiz	f	2026-08-13 18:44:05.044734-05	fa317260-ac0e-4245-b4da-10183c00c2a6	2026-08-13 18:44:05.044835-05	2026-08-16 14:25:45.534474-05	veronica.medina@example.com	46789024	+51 987 650 011	PACIENTE	ACTIVO	f	t	
+pbkdf2_sha256$1500000$C6TgGOk8HdwDtD7hirZelK$0PfLAEjm4+wiHSwVMdq4Q5vbGIZLfJhRA6ykWbOKdE8=	\N	f	jorge.torres	Jorge	Torres Vega	f	2026-08-13 18:44:05.299814-05	f8799c2b-cdfd-4d01-8a84-25bb408acf51	2026-08-13 18:44:05.299917-05	2026-08-16 14:25:45.775152-05	jorge.torres@example.com	47890135	+51 987 650 012	PACIENTE	ACTIVO	f	t	
+pbkdf2_sha256$1500000$Xnt0OpdAYwk5wgU98o4ZnW$byJBFkGZEhtDXXtCBMIexEMHzUpKoun7ZiXF+TBOGF8=	\N	f	katherine.perez	Katherine	Pérez Solís	f	2026-08-13 18:44:05.565245-05	370e4207-b934-4372-87c9-3ccb649e5238	2026-08-13 18:44:05.565367-05	2026-08-16 14:25:46.01901-05	katherine.perez@example.com	48901246	+51 987 650 013	PACIENTE	ACTIVO	f	t	
+pbkdf2_sha256$1500000$Cddsdh7q3Uzq4JDInE7INm$16mpi0N0mYGD6CzKo9vPwz35E5skRvvGadPOyg55ixs=	2026-08-16 14:26:37.964927-05	f	valeria.ruiz	Valeria	Ruiz	f	2026-08-13 18:44:03.992992-05	6719b9b9-b86d-4070-a9c6-16adda634819	2026-08-13 18:44:03.993135-05	2026-08-16 14:25:44.638402-05	valeria.ruiz@hnsb.gob.pe	40123456	+51 987 654 321	MEDICO	ACTIVO	f	t	
+pbkdf2_sha256$1500000$DcZ7ZpnArD4o9G8SFvzt7o$WqyYFjuCrQ5IKVYxrgvByxuUlMZCHnWPpogJbjclYjU=	2026-08-16 14:26:58.291073-05	f	maria.flores	María	Flores López	f	2026-08-13 18:44:04.382031-05	ac82977d-de16-40e9-ab46-039f04f6790c	2026-08-13 18:44:04.382159-05	2026-08-16 14:25:44.999145-05	maria.flores@example.com	45678912	+51 987 654 321	PACIENTE	ACTIVO	f	t	
 \.
 
 
@@ -1935,7 +2161,7 @@ SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1, false);
 -- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.auth_permission_id_seq', 136, true);
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 148, true);
 
 
 --
@@ -1949,14 +2175,14 @@ SELECT pg_catalog.setval('public.django_admin_log_id_seq', 1, false);
 -- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.django_content_type_id_seq', 34, true);
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 37, true);
 
 
 --
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 34, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 39, true);
 
 
 --
@@ -2075,6 +2301,54 @@ ALTER TABLE ONLY public.clinica_consultaclinica
 
 ALTER TABLE ONLY public.clinica_consultaclinica
     ADD CONSTRAINT clinica_consultaclinica_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: clinica_dia_cambioprogramacionquimioterapia clinica_dia_cambioprogramacionquimioterapia_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_cambioprogramacionquimioterapia
+    ADD CONSTRAINT clinica_dia_cambioprogramacionquimioterapia_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia clinica_dia_programacionquimioterapia_cita_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_programacionquimioterapia
+    ADD CONSTRAINT clinica_dia_programacionquimioterapia_cita_id_key UNIQUE (cita_id);
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia clinica_dia_programacionquimioterapia_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_programacionquimioterapia
+    ADD CONSTRAINT clinica_dia_programacionquimioterapia_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia clinica_dia_solicitudquimioterapia_codigo_externo_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_solicitudquimioterapia
+    ADD CONSTRAINT clinica_dia_solicitudquimioterapia_codigo_externo_key UNIQUE (codigo_externo);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia clinica_dia_solicitudquimioterapia_huella_importacion_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_solicitudquimioterapia
+    ADD CONSTRAINT clinica_dia_solicitudquimioterapia_huella_importacion_key UNIQUE (huella_importacion);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia clinica_dia_solicitudquimioterapia_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_solicitudquimioterapia
+    ADD CONSTRAINT clinica_dia_solicitudquimioterapia_pkey PRIMARY KEY (id);
 
 
 --
@@ -2532,6 +2806,20 @@ CREATE INDEX alerta_pac_estado_idx ON public.seguimiento_alertaseguimiento USING
 
 
 --
+-- Name: asig_med_carga_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX asig_med_carga_idx ON public.pacientes_asignacionmedica USING btree (medico_id, activa, es_principal);
+
+
+--
+-- Name: asig_pac_hist_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX asig_pac_hist_idx ON public.pacientes_asignacionmedica USING btree (paciente_id, creado_en DESC);
+
+
+--
 -- Name: asignacion_medica_activa_unica; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2634,6 +2922,174 @@ CREATE INDEX clinica_consultaclinica_medico_id_0cbeb6cf ON public.clinica_consul
 --
 
 CREATE INDEX clinica_consultaclinica_paciente_id_9d3134ad ON public.clinica_consultaclinica USING btree (paciente_id);
+
+
+--
+-- Name: clinica_dia_cambioprograma_programacion_id_0587221f; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_cambioprograma_programacion_id_0587221f ON public.clinica_dia_cambioprogramacionquimioterapia USING btree (programacion_id);
+
+
+--
+-- Name: clinica_dia_cambioprograma_realizada_por_id_60176446; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_cambioprograma_realizada_por_id_60176446 ON public.clinica_dia_cambioprogramacionquimioterapia USING btree (realizada_por_id);
+
+
+--
+-- Name: clinica_dia_programacion_recordatorio_estado_6f7b7bd7_like; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacion_recordatorio_estado_6f7b7bd7_like ON public.clinica_dia_programacionquimioterapia USING btree (recordatorio_estado varchar_pattern_ops);
+
+
+--
+-- Name: clinica_dia_programacionqu_confirmada_por_id_e70147c4; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionqu_confirmada_por_id_e70147c4 ON public.clinica_dia_programacionquimioterapia USING btree (confirmada_por_id);
+
+
+--
+-- Name: clinica_dia_programacionqu_programada_por_id_5fd93381; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionqu_programada_por_id_5fd93381 ON public.clinica_dia_programacionquimioterapia USING btree (programada_por_id);
+
+
+--
+-- Name: clinica_dia_programacionqu_recordatorio_estado_6f7b7bd7; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionqu_recordatorio_estado_6f7b7bd7 ON public.clinica_dia_programacionquimioterapia USING btree (recordatorio_estado);
+
+
+--
+-- Name: clinica_dia_programacionqu_recordatorio_por_id_d946803d; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionqu_recordatorio_por_id_d946803d ON public.clinica_dia_programacionquimioterapia USING btree (recordatorio_por_id);
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia_cancelada_por_id_80ff2f62; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionquimioterapia_cancelada_por_id_80ff2f62 ON public.clinica_dia_programacionquimioterapia USING btree (cancelada_por_id);
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia_estado_c70dbd80; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionquimioterapia_estado_c70dbd80 ON public.clinica_dia_programacionquimioterapia USING btree (estado);
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia_estado_c70dbd80_like; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionquimioterapia_estado_c70dbd80_like ON public.clinica_dia_programacionquimioterapia USING btree (estado varchar_pattern_ops);
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia_fecha_49143b33; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionquimioterapia_fecha_49143b33 ON public.clinica_dia_programacionquimioterapia USING btree (fecha);
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia_solicitud_id_ee3546e1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_programacionquimioterapia_solicitud_id_ee3546e1 ON public.clinica_dia_programacionquimioterapia USING btree (solicitud_id);
+
+
+--
+-- Name: clinica_dia_solicitudqui_huella_importacion_dbc6460e_like; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudqui_huella_importacion_dbc6460e_like ON public.clinica_dia_solicitudquimioterapia USING btree (huella_importacion varchar_pattern_ops);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_codigo_externo_c31e4242_like; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_codigo_externo_c31e4242_like ON public.clinica_dia_solicitudquimioterapia USING btree (codigo_externo varchar_pattern_ops);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_creada_por_id_c51ff300; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_creada_por_id_c51ff300 ON public.clinica_dia_solicitudquimioterapia USING btree (creada_por_id);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_dni_e77cb3e5; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_dni_e77cb3e5 ON public.clinica_dia_solicitudquimioterapia USING btree (dni);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_dni_e77cb3e5_like; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_dni_e77cb3e5_like ON public.clinica_dia_solicitudquimioterapia USING btree (dni varchar_pattern_ops);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_estado_d7cf3fb9; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_estado_d7cf3fb9 ON public.clinica_dia_solicitudquimioterapia USING btree (estado);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_estado_d7cf3fb9_like; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_estado_d7cf3fb9_like ON public.clinica_dia_solicitudquimioterapia USING btree (estado varchar_pattern_ops);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_fecha_preferida_f2fa8cfb; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_fecha_preferida_f2fa8cfb ON public.clinica_dia_solicitudquimioterapia USING btree (fecha_preferida);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_lote_importacion_e730ee2b; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_lote_importacion_e730ee2b ON public.clinica_dia_solicitudquimioterapia USING btree (lote_importacion);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_paciente_id_f59ae011; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_paciente_id_f59ae011 ON public.clinica_dia_solicitudquimioterapia USING btree (paciente_id);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_prioridad_79ae7bb6; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_prioridad_79ae7bb6 ON public.clinica_dia_solicitudquimioterapia USING btree (prioridad);
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia_prioridad_79ae7bb6_like; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clinica_dia_solicitudquimioterapia_prioridad_79ae7bb6_like ON public.clinica_dia_solicitudquimioterapia USING btree (prioridad varchar_pattern_ops);
 
 
 --
@@ -2903,6 +3359,13 @@ CREATE INDEX pacientes_asignacionmedica_asignado_por_id_955d61e3 ON public.pacie
 
 
 --
+-- Name: pacientes_asignacionmedica_cerrada_por_id_af3ae038; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX pacientes_asignacionmedica_cerrada_por_id_af3ae038 ON public.pacientes_asignacionmedica USING btree (cerrada_por_id);
+
+
+--
 -- Name: pacientes_asignacionmedica_medico_id_fe3766a9; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2977,6 +3440,41 @@ CREATE INDEX plan_pac_estado_idx ON public.clinica_plantratamiento USING btree (
 --
 
 CREATE INDEX prescripcion_pac_estado_idx ON public.medicacion_prescripcion USING btree (paciente_id, estado);
+
+
+--
+-- Name: quim_prog_agenda_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX quim_prog_agenda_idx ON public.clinica_dia_programacionquimioterapia USING btree (fecha, turno, estado);
+
+
+--
+-- Name: quim_prog_record_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX quim_prog_record_idx ON public.clinica_dia_programacionquimioterapia USING btree (recordatorio_estado, fecha);
+
+
+--
+-- Name: quim_prog_slot_unico; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX quim_prog_slot_unico ON public.clinica_dia_programacionquimioterapia USING btree (fecha, turno, cama) WHERE (NOT ((estado)::text = 'CANCELADA'::text));
+
+
+--
+-- Name: quim_prog_solicitud_activa; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX quim_prog_solicitud_activa ON public.clinica_dia_programacionquimioterapia USING btree (solicitud_id) WHERE (NOT ((estado)::text = 'CANCELADA'::text));
+
+
+--
+-- Name: quim_sol_pendiente_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX quim_sol_pendiente_idx ON public.clinica_dia_solicitudquimioterapia USING btree (estado, prioridad, fecha_preferida);
 
 
 --
@@ -3286,6 +3784,86 @@ ALTER TABLE ONLY public.clinica_consultaclinica
 
 
 --
+-- Name: clinica_dia_cambioprogramacionquimioterapia clinica_dia_cambiopr_programacion_id_0587221f_fk_clinica_d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_cambioprogramacionquimioterapia
+    ADD CONSTRAINT clinica_dia_cambiopr_programacion_id_0587221f_fk_clinica_d FOREIGN KEY (programacion_id) REFERENCES public.clinica_dia_programacionquimioterapia(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_cambioprogramacionquimioterapia clinica_dia_cambiopr_realizada_por_id_60176446_fk_usuarios_; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_cambioprogramacionquimioterapia
+    ADD CONSTRAINT clinica_dia_cambiopr_realizada_por_id_60176446_fk_usuarios_ FOREIGN KEY (realizada_por_id) REFERENCES public.usuarios_usuario(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia clinica_dia_programa_cancelada_por_id_80ff2f62_fk_usuarios_; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_programacionquimioterapia
+    ADD CONSTRAINT clinica_dia_programa_cancelada_por_id_80ff2f62_fk_usuarios_ FOREIGN KEY (cancelada_por_id) REFERENCES public.usuarios_usuario(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia clinica_dia_programa_cita_id_2ccafeac_fk_citas_cit; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_programacionquimioterapia
+    ADD CONSTRAINT clinica_dia_programa_cita_id_2ccafeac_fk_citas_cit FOREIGN KEY (cita_id) REFERENCES public.citas_cita(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia clinica_dia_programa_confirmada_por_id_e70147c4_fk_usuarios_; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_programacionquimioterapia
+    ADD CONSTRAINT clinica_dia_programa_confirmada_por_id_e70147c4_fk_usuarios_ FOREIGN KEY (confirmada_por_id) REFERENCES public.usuarios_usuario(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia clinica_dia_programa_programada_por_id_5fd93381_fk_usuarios_; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_programacionquimioterapia
+    ADD CONSTRAINT clinica_dia_programa_programada_por_id_5fd93381_fk_usuarios_ FOREIGN KEY (programada_por_id) REFERENCES public.usuarios_usuario(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia clinica_dia_programa_recordatorio_por_id_d946803d_fk_usuarios_; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_programacionquimioterapia
+    ADD CONSTRAINT clinica_dia_programa_recordatorio_por_id_d946803d_fk_usuarios_ FOREIGN KEY (recordatorio_por_id) REFERENCES public.usuarios_usuario(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_programacionquimioterapia clinica_dia_programa_solicitud_id_ee3546e1_fk_clinica_d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_programacionquimioterapia
+    ADD CONSTRAINT clinica_dia_programa_solicitud_id_ee3546e1_fk_clinica_d FOREIGN KEY (solicitud_id) REFERENCES public.clinica_dia_solicitudquimioterapia(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia clinica_dia_solicitu_creada_por_id_c51ff300_fk_usuarios_; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_solicitudquimioterapia
+    ADD CONSTRAINT clinica_dia_solicitu_creada_por_id_c51ff300_fk_usuarios_ FOREIGN KEY (creada_por_id) REFERENCES public.usuarios_usuario(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: clinica_dia_solicitudquimioterapia clinica_dia_solicitu_paciente_id_f59ae011_fk_pacientes; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clinica_dia_solicitudquimioterapia
+    ADD CONSTRAINT clinica_dia_solicitu_paciente_id_f59ae011_fk_pacientes FOREIGN KEY (paciente_id) REFERENCES public.pacientes_paciente(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: clinica_diagnostico clinica_diagnostico_medico_id_787766e3_fk_usuarios_usuario_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3483,6 +4061,14 @@ ALTER TABLE ONLY public.medicacion_reportedosis
 
 ALTER TABLE ONLY public.pacientes_asignacionmedica
     ADD CONSTRAINT pacientes_asignacion_asignado_por_id_955d61e3_fk_usuarios_ FOREIGN KEY (asignado_por_id) REFERENCES public.usuarios_usuario(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: pacientes_asignacionmedica pacientes_asignacion_cerrada_por_id_af3ae038_fk_usuarios_; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pacientes_asignacionmedica
+    ADD CONSTRAINT pacientes_asignacion_cerrada_por_id_af3ae038_fk_usuarios_ FOREIGN KEY (cerrada_por_id) REFERENCES public.usuarios_usuario(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -3713,4 +4299,5 @@ ALTER TABLE ONLY public.usuarios_usuario_user_permissions
 -- PostgreSQL database dump complete
 --
 
-\unrestrict I1dFI1Mbi9EGVhkqk41DK4wQj9tuN8ehdKwpfqB8k4w8HPStP2lYIMpCAk66onv
+\unrestrict GyhgVYkdtYcBwiZQ0nnNuBa602IfcBMnaAxwT3mpksDLxxAVYDGZzV1R2dXWdOa
+

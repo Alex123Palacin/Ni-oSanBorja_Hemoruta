@@ -7,3 +7,6 @@ Dockerfile text eol=lf
 **/Dockerfile text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+
+# Volcado SQL generado; las filas COPY pueden terminar en tabuladores válidos.
+baseDatos.txt -diff

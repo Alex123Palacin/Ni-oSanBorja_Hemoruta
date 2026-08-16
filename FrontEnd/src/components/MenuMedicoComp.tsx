@@ -16,7 +16,6 @@ function MenuMedicoComp() {
   const { pathname } = useLocation()
   const pacientesActivo = [
     '/doctor/pacientes',
-    '/doctor/nuevoRegistro',
     '/doctor/ficha',
     '/doctor/consulta',
     '/doctor/historial',

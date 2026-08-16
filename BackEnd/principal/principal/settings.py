@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "nucleo",
     "usuarios",
     "pacientes",
+    "clinica_dia",
     "clinica",
     "citas",
     "medicacion",

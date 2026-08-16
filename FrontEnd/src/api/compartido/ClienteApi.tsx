@@ -250,7 +250,10 @@ export async function solicitarArchivoApi(
   const headers = new Headers(headersIniciales)
   const token = autenticado ? obtenerTokenApi() : null
 
-  headers.set('Accept', 'application/octet-stream, application/pdf, image/*')
+  headers.set(
+    'Accept',
+    'application/octet-stream, application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv, image/*',
+  )
   if (token) headers.set('Authorization', `${obtenerEsquemaTokenApi()} ${token}`)
 
   try {

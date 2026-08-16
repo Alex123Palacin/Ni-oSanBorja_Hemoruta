@@ -1,50 +1,18 @@
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from citas.models import Cita
-from clinica.models import Diagnostico
+from clinica.models import ConsultaClinica, Diagnostico
 from documentos.models import DocumentoPaciente
 from seguimiento.models import SemaforoPaciente
 
-from .models import Paciente, TutorPaciente
+from .models import AsignacionMedica, Paciente, TutorPaciente
 from .paginacion import paginar_resultados
 from .permissions import SoloMedico, SoloPacienteOResponsable, paciente_del_usuario, pacientes_visibles_para
-from .services import registrar_paciente_provisional_por_medico
-
-
-class AltaPacienteMedicoSerializer(serializers.Serializer):
-    nombreCompleto = serializers.CharField(max_length=241, trim_whitespace=True)
-    dni = serializers.RegexField(r"^\d{8}$", error_messages={"invalid": "El DNI debe contener exactamente 8 dígitos."})
-    telefono = serializers.CharField(max_length=20, trim_whitespace=True)
-    correo = serializers.EmailField(required=False, allow_blank=True)
-
-    def validate_nombreCompleto(self, valor):
-        if len(valor.split()) < 2:
-            raise serializers.ValidationError("Ingresa al menos un nombre y un apellido.")
-        return " ".join(valor.split())
-
-    def validate_telefono(self, valor):
-        digitos = "".join(caracter for caracter in valor if caracter.isdigit())
-        if len(digitos) < 9 or len(digitos) > 12:
-            raise serializers.ValidationError("Ingresa un teléfono válido de 9 a 12 dígitos.")
-        return valor.strip()
-
-    def validate(self, datos):
-        from usuarios.models import Usuario
-
-        if Paciente.objects.filter(dni=datos["dni"]).exists():
-            raise serializers.ValidationError({"dni": "Ya existe un paciente registrado con este DNI."})
-        if Usuario.objects.filter(dni=datos["dni"]).exists():
-            raise serializers.ValidationError({"dni": "Este DNI ya está vinculado a una cuenta."})
-        correo = datos.get("correo", "")
-        if correo and Usuario.objects.filter(email__iexact=correo).exists():
-            raise serializers.ValidationError({"correo": "Este correo ya está vinculado a una cuenta."})
-        return datos
 
 
 def _proxima_cita(paciente):
@@ -62,8 +30,18 @@ def _tutor_principal(paciente):
     return tutores[0] if tutores else None
 
 
+def _asignacion_principal(paciente):
+    asignaciones = getattr(paciente, "asignacion_principal_prefetch", [])
+    return asignaciones[0] if asignaciones else None
+
+
+def _ultima_consulta_atendida(paciente):
+    consultas = getattr(paciente, "consultas_atendidas_prefetch", [])
+    return consultas[0] if consultas else None
+
+
 def queryset_pacientes_resumen(usuario):
-    return pacientes_visibles_para(usuario).select_related("creado_por").prefetch_related(
+    return pacientes_visibles_para(usuario).prefetch_related(
         Prefetch(
             "diagnosticos",
             queryset=Diagnostico.objects.filter(es_principal=True, estado=Diagnostico.Estado.ACTIVO),
@@ -82,6 +60,23 @@ def queryset_pacientes_resumen(usuario):
             ).order_by("inicio"),
             to_attr="proximas_citas_prefetch",
         ),
+        Prefetch(
+            "asignaciones_medicas",
+            queryset=AsignacionMedica.objects.filter(
+                activa=True,
+                es_principal=True,
+            ).select_related("medico", "medico__perfil_medico"),
+            to_attr="asignacion_principal_prefetch",
+        ),
+        Prefetch(
+            "consultas",
+            queryset=ConsultaClinica.objects.filter(
+                estado=ConsultaClinica.Estado.COMPLETADA,
+            )
+            .select_related("medico")
+            .order_by("-completada_en", "-creado_en"),
+            to_attr="consultas_atendidas_prefetch",
+        ),
     )
 
 
@@ -89,6 +84,8 @@ def serializar_paciente_lista(paciente):
     diagnostico = _diagnostico_principal(paciente)
     tutor = _tutor_principal(paciente)
     cita = _proxima_cita(paciente)
+    asignacion = _asignacion_principal(paciente)
+    ultima_consulta = _ultima_consulta_atendida(paciente)
     return {
         "id": str(paciente.id),
         "nombre": paciente.nombre_completo,
@@ -109,13 +106,25 @@ def serializar_paciente_lista(paciente):
         ),
         "proximaCitaEn": cita.inicio.isoformat() if cita else None,
         "estadoCita": cita.estado if cita else "SIN_CITA",
-        "registradoPor": (
+        "medicoResponsable": (
             {
-                "id": str(paciente.creado_por_id),
-                "nombre": paciente.creado_por.nombre_completo,
-                "rol": paciente.creado_por.rol,
+                "id": str(asignacion.medico_id),
+                "nombre": asignacion.medico.nombre_completo,
+                "especialidad": getattr(
+                    getattr(asignacion.medico, "perfil_medico", None),
+                    "especialidad",
+                    "",
+                ),
             }
-            if paciente.creado_por
+            if asignacion
+            else None
+        ),
+        "atendidoPor": (
+            {
+                "id": str(ultima_consulta.medico_id),
+                "nombre": ultima_consulta.medico.nombre_completo,
+            }
+            if ultima_consulta
             else None
         ),
     }
@@ -149,40 +158,6 @@ class ListaPacientesMedicoAPIView(APIView):
         if estado:
             queryset = queryset.filter(estado=estado)
         return paginar_resultados(request, queryset.order_by("apellidos", "nombres"), serializar_paciente_lista)
-
-
-class AltaPacienteMedicoAPIView(APIView):
-    permission_classes = (IsAuthenticated, SoloMedico)
-
-    def post(self, request):
-        serializer = AltaPacienteMedicoSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        paciente, usuario, password_temporal = registrar_paciente_provisional_por_medico(
-            medico=request.user,
-            nombre_completo=serializer.validated_data["nombreCompleto"],
-            dni=serializer.validated_data["dni"],
-            telefono=serializer.validated_data["telefono"],
-            correo=serializer.validated_data.get("correo", ""),
-        )
-        return Response(
-            {
-                "paciente": {
-                    "id": str(paciente.id),
-                    "nombre": paciente.nombre_completo,
-                    "dni": paciente.dni,
-                    "historiaClinica": paciente.historia_clinica,
-                    "estado": paciente.estado,
-                    "perfilCompleto": paciente.perfil_completo,
-                },
-                "cuenta": {
-                    "usuario": usuario.username,
-                    "contrasenaTemporal": password_temporal,
-                    "requiereCambioContrasena": usuario.requiere_cambio_password,
-                    "estado": usuario.estado,
-                },
-            },
-            status=status.HTTP_201_CREATED,
-        )
 
 
 class FichaPacienteMedicoAPIView(APIView):

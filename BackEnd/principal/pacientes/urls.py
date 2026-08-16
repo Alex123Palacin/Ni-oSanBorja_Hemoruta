@@ -2,7 +2,6 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .facades import (
-    AltaPacienteMedicoAPIView,
     FichaPacienteMedicoAPIView,
     InicioPacienteAPIView,
     ListaPacientesMedicoAPIView,
@@ -24,7 +23,6 @@ router.register("cuentas-moviles-paciente", CuentaMovilPacienteViewSet, basename
 
 urlpatterns = [
     path("medico/pacientes/", ListaPacientesMedicoAPIView.as_view(), name="medico-pacientes"),
-    path("medico/pacientes/alta/", AltaPacienteMedicoAPIView.as_view(), name="medico-alta-paciente"),
     path(
         "medico/pacientes/<uuid:paciente_id>/ficha/",
         FichaPacienteMedicoAPIView.as_view(),

@@ -8,9 +8,10 @@ export interface PacienteMedicoListaApi {
   estadoCita: string
   historiaClinica: string
   id: string
+  atendidoPor: { id: string; nombre: string } | null
+  medicoResponsable: { especialidad: string; id: string; nombre: string } | null
   nombre: string
   proximaCitaEn: string | null
-  registradoPor: { id: string; nombre: string; rol: string } | null
   tutor: { id: string; nombre: string; parentesco: string } | null
 }
 
@@ -77,32 +78,6 @@ export interface FiltrosPacientesMedicoApi extends FiltrosPaginadosApi {
   tipoBusqueda?: 'DNI' | 'HISTORIA_CLINICA' | 'NOMBRE'
 }
 
-export interface CrearPacienteMedicoApi {
-  apellidos: string
-  direccion?: string
-  distrito?: string
-  dni?: string | null
-  estado?: 'ACTIVO' | 'INACTIVO' | 'PENDIENTE'
-  fecha_nacimiento: string
-  grupo_sanguineo?: string
-  historia_clinica: string
-  idioma_preferido?: string
-  lugar_nacimiento?: string
-  nacionalidad?: string
-  nombres: string
-  perfil_completo?: boolean
-  procedencia?: string
-  sexo?: 'F' | 'M' | 'N' | 'O'
-}
-
-export interface PacienteCreadoMedicoApi extends CrearPacienteMedicoApi {
-  actualizado_en: string
-  creado_en: string
-  edad: number
-  id: string
-  nombre_completo: string
-}
-
 export interface FichaPacienteMedicoApi {
   cuentaMovil: { estado: string; ultimoAccesoEn: string | null }
   datosGenerales: Record<string, string | null>
@@ -144,13 +119,6 @@ export function listarPacientesMedicoApi(filtros: FiltrosPacientesMedicoApi = {}
       tamanoPagina: filtros.tamanoPagina,
       tipoBusqueda: filtros.tipoBusqueda,
     },
-  })
-}
-
-export function crearPacienteMedicoApi(datos: CrearPacienteMedicoApi) {
-  return solicitarApi<PacienteCreadoMedicoApi>('/pacientes/', {
-    cuerpo: datos,
-    method: 'POST',
   })
 }
 

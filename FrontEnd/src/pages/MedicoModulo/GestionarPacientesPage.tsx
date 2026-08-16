@@ -13,7 +13,6 @@ import TablaPacientesComp from '../../components/medicoMcomp/TablaPacientesComp'
 import useRedirrecion from '../../hooks/Redirrecion'
 import useGestionarPacientes from '../../hooks/useGestionarPacientes'
 import type { EstadoPaciente, Paciente, TipoBusqueda } from '../../types/GestionarPacientes'
-import { BtnCrear } from '../../ui/BotonUi'
 import type { OpcionComboBox } from '../../ui/ComboBoxUI'
 
 const DOCTORA = {
@@ -138,7 +137,7 @@ function GestionarPacientesPage() {
         setTotalPacientes(respuesta.paginacion.total)
         setAvisoLimite(
           respuesta.paginacion.total > respuesta.resultados.length
-            ? `La búsqueda y los filtros abarcan ${respuesta.resultados.length} de ${respuesta.paginacion.total} pacientes registrados.`
+            ? `La búsqueda y los filtros abarcan ${respuesta.resultados.length} de ${respuesta.paginacion.total} pacientes del hospital.`
             : '',
         )
       } catch (error) {
@@ -228,7 +227,7 @@ function GestionarPacientesPage() {
 
         <main className='min-h-[calc(100dvh-54px)] px-4 pb-3 pt-5 sm:px-6 xl:px-8'>
           <div className='mx-auto w-full max-w-[1220px]'>
-            <div className='flex flex-col gap-3 px-1 sm:flex-row sm:items-start sm:justify-between'>
+            <div className='px-1'>
               <div className='min-w-0'>
                 <h1 className='text-[clamp(28px,2.45vw,32px)] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#0a2b79]'>
                   Pacientes
@@ -237,7 +236,6 @@ function GestionarPacientesPage() {
                   Gestiona y consulta la ficha longitudinal de los pacientes hematológicos pediátricos.
                 </p>
               </div>
-              <BtnCrear ruta='/doctor/nuevoRegistro' tamano='compacto' texto='Nuevo paciente' />
             </div>
 
             {!cargando && !errorCarga && (
@@ -307,8 +305,8 @@ function GestionarPacientesPage() {
             {!cargando && !errorCarga && totalPacientes === 0 && (
               <section className='mt-2.5 grid min-h-44 place-items-center rounded-xl border border-[#dce5ee] bg-white px-6 text-center shadow-[0_5px_16px_rgba(18,52,91,0.08)]'>
                 <div>
-                  <p className='text-[13px] font-bold text-[#173679]'>Aún no hay pacientes registrados</p>
-                  <p className='mt-1 text-[11px] text-[#617493]'>Los pacientes creados aparecerán en esta lista.</p>
+                  <p className='text-[13px] font-bold text-[#173679]'>Aún no hay pacientes disponibles</p>
+                  <p className='mt-1 text-[11px] text-[#617493]'>Los pacientes del hospital aparecerán en esta lista.</p>
                 </div>
               </section>
             )}

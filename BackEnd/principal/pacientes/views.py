@@ -1,4 +1,3 @@
-from django.db import transaction
 from rest_framework import filters, permissions, viewsets
 from rest_framework.exceptions import PermissionDenied
 
@@ -37,17 +36,9 @@ class PacienteViewSet(viewsets.ModelViewSet):
         return PacienteListadoSerializer if self.action == "list" else PacienteSerializer
 
     def perform_create(self, serializer):
-        if not (es_administrador(self.request.user) or es_medico(self.request.user)):
-            raise PermissionDenied("Solo el personal hospitalario puede registrar pacientes.")
-        with transaction.atomic():
-            paciente = serializer.save(creado_por=self.request.user)
-            if es_medico(self.request.user):
-                AsignacionMedica.objects.create(
-                    paciente=paciente,
-                    medico=self.request.user,
-                    es_principal=True,
-                    asignado_por=self.request.user,
-                )
+        if not es_administrador(self.request.user):
+            raise PermissionDenied("Solo el administrador puede registrar pacientes.")
+        serializer.save(creado_por=self.request.user)
 
     def perform_destroy(self, instance):
         raise PermissionDenied("Los pacientes no se eliminan; cambie su estado a INACTIVO.")
@@ -102,7 +93,6 @@ class TutorPacienteViewSet(viewsets.ModelViewSet):
 class AsignacionMedicaViewSet(viewsets.ModelViewSet):
     serializer_class = AsignacionMedicaSerializer
     permission_classes = (permissions.IsAuthenticated, SoloAdministradorParaModificarAsignacion)
-
     def get_queryset(self):
         pacientes = pacientes_visibles_para(self.request.user)
         return AsignacionMedica.objects.filter(paciente__in=pacientes).select_related("paciente", "medico")
@@ -112,7 +102,6 @@ class AsignacionMedicaViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         raise PermissionDenied("Las asignaciones se cierran estableciendo activa=false; no se eliminan.")
-
 
 class CuentaMovilPacienteViewSet(viewsets.ModelViewSet):
     serializer_class = CuentaMovilPacienteSerializer

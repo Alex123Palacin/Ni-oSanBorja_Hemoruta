@@ -68,7 +68,7 @@ services:
       ML_STT_DISPOSITIVO: cpu
       ML_STT_COMPUTE_TYPE: int8
       HEMORUTA_DEMO_PASSWORD: alex
-      HEMORUTA_DEMO_FECHA_BASE: "2026-08-13"
+      HEMORUTA_DEMO_FECHA_BASE: "2026-08-16"
     volumes:
       - hemoruta_media:/app/media
       - hemoruta_static:/app/staticfiles

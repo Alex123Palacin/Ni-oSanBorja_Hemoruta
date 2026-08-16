@@ -38,6 +38,10 @@ export interface DetalleMedicoAdministrativoApi {
 }
 
 export interface FichaPacienteAdministrativaApi {
+  atendidoPor: {
+    id: string
+    nombreCompleto: string
+  } | null
   cuentaMovil: {
     alias: string
     dispositivo: string
@@ -56,9 +60,13 @@ export interface FichaPacienteAdministrativaApi {
   idiomaPreferido: string
   nacionalidad: string
   nombreCompleto: string
+  medicoResponsable: {
+    especialidad: string
+    id: string
+    nombreCompleto: string
+  } | null
   perfilCompleto: boolean
   procedencia: string
-  registradoPor: { id: string; nombre: string; rol: string } | null
   sexo: string
   vinculo: {
     correo: string
@@ -133,6 +141,7 @@ interface DetalleAdministrativoBackend {
   } | null
   incluye_datos_clinicos: false
   pacientes: Array<{
+    atendido_por?: { id: string; nombre: string } | null
     cuenta_movil: {
       alias: string
       dispositivo: string
@@ -151,9 +160,13 @@ interface DetalleAdministrativoBackend {
     idioma_preferido: string
     nacionalidad: string
     nombre_completo: string
+    medico_responsable?: {
+      especialidad: string
+      id: string
+      nombre: string
+    } | null
     perfil_completo: boolean
     procedencia: string
-    registrado_por: { id: string; nombre: string; rol: string } | null
     sexo: string
     vinculo: {
       correo: string
@@ -265,6 +278,12 @@ export async function obtenerDetalleAdministrativoUsuarioApi(usuarioId: string) 
       : null,
     incluyeDatosClinicos: respuesta.incluye_datos_clinicos,
     pacientes: respuesta.pacientes.map((paciente) => ({
+      atendidoPor: paciente.atendido_por
+        ? {
+            id: paciente.atendido_por.id,
+            nombreCompleto: paciente.atendido_por.nombre,
+          }
+        : null,
       cuentaMovil: paciente.cuenta_movil
         ? {
             alias: paciente.cuenta_movil.alias,
@@ -285,15 +304,15 @@ export async function obtenerDetalleAdministrativoUsuarioApi(usuarioId: string) 
       idiomaPreferido: paciente.idioma_preferido,
       nacionalidad: paciente.nacionalidad,
       nombreCompleto: paciente.nombre_completo,
-      perfilCompleto: paciente.perfil_completo,
-      procedencia: paciente.procedencia,
-      registradoPor: paciente.registrado_por
+      medicoResponsable: paciente.medico_responsable
         ? {
-            id: paciente.registrado_por.id,
-            nombre: paciente.registrado_por.nombre,
-            rol: paciente.registrado_por.rol,
+            especialidad: paciente.medico_responsable.especialidad,
+            id: paciente.medico_responsable.id,
+            nombreCompleto: paciente.medico_responsable.nombre,
           }
         : null,
+      perfilCompleto: paciente.perfil_completo,
+      procedencia: paciente.procedencia,
       sexo: paciente.sexo,
       vinculo: paciente.vinculo
         ? {

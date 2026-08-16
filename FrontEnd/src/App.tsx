@@ -14,6 +14,7 @@ import VerificacionCuentaAdminsPage from './pages/VerificacionCuentaAdminsPage'
 import ConfirmacionUsuarioPage from './pages/AdminModulo/ConfirmacionUsuarioPage'
 import CrearUsuarioAdminPage from './pages/AdminModulo/CrearUsuarioAdminPage'
 import DetalleUsuarioHospitalarioPage from './pages/AdminModulo/DetalleUsuarioHospitalarioPage'
+import ClinicaDiaPage from './pages/AdminModulo/ClinicaDiaPage'
 import InicioAdminPage from './pages/AdminModulo/InicioAdminPage'
 import UsuariosHospitalariosPage from './pages/AdminModulo/UsuariosHospitalariosPage'
 
@@ -23,7 +24,6 @@ import FichaPacientePage from './pages/MedicoModulo/FichaPacientePage'
 import GestionarPacientesPage from './pages/MedicoModulo/GestionarPacientesPage'
 import HistoriaPacientePage from './pages/MedicoModulo/HistoriaPacientePage'
 import InicioDoctorPage from './pages/MedicoModulo/InicioDoctorPage'
-import NuevoPacientePage from './pages/MedicoModulo/NuevoPacientePage'
 import SeguimientoPacientesListaPage from './pages/MedicoModulo/SeguimientoPacientesListaPage'
 import VisualizarSeguimientoPacientePage from './pages/MedicoModulo/VisualizarSeguimientoPacientePage'
 
@@ -55,7 +55,6 @@ function App() {
               <Route path='/doctor/ficha' element={<FichaPacientePage />} />
               <Route path='/doctor/consulta' element={<ConsultaVozPage />} />
               <Route path='/doctor/historial' element={<HistoriaPacientePage />} />
-              <Route path='/doctor/nuevoRegistro' element={<NuevoPacientePage />} />
               <Route path='/doctor/seguimiento' element={<SeguimientoPacientesListaPage />} />
               <Route path='/doctor/visualizar' element={<VisualizarSeguimientoPacientePage />} />
             </Route>
@@ -66,6 +65,7 @@ function App() {
               <Route path='/admin/inicio' element={<InicioAdminPage />} />
               <Route path='/admin/UsuariosHospitalarios' element={<UsuariosHospitalariosPage />} />
               <Route path='/admin/CrearUs' element={<CrearUsuarioAdminPage />} />
+              <Route path='/admin/clinica-dia' element={<ClinicaDiaPage />} />
               <Route path='/admin/confirmacion' element={<ConfirmacionUsuarioPage />} />
               <Route path='/admin/detalleUs' element={<Navigate replace to='/admin/UsuariosHospitalarios' />} />
               <Route path='/admin/detalleUs/:usuarioId' element={<DetalleUsuarioHospitalarioPage />} />

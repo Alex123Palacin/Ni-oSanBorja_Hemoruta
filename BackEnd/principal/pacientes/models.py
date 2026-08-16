@@ -138,6 +138,11 @@ class TutorPaciente(models.Model):
 
 
 class AsignacionMedica(models.Model):
+    class Origen(models.TextChoices):
+        AUTOMATICA = "AUTOMATICA", "Asignación automática"
+        MANUAL = "MANUAL", "Reasignación manual"
+        REEQUILIBRIO = "REEQUILIBRIO", "Reequilibrio asistencial"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name="asignaciones_medicas")
     medico = models.ForeignKey(
@@ -156,10 +161,34 @@ class AsignacionMedica(models.Model):
         blank=True,
         related_name="asignaciones_medicas_realizadas",
     )
+    origen = models.CharField(
+        max_length=16,
+        choices=Origen.choices,
+        default=Origen.AUTOMATICA,
+    )
+    motivo = models.CharField(max_length=255, blank=True)
+    cerrado_en = models.DateTimeField(null=True, blank=True)
+    cerrada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="asignaciones_medicas_cerradas",
+    )
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ("-activa", "-es_principal", "-fecha_inicio")
+        indexes = [
+            models.Index(
+                fields=("medico", "activa", "es_principal"),
+                name="asig_med_carga_idx",
+            ),
+            models.Index(
+                fields=("paciente", "-creado_en"),
+                name="asig_pac_hist_idx",
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=("paciente",),
@@ -182,6 +211,10 @@ class AsignacionMedica(models.Model):
             raise ValidationError({"medico": "El usuario asignado debe tener rol MEDICO."})
         if self.fecha_fin and self.fecha_fin < self.fecha_inicio:
             raise ValidationError({"fecha_fin": "La fecha de fin no puede ser anterior al inicio."})
+        if self.activa and (self.fecha_fin or self.cerrado_en):
+            raise ValidationError(
+                "Una asignación activa no puede tener fecha de cierre."
+            )
 
 
 class CuentaMovilPaciente(models.Model):

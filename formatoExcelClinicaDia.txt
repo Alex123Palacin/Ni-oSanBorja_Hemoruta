@@ -1,0 +1,90 @@
+FORMATO DE IMPORTACIÓN — CLÍNICA DE DÍA
+Hospital del Niño San Borja · HemoRuta Pediátrica
+
+ARCHIVO
+- Formato admitido: .xlsx
+- Tamaño máximo: 5 MB.
+- Cantidad máxima: 5,000 filas de datos.
+- Nombre obligatorio de la hoja: Pacientes
+- La fila 1 contiene los encabezados.
+- Cada fila desde la fila 2 representa una sesión de quimioterapia por programar.
+- El archivo original no se almacena: solo se validan y guardan sus filas.
+
+ENCABEZADOS OBLIGATORIOS (escribirlos exactamente así)
+1. codigo_solicitud
+   Código único de la sesión. Ejemplo: QMT-2026-0001.
+   Si se vuelve a importar el mismo código, no se duplica la solicitud.
+
+2. dni
+   DNI del paciente como texto de 8 dígitos. Ejemplo: 71562384.
+
+3. nombres_completos
+   Nombres y apellidos del paciente. Ejemplo: Mateo Gabriel Flores.
+
+4. telefono
+   Número de contacto del tutor o responsable. Ejemplo: 987654321.
+
+5. fecha_solicitada
+   Fecha preferida. Usar una fecha real de Excel o AAAA-MM-DD.
+   Ejemplo: 2026-08-17. La agenda solo trabaja de lunes a viernes.
+
+6. hora_preferida
+   Hora preferida como hora real de Excel o HH:MM.
+   Ejemplo: 08:00, 11:00 o 14:00.
+
+7. duracion_horas
+   Número de horas estimadas. Ejemplos: 2.5, 3 o 3.5.
+   Mínimo: 0.25 horas. Máximo: 3.5 horas.
+   Los turnos de mañana admiten hasta 3 horas.
+
+8. prioridad
+   Valores admitidos: ALTA, MEDIA o BAJA.
+
+9. procedencia
+   Valores recomendados: LIMA o PROVINCIA.
+
+ENCABEZADOS OPCIONALES
+10. historia_clinica
+    Historia clínica del hospital. Si el DNI ya existe, debe coincidir.
+
+11. diagnostico
+    Diagnóstico relacionado con la atención.
+
+12. protocolo_quimioterapia
+    Protocolo o esquema indicado. Puede dejarse vacío.
+
+13. observaciones
+    Información breve necesaria para programar la sesión.
+
+EJEMPLO DE FILA
+codigo_solicitud: QMT-2026-0001
+dni: 71562384
+nombres_completos: Mateo Gabriel Flores
+telefono: 987654321
+fecha_solicitada: 2026-08-17
+hora_preferida: 08:00
+duracion_horas: 3
+prioridad: ALTA
+procedencia: LIMA
+historia_clinica: HC-2024-01568
+diagnostico: Leucemia linfoblástica aguda
+protocolo_quimioterapia: LLA-2024
+observaciones: Acudir 15 minutos antes.
+
+REGLAS DE PROGRAMACIÓN
+- Hay 8 camas disponibles por turno.
+- Turno 1: 08:00–11:00.
+- Turno 2: 11:00–14:00.
+- Turno 3: 14:00–17:30.
+- Se respeta primero la prioridad, fecha y hora preferidas.
+- Si el turno está lleno, se busca otro turno compatible del mismo día.
+- Si el día está lleno, se continúa en el siguiente día hábil disponible.
+- Un DNI existente se vincula con su ficha; un DNI nuevo queda como solicitud externa
+  y no crea automáticamente una cuenta ni una ficha clínica incompleta.
+- Las filas inválidas se informan con su número y motivo; las filas válidas sí se importan.
+
+CONSEJOS PARA EXCEL
+- Mantener el DNI y el teléfono con formato Texto para no perder ceros iniciales.
+- No combinar celdas, no cambiar el nombre de la hoja y no repetir encabezados.
+- No agregar filas de título antes de los encabezados.
+- Guardar siempre como Libro de Excel (.xlsx).
